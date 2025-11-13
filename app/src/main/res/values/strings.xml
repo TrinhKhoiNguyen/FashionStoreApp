@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">160Store</string>
+    <string name="main_banner_title">ALL ABOUT MEN\'S WEAR</string>
+    <string name="voucher_banner">VOUCHER 15K ĐƠN TỪ 299K</string>
+    <string name="deals_for_you">ƯU ĐÃI DÀNH CHO BẠN</string>
+    <string name="retro_sports">RETRO SPORTS</string>
+    <string name="new_arrivals">HÀNG MỚI</string>
+    <string name="outlet">OUTLET</string>
+    <string name="view_all">Xem tất cả »</string>
+    <string name="add_to_cart">Thêm vào giỏ</string>
+    <string name="cart">GIỎ HÀNG</string>
+    <string name="empty_cart">Giỏ hàng trống</string>
+    <string name="continue_shopping">Tiếp tục mua sắm</string>
+    <string name="subtotal">Tạm tính:</string>
+    <string name="discount">Giảm giá:</string>
+    <string name="total">Tổng cộng:</string>
+    <string name="edit_cart">CHỈNH SỬA GIỎ HÀNG</string>
+    <string name="checkout">THANH TOÁN</string>
+    <string name="login">ĐĂNG NHẬP</string>
+    <string name="email_hint">Nhập email hoặc số điện thoại</string>
+    <string name="password_hint">Mật khẩu</string>
+    <string name="forgot_password">Quên mật khẩu?</string>
+    <string name="or">HOẶC</string>
+    <string name="login_google">Đăng nhập với Google</string>
+    <string name="login_facebook">Đăng nhập với Facebook</string>
+    <string name="new_customer">Khách hàng mới? </string>
+    <string name="create_account">Tạo tài khoản</string>
+    <string name="search_hint">Tìm kiếm sản phẩm...</string>
+</resources>
