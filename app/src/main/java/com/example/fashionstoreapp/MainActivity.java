@@ -24,9 +24,11 @@ import com.example.fashionstoreapp.adapters.BannerAdapter;
 import com.example.fashionstoreapp.adapters.ProductAdapter;
 import com.example.fashionstoreapp.models.Banner;
 import com.example.fashionstoreapp.models.CartItem;
+import com.example.fashionstoreapp.models.Category;
 import com.example.fashionstoreapp.models.Product;
 import com.example.fashionstoreapp.models.User;
 import com.example.fashionstoreapp.utils.CartManager;
+import com.example.fashionstoreapp.utils.FirestoreManager;
 import com.example.fashionstoreapp.utils.SessionManager;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.auth.FirebaseAuth;
@@ -51,17 +53,18 @@ public class MainActivity extends AppCompatActivity
 
     private RecyclerView voucherRecyclerView, retroSportsRecyclerView;
     private RecyclerView newArrivalsRecyclerView, outletRecyclerView;
-    private RecyclerView shirtsRecyclerView, poloRecyclerView;
+    private RecyclerView shirtsRecyclerView, poloRecyclerView, somiRecyclerView;
 
     private ProductAdapter voucherAdapter, retroSportsAdapter;
     private ProductAdapter newArrivalsAdapter, outletAdapter;
-    private ProductAdapter shirtsAdapter, poloAdapter;
+    private ProductAdapter shirtsAdapter, poloAdapter, somiAdapter;
 
     private Button btnViewAllRetro, btnViewAllOutlet, btnViewAllShirts, btnViewAllPolo;
 
     private CartManager cartManager;
     private SessionManager sessionManager;
     private FirebaseAuth mAuth;
+    private FirestoreManager firestoreManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -72,6 +75,7 @@ public class MainActivity extends AppCompatActivity
         cartManager = CartManager.getInstance();
         sessionManager = new SessionManager(this);
         mAuth = FirebaseAuth.getInstance();
+        firestoreManager = FirestoreManager.getInstance();
 
         // Initialize views
         initViews();
@@ -82,8 +86,9 @@ public class MainActivity extends AppCompatActivity
         // Setup RecyclerViews
         setupRecyclerViews();
 
-        // Load sample data
-        loadSampleProducts();
+        // Load data from Firestore
+        loadProductsFromFirestore();
+        loadCategoriesFromFirestore();
 
         // Setup click listeners
         setupClickListeners();
@@ -110,6 +115,7 @@ public class MainActivity extends AppCompatActivity
         outletRecyclerView = findViewById(R.id.outletRecyclerView);
         shirtsRecyclerView = findViewById(R.id.shirtsRecyclerView);
         poloRecyclerView = findViewById(R.id.poloRecyclerView);
+        somiRecyclerView = findViewById(R.id.somiRecyclerView);
 
         btnViewAllRetro = findViewById(R.id.btnViewAllRetro);
         btnViewAllOutlet = findViewById(R.id.btnViewAllOutlet);
@@ -225,6 +231,7 @@ public class MainActivity extends AppCompatActivity
         setupHorizontalRecyclerView(retroSportsRecyclerView);
         setupHorizontalRecyclerView(shirtsRecyclerView);
         setupHorizontalRecyclerView(poloRecyclerView);
+        setupHorizontalRecyclerView(somiRecyclerView);
 
         // Grid RecyclerViews
         setupGridRecyclerView(newArrivalsRecyclerView);
@@ -280,6 +287,142 @@ public class MainActivity extends AppCompatActivity
         poloRecyclerView.setAdapter(poloAdapter);
     }
 
+    // ==================== FIRESTORE METHODS ====================
+
+    private void loadProductsFromFirestore() {
+        // Load voucher products
+        firestoreManager.loadVoucherProducts(10, new FirestoreManager.OnProductsLoadedListener() {
+            @Override
+            public void onProductsLoaded(List<Product> products) {
+                if (!products.isEmpty()) {
+                    voucherAdapter = new ProductAdapter(MainActivity.this, products, MainActivity.this);
+                    voucherRecyclerView.setAdapter(voucherAdapter);
+                } else {
+                    // Fallback to sample data if Firestore is empty
+                    loadSampleVoucherProducts();
+                }
+            }
+
+            @Override
+            public void onError(String error) {
+                Toast.makeText(MainActivity.this, "Lỗi tải sản phẩm voucher: " + error, Toast.LENGTH_SHORT).show();
+                loadSampleVoucherProducts();
+            }
+        });
+
+        // Load new products
+        firestoreManager.loadNewProducts(10, new FirestoreManager.OnProductsLoadedListener() {
+            @Override
+            public void onProductsLoaded(List<Product> products) {
+                if (!products.isEmpty()) {
+                    newArrivalsAdapter = new ProductAdapter(MainActivity.this, products, MainActivity.this);
+                    newArrivalsRecyclerView.setAdapter(newArrivalsAdapter);
+                } else {
+                    loadSampleNewProducts();
+                }
+            }
+
+            @Override
+            public void onError(String error) {
+                Toast.makeText(MainActivity.this, "Lỗi tải sản phẩm mới: " + error, Toast.LENGTH_SHORT).show();
+                loadSampleNewProducts();
+            }
+        });
+
+        // Load products by category
+        loadProductsByCategory("retro-sports", retroSportsRecyclerView, products -> {
+            retroSportsAdapter = new ProductAdapter(MainActivity.this, products, MainActivity.this);
+            retroSportsRecyclerView.setAdapter(retroSportsAdapter);
+        });
+
+        loadProductsByCategory("outlet", outletRecyclerView, products -> {
+            outletAdapter = new ProductAdapter(MainActivity.this, products, MainActivity.this);
+            outletRecyclerView.setAdapter(outletAdapter);
+        });
+
+        loadProductsByCategory("ao-thun", shirtsRecyclerView, products -> {
+            shirtsAdapter = new ProductAdapter(MainActivity.this, products, MainActivity.this);
+            shirtsRecyclerView.setAdapter(shirtsAdapter);
+        });
+
+        loadProductsByCategory("ao-polo", poloRecyclerView, products -> {
+            poloAdapter = new ProductAdapter(MainActivity.this, products, MainActivity.this);
+            poloRecyclerView.setAdapter(poloAdapter);
+        });
+
+        loadProductsByCategory("ao-so-mi", somiRecyclerView, products -> {
+            somiAdapter = new ProductAdapter(MainActivity.this, products, MainActivity.this);
+            somiRecyclerView.setAdapter(somiAdapter);
+        });
+    }
+
+    private void loadProductsByCategory(String categoryId, RecyclerView recyclerView, OnProductsLoadCallback callback) {
+        firestoreManager.loadProductsByCategory(categoryId, new FirestoreManager.OnProductsLoadedListener() {
+            @Override
+            public void onProductsLoaded(List<Product> products) {
+                if (!products.isEmpty()) {
+                    callback.onLoaded(products);
+                } else {
+                    // Fallback to sample data
+                    List<Product> sampleProducts = createSampleProducts(categoryId, 5);
+                    callback.onLoaded(sampleProducts);
+                }
+            }
+
+            @Override
+            public void onError(String error) {
+                Toast.makeText(MainActivity.this, "Lỗi tải danh mục " + categoryId, Toast.LENGTH_SHORT).show();
+                List<Product> sampleProducts = createSampleProducts(categoryId, 5);
+                callback.onLoaded(sampleProducts);
+            }
+        });
+    }
+
+    private void loadCategoriesFromFirestore() {
+        firestoreManager.loadCategories(new FirestoreManager.OnCategoriesLoadedListener() {
+            @Override
+            public void onCategoriesLoaded(List<Category> categories) {
+                // You can use categories for navigation or filtering
+                // For now, just log them
+                for (Category category : categories) {
+                    android.util.Log.d("MainActivity", "Category: " + category.getName());
+                }
+            }
+
+            @Override
+            public void onError(String error) {
+                Toast.makeText(MainActivity.this, "Lỗi tải danh mục: " + error, Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    // Fallback methods to load sample data
+    private void loadSampleVoucherProducts() {
+        List<Product> voucherProducts = createSampleProducts("Voucher", 5);
+        for (Product p : voucherProducts) {
+            p.setHasVoucher(true);
+            p.setVoucherText("Voucher 15K");
+        }
+        voucherAdapter = new ProductAdapter(this, voucherProducts, this);
+        voucherRecyclerView.setAdapter(voucherAdapter);
+    }
+
+    private void loadSampleNewProducts() {
+        List<Product> newProducts = createSampleProducts("Hàng Mới", 6);
+        for (Product p : newProducts) {
+            p.setNew(true);
+        }
+        newArrivalsAdapter = new ProductAdapter(this, newProducts, this);
+        newArrivalsRecyclerView.setAdapter(newArrivalsAdapter);
+    }
+
+    // Callback interface
+    private interface OnProductsLoadCallback {
+        void onLoaded(List<Product> products);
+    }
+
+    // Keep the sample data method as fallback
+
     private List<Product> createSampleProducts(String category, int count) {
         List<Product> products = new ArrayList<>();
         String[] names = {
@@ -291,14 +434,28 @@ public class MainActivity extends AppCompatActivity
                 "Áo Sơ Mi Oxford Classic"
         };
 
+        // Ảnh sản phẩm - Bạn có thể thay đổi tên file ảnh ở đây
+        // Đặt ảnh vào: app/src/main/res/drawable/
+        String[] imageUrls = {
+                "product1", // Tên file ảnh trong drawable (không cần .png/.jpg)
+                "product2",
+                "product3",
+                "product4",
+                "product5",
+                "product6"
+        };
+
         for (int i = 0; i < count; i++) {
             String id = category + "_" + (i + 1);
             String name = names[i % names.length] + " " + (i + 1);
             double originalPrice = 500000 + (i * 100000);
             double currentPrice = originalPrice * 0.7; // 30% discount
 
+            // Sử dụng tên drawable cho imageUrl
+            String imageUrl = imageUrls[i % imageUrls.length];
+
             Product product = new Product(id, name, "Mô tả sản phẩm " + name,
-                    currentPrice, originalPrice, "", category);
+                    currentPrice, originalPrice, imageUrl, category);
             products.add(product);
         }
         return products;

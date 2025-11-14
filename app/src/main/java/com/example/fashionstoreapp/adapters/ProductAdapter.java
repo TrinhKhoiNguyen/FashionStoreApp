@@ -11,10 +11,13 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.example.fashionstoreapp.R;
 import com.example.fashionstoreapp.models.Product;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.List;
 
 public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductViewHolder> {
@@ -129,9 +132,35 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
                 favoriteIcon.setImageResource(android.R.drawable.btn_star_big_off);
             }
 
-            // Load product image (you can use Glide or Picasso here)
-            // For now, using placeholder
-            productImage.setImageResource(android.R.drawable.ic_menu_gallery);
+            // Load product image
+            if (product.getImageUrl() != null && !product.getImageUrl().isEmpty()) {
+                // Check if it's a URL (starts with http)
+                if (product.getImageUrl().startsWith("http")) {
+                    // Load from URL using Glide
+                    Glide.with(context)
+                            .load(product.getImageUrl())
+                            .diskCacheStrategy(DiskCacheStrategy.ALL)
+                            .placeholder(android.R.drawable.ic_menu_gallery)
+                            .error(android.R.drawable.ic_menu_gallery)
+                            .into(productImage);
+                } else {
+                    // Load from drawable by resource name
+                    int resourceId = context.getResources().getIdentifier(
+                            product.getImageUrl(),
+                            "drawable",
+                            context.getPackageName());
+
+                    if (resourceId != 0) {
+                        productImage.setImageResource(resourceId);
+                    } else {
+                        // Fallback to placeholder if image not found
+                        productImage.setImageResource(android.R.drawable.ic_menu_gallery);
+                    }
+                }
+            } else {
+                // No image URL, use placeholder
+                productImage.setImageResource(android.R.drawable.ic_menu_gallery);
+            }
 
             // Click listeners
             itemView.setOnClickListener(v -> {

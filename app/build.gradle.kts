@@ -48,6 +48,7 @@ dependencies {
     implementation(platform("com.google.firebase:firebase-bom:34.5.0"))
     implementation("com.google.firebase:firebase-analytics")
     implementation("com.google.firebase:firebase-auth")
+    implementation("com.google.firebase:firebase-firestore")
     
     // Google Sign In
     implementation("com.google.android.gms:play-services-auth:21.2.0")
@@ -58,9 +59,8 @@ dependencies {
     // Gson for JSON serialization
     implementation("com.google.code.gson:gson:2.10.1")
     
-    // Optional: Image loading libraries (uncomment if needed)
-    // implementation("com.github.bumptech.glide:glide:4.16.0")
-    // implementation("com.squareup.picasso:picasso:2.8")
+    // Glide for image loading
+    implementation("com.github.bumptech.glide:glide:4.16.0")
     
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)

@@ -10,6 +10,8 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.example.fashionstoreapp.R;
 import com.example.fashionstoreapp.models.Banner;
 
@@ -77,9 +79,13 @@ public class BannerAdapter extends RecyclerView.Adapter<BannerAdapter.BannerView
                 bannerImage.setImageResource(banner.getImageResource());
                 bannerImage.setVisibility(View.VISIBLE);
             } else if (banner.getImageUrl() != null && !banner.getImageUrl().isEmpty()) {
-                // TODO: Load image from URL using Glide or Picasso
-                // Glide.with(context).load(banner.getImageUrl()).into(bannerImage);
-                bannerImage.setImageResource(android.R.drawable.ic_menu_gallery);
+                // Load image from URL using Glide
+                Glide.with(context)
+                        .load(banner.getImageUrl())
+                        .diskCacheStrategy(DiskCacheStrategy.ALL)
+                        .placeholder(android.R.drawable.ic_menu_gallery)
+                        .error(android.R.drawable.ic_menu_gallery)
+                        .into(bannerImage);
                 bannerImage.setVisibility(View.VISIBLE);
             } else {
                 // Không có ảnh thì ẩn đi
