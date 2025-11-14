@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="24dp">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Viết đánh giá"
+        android:textColor="#000000"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:gravity="center" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="Đánh giá của bạn"
+        android:textColor="#333333"
+        android:textSize="14sp" />
+
+    <RatingBar
+        android:id="@+id/ratingBarDialog"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginTop="8dp"
+        android:numStars="5"
+        android:rating="5"
+        android:stepSize="1" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="Nhận xét của bạn"
+        android:textColor="#333333"
+        android:textSize="14sp" />
+
+    <EditText
+        android:id="@+id/etReviewComment"
+        android:layout_width="match_parent"
+        android:layout_height="120dp"
+        android:layout_marginTop="8dp"
+        android:background="@android:drawable/edit_text"
+        android:gravity="top|start"
+        android:hint="Chia sẻ trải nghiệm của bạn về sản phẩm..."
+        android:inputType="textMultiLine"
+        android:maxLines="5"
+        android:padding="12dp"
+        android:textSize="14sp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/btnCancelReview"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:layout_weight="1"
+            android:background="#E0E0E0"
+            android:text="Hủy"
+            android:textColor="#333333" />
+
+        <Button
+            android:id="@+id/btnSubmitReview"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:background="#000000"
+            android:text="Gửi đánh giá"
+            android:textColor="#FFFFFF" />
+    </LinearLayout>
+
+</LinearLayout>

@@ -1,6 +1,9 @@
 package com.example.fashionstoreapp.models;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class Product implements Serializable {
     private String id;
@@ -16,6 +19,9 @@ public class Product implements Serializable {
     private String voucherText;
     private boolean isFavorite;
     private int stockQuantity;
+    private List<String> availableSizes;
+    private double rating;
+    private int reviewCount;
 
     // Constructor
     public Product() {
@@ -33,6 +39,9 @@ public class Product implements Serializable {
         this.discountPercent = calculateDiscountPercent();
         this.isFavorite = false;
         this.stockQuantity = 100;
+        this.availableSizes = Arrays.asList("S", "M", "L", "XL");
+        this.rating = 0.0;
+        this.reviewCount = 0;
     }
 
     // Calculate discount percentage
@@ -144,6 +153,33 @@ public class Product implements Serializable {
 
     public void setStockQuantity(int stockQuantity) {
         this.stockQuantity = stockQuantity;
+    }
+
+    public List<String> getAvailableSizes() {
+        if (availableSizes == null) {
+            availableSizes = Arrays.asList("S", "M", "L", "XL");
+        }
+        return availableSizes;
+    }
+
+    public void setAvailableSizes(List<String> availableSizes) {
+        this.availableSizes = availableSizes;
+    }
+
+    public double getRating() {
+        return rating;
+    }
+
+    public void setRating(double rating) {
+        this.rating = rating;
+    }
+
+    public int getReviewCount() {
+        return reviewCount;
+    }
+
+    public void setReviewCount(int reviewCount) {
+        this.reviewCount = reviewCount;
     }
 
     // Formatted price strings

@@ -20,7 +20,10 @@ products/
     ├── hasVoucher: boolean
     ├── voucherText: string
     ├── isFavorite: boolean
-    └── stockQuantity: number
+    ├── stockQuantity: number
+    ├── availableSizes: array<string> (NEW)
+    ├── rating: number (NEW)
+    └── reviewCount: number (NEW)
 ```
 
 #### 2. **categories** (Danh mục)
@@ -33,6 +36,20 @@ categories/
     ├── imageUrl: string
     ├── displayOrder: number
     └── isActive: boolean
+```
+
+#### 3. **reviews** (Đánh giá sản phẩm) - NEW
+```
+reviews/
+├── {reviewId}/
+    ├── id: string
+    ├── productId: string
+    ├── userId: string
+    ├── userName: string
+    ├── rating: number (1-5)
+    ├── comment: string
+    ├── timestamp: number
+    └── userImageUrl: string (optional)
 ```
 
 ## 🚀 Cách Thêm Dữ Liệu Vào Firestore
@@ -113,7 +130,10 @@ categories/
   "hasVoucher": false,
   "voucherText": "",
   "isFavorite": false,
-  "stockQuantity": 50
+  "stockQuantity": 50,
+  "availableSizes": ["S", "M", "L", "XL"],
+  "rating": 4.5,
+  "reviewCount": 12
 }
 ```
 
@@ -198,12 +218,48 @@ categories/
 Bạn có thể copy/paste và chỉnh sửa các trường:
 - `id`: unique identifier
 - `name`: Tên sản phẩm
+- `description`: Mô tả chi tiết sản phẩm (hiển thị trong ProductDetail)
 - `currentPrice`: Giá hiện tại
 - `originalPrice`: Giá gốc
 - `category`: ID của category (phải khớp với category đã tạo)
 - `isNew`: true/false - Sản phẩm mới
 - `hasVoucher`: true/false - Có voucher không
-- `imageUrl`: Tên file ảnh trong drawable (không cần extension)
+- `imageUrl`: URL hoặc tên file ảnh trong drawable
+- `availableSizes`: ["S", "M", "L", "XL"] - Các size có sẵn
+- `rating`: 0.0 - 5.0 - Điểm đánh giá trung bình
+- `reviewCount`: Số lượng đánh giá
+
+### Bước 5: Thêm Reviews (Đánh giá sản phẩm)
+
+**Ví dụ thêm review:**
+
+#### Document: review_001
+```json
+{
+  "id": "review_001",
+  "productId": "product_001",
+  "userId": "user123",
+  "userName": "Nguyễn Văn A",
+  "rating": 5,
+  "comment": "Sản phẩm rất đẹp, chất lượng tốt. Giao hàng nhanh!",
+  "timestamp": 1700000000000,
+  "userImageUrl": ""
+}
+```
+
+#### Document: review_002
+```json
+{
+  "id": "review_002",
+  "productId": "product_001",
+  "userId": "user456",
+  "userName": "Trần Thị B",
+  "rating": 4,
+  "comment": "Form áo đẹp nhưng hơi ôm. Nên lấy size lớn hơn 1 size.",
+  "timestamp": 1700100000000,
+  "userImageUrl": ""
+}
+```
 
 ## 📱 Testing
 
@@ -239,8 +295,15 @@ Nếu Firestore trống hoặc lỗi, app sẽ tự động hiển thị dữ li
    - Fallback to sample data nếu Firestore trống
 
 3. **Models** ✅
-   - `Product.java` - Model sản phẩm
+   - `Product.java` - Model sản phẩm (updated with sizes, rating, reviewCount)
    - `Category.java` - Model danh mục
+   - `Review.java` - Model đánh giá (NEW)
+
+4. **Product Detail Screen** ✅ (NEW)
+   - `ProductDetailActivity.java` - Màn hình chi tiết sản phẩm
+   - `activity_product_detail.xml` - Layout với image gallery, size selector, description, reviews
+   - `ReviewAdapter.java` - Adapter hiển thị đánh giá
+   - `item_review.xml` - Layout item đánh giá
 
 ## 🎯 Next Steps
 
@@ -275,32 +338,79 @@ db.collection("products")
 
 ## 📊 Firestore Rules
 
-Thêm rules để bảo mật:
+**⚠️ QUAN TRỌNG: Bạn cần cập nhật Firestore Rules để cho phép ghi đánh giá!**
+
+### Cách cập nhật Rules:
+
+1. Mở Firebase Console: https://console.firebase.google.com/
+2. Chọn project của bạn
+3. Vào **Firestore Database** → **Rules**
+4. Copy và paste rules sau:
 
 ```javascript
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Allow read for all users
+    
+    // Products - Read: everyone, Write: authenticated users only
     match /products/{productId} {
       allow read: if true;
-      allow write: if request.auth != null; // Only authenticated users
+      allow write: if request.auth != null;
     }
     
+    // Categories - Read: everyone, Write: authenticated users only
     match /categories/{categoryId} {
       allow read: if true;
       allow write: if request.auth != null;
+    }
+    
+    // Reviews - Read: everyone, Write: authenticated users only
+    match /reviews/{reviewId} {
+      allow read: if true;
+      allow create: if true; // Cho phép tất cả người dùng tạo review
+      allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
     }
   }
 }
 ```
 
+5. Click **Publish** để lưu
+
+### Giải thích Rules:
+
+- **products**: Mọi người đọc được, chỉ user đã đăng nhập mới ghi được
+- **categories**: Mọi người đọc được, chỉ user đã đăng nhập mới ghi được
+- **reviews**: 
+  - Mọi người đọc được
+  - **Mọi người tạo đánh giá được** (không cần đăng nhập)
+  - Chỉ chủ review mới sửa/xóa được
+
+### Lưu ý:
+- Nếu muốn bắt buộc đăng nhập mới viết review: `allow create: if request.auth != null;`
+- Rules hiện tại cho phép KHÔNG CẦN đăng nhập để viết review
+
 ## 🔑 Important Notes
 
-1. **ImageUrl**: Sử dụng tên drawable (không cần .png/.jpg)
+1. **ImageUrl**: Có thể sử dụng URL (bắt đầu bằng http/https) hoặc tên drawable
 2. **Category**: Phải match với category ID trong collection categories
 3. **Price**: Lưu dưới dạng number, không phải string
 4. **Boolean**: isNew, hasVoucher, isActive phải là boolean true/false
+5. **availableSizes**: Array chứa các size ["S", "M", "L", "XL"]
+6. **rating**: Number từ 0.0 đến 5.0
+7. **reviewCount**: Số nguyên, số lượng đánh giá
+8. **description**: String mô tả chi tiết, hiển thị trong màn hình ProductDetail
+
+## ✨ Product Detail Features
+
+Khi click vào sản phẩm, app sẽ hiển thị:
+- ✅ Image gallery với ViewPager2
+- ✅ Tên sản phẩm, loại, MSP
+- ✅ Giá hiện tại, giá gốc, % giảm giá
+- ✅ Đánh giá sao + số lượng review
+- ✅ Chọn kích thước (S/M/L/XL) với highlight
+- ✅ Mô tả chi tiết sản phẩm
+- ✅ Danh sách đánh giá từ người dùng
+- ✅ Nút "Thêm vào giỏ" và "Mua ngay"
 
 ---
 

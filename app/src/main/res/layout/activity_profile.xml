@@ -43,7 +43,7 @@
                     android:layout_height="48dp"
                     android:background="@drawable/circle_background"
                     android:padding="12dp"
-                    android:src="@android:drawable/ic_menu_myplaces"
+                    android:src="@drawable/baseline_person_24"
                     android:tint="#000000" />
 
                 <LinearLayout
@@ -109,7 +109,7 @@
                             <ImageView
                                 android:layout_width="32dp"
                                 android:layout_height="32dp"
-                                android:src="@android:drawable/ic_menu_myplaces"
+                                android:src="@drawable/baseline_person_24"
                                 android:tint="#FFFFFF" />
 
                             <TextView

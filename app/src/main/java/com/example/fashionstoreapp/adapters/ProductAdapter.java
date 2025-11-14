@@ -1,6 +1,7 @@
 package com.example.fashionstoreapp.adapters;
 
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Paint;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -13,11 +14,11 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
+import com.example.fashionstoreapp.ProductDetailActivity;
 import com.example.fashionstoreapp.R;
 import com.example.fashionstoreapp.models.Product;
 
 import java.util.ArrayList;
-import java.util.List;
 import java.util.List;
 
 public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductViewHolder> {
@@ -164,6 +165,12 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
 
             // Click listeners
             itemView.setOnClickListener(v -> {
+                // Open ProductDetailActivity
+                Intent intent = new Intent(context, ProductDetailActivity.class);
+                intent.putExtra("product", product);
+                context.startActivity(intent);
+
+                // Also notify listener if available
                 if (listener != null) {
                     listener.onProductClick(product);
                 }

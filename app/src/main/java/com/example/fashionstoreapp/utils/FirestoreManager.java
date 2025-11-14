@@ -4,6 +4,7 @@ import android.util.Log;
 
 import com.example.fashionstoreapp.models.Category;
 import com.example.fashionstoreapp.models.Product;
+import com.example.fashionstoreapp.models.Review;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
@@ -20,6 +21,7 @@ public class FirestoreManager {
     private static final String COLLECTION_PRODUCTS = "products";
     private static final String COLLECTION_CATEGORIES = "categories";
     private static final String COLLECTION_BANNERS = "banners";
+    private static final String COLLECTION_REVIEWS = "reviews";
 
     private FirestoreManager() {
         db = FirebaseFirestore.getInstance();
@@ -203,6 +205,102 @@ public class FirestoreManager {
                 });
     }
 
+    // ==================== REVIEWS ====================
+
+    /**
+     * Load reviews for a product
+     */
+    public void loadProductReviews(String productId, OnReviewsLoadedListener listener) {
+        Log.d(TAG, "Loading reviews for product: " + productId);
+        db.collection(COLLECTION_REVIEWS)
+                .whereEqualTo("productId", productId)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    List<Review> reviews = new ArrayList<>();
+                    for (DocumentSnapshot document : queryDocumentSnapshots) {
+                        Review review = document.toObject(Review.class);
+                        if (review != null) {
+                            review.setId(document.getId());
+                            reviews.add(review);
+                        }
+                    }
+
+                    // Sort by timestamp descending in Java
+                    reviews.sort((r1, r2) -> Long.compare(r2.getTimestamp(), r1.getTimestamp()));
+
+                    Log.d(TAG, "Loaded " + reviews.size() + " reviews for product: " + productId);
+                    listener.onReviewsLoaded(reviews);
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error loading reviews: " + e.getMessage(), e);
+                    listener.onError(e.getMessage());
+                });
+    }
+
+    /**
+     * Add a review
+     */
+    public void addReview(Review review, OnReviewAddedListener listener) {
+        db.collection(COLLECTION_REVIEWS)
+                .add(review)
+                .addOnSuccessListener(documentReference -> {
+                    String reviewId = documentReference.getId();
+                    Log.d(TAG, "Review added with ID: " + reviewId);
+
+                    // Update product rating
+                    updateProductRating(review.getProductId());
+
+                    listener.onReviewAdded(reviewId);
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error adding review", e);
+                    listener.onError(e.getMessage());
+                });
+    }
+
+    /**
+     * Update product rating based on reviews
+     */
+    private void updateProductRating(String productId) {
+        db.collection(COLLECTION_REVIEWS)
+                .whereEqualTo("productId", productId)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    if (queryDocumentSnapshots.isEmpty()) {
+                        return;
+                    }
+
+                    double totalRating = 0;
+                    int count = 0;
+
+                    for (DocumentSnapshot document : queryDocumentSnapshots) {
+                        Review review = document.toObject(Review.class);
+                        if (review != null) {
+                            totalRating += review.getRating();
+                            count++;
+                        }
+                    }
+
+                    final double averageRating = count > 0 ? totalRating / count : 0;
+                    final int reviewCount = count;
+
+                    // Update product
+                    db.collection(COLLECTION_PRODUCTS)
+                            .document(productId)
+                            .update("rating", averageRating, "reviewCount", reviewCount)
+                            .addOnSuccessListener(aVoid -> {
+                                Log.d(TAG,
+                                        "Product rating updated: " + averageRating + " (" + reviewCount + " reviews)");
+                            })
+                            .addOnFailureListener(e -> {
+                                Log.e(TAG, "Error updating product rating", e);
+                            });
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error calculating product rating", e);
+                });
+    }
+
     // ==================== CALLBACKS ====================
 
     public interface OnProductsLoadedListener {
@@ -225,6 +323,18 @@ public class FirestoreManager {
 
     public interface OnCategoryAddedListener {
         void onCategoryAdded(String categoryId);
+
+        void onError(String error);
+    }
+
+    public interface OnReviewsLoadedListener {
+        void onReviewsLoaded(List<Review> reviews);
+
+        void onError(String error);
+    }
+
+    public interface OnReviewAddedListener {
+        void onReviewAdded(String reviewId);
 
         void onError(String error);
     }
