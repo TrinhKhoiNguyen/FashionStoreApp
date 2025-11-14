@@ -86,6 +86,9 @@ public class MainActivity extends AppCompatActivity
         // Setup RecyclerViews
         setupRecyclerViews();
 
+        // Load cart from Firestore
+        loadCartFromFirestore();
+
         // Load data from Firestore
         loadProductsFromFirestore();
         loadCategoriesFromFirestore();
@@ -289,6 +292,22 @@ public class MainActivity extends AppCompatActivity
 
     // ==================== FIRESTORE METHODS ====================
 
+    private void loadCartFromFirestore() {
+        if (mAuth.getCurrentUser() != null) {
+            cartManager.loadCartFromFirestore(new CartManager.OnCartLoadedListener() {
+                @Override
+                public void onCartLoaded() {
+                    updateCartBadge();
+                }
+
+                @Override
+                public void onError(String error) {
+                    // Handle error silently or show a toast if needed
+                }
+            });
+        }
+    }
+
     private void loadProductsFromFirestore() {
         // Load voucher products
         firestoreManager.loadVoucherProducts(10, new FirestoreManager.OnProductsLoadedListener() {
@@ -467,7 +486,8 @@ public class MainActivity extends AppCompatActivity
         });
 
         searchIcon.setOnClickListener(v -> {
-            Toast.makeText(this, "Search clicked", Toast.LENGTH_SHORT).show();
+            Intent intent = new Intent(MainActivity.this, SearchActivity.class);
+            startActivity(intent);
         });
 
         accountIcon.setOnClickListener(v -> {
@@ -540,11 +560,6 @@ public class MainActivity extends AppCompatActivity
         builder.setPositiveButton("Thông tin tài khoản", (dialog, which) -> {
             Intent intent = new Intent(MainActivity.this, ProfileActivity.class);
             startActivity(intent);
-        });
-
-        builder.setNeutralButton("Đơn hàng", (dialog, which) -> {
-            Toast.makeText(this, "Tính năng đang được phát triển", Toast.LENGTH_SHORT).show();
-            // TODO: Navigate to orders activity
         });
 
         builder.setNegativeButton("Đăng xuất", (dialog, which) -> {

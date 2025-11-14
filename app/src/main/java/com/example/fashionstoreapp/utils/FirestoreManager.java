@@ -22,6 +22,8 @@ public class FirestoreManager {
     private static final String COLLECTION_CATEGORIES = "categories";
     private static final String COLLECTION_BANNERS = "banners";
     private static final String COLLECTION_REVIEWS = "reviews";
+    private static final String COLLECTION_USERS = "users";
+    private static final String COLLECTION_CARTS = "carts";
 
     private FirestoreManager() {
         db = FirebaseFirestore.getInstance();
@@ -301,6 +303,223 @@ public class FirestoreManager {
                 });
     }
 
+    // ==================== USERS ====================
+
+    /**
+     * Save user profile to Firestore
+     */
+    public void saveUserProfile(String userId, String name, String birthday, String gender, String phone,
+            OnUserProfileSavedListener listener) {
+        java.util.Map<String, Object> profileData = new java.util.HashMap<>();
+        profileData.put("name", name);
+        profileData.put("birthday", birthday);
+        profileData.put("gender", gender);
+        if (phone != null && !phone.isEmpty()) {
+            profileData.put("phone", phone);
+        }
+        profileData.put("updatedAt", System.currentTimeMillis());
+
+        db.collection(COLLECTION_USERS)
+                .document(userId)
+                .set(profileData, com.google.firebase.firestore.SetOptions.merge())
+                .addOnSuccessListener(aVoid -> {
+                    Log.d(TAG, "User profile saved successfully");
+                    listener.onProfileSaved();
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error saving user profile", e);
+                    listener.onError(e.getMessage());
+                });
+    }
+
+    /**
+     * Load user profile from Firestore
+     */
+    public void loadUserProfile(String userId, OnUserProfileLoadedListener listener) {
+        db.collection(COLLECTION_USERS)
+                .document(userId)
+                .get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (documentSnapshot.exists()) {
+                        String name = documentSnapshot.getString("name");
+                        String birthday = documentSnapshot.getString("birthday");
+                        String gender = documentSnapshot.getString("gender");
+                        String phone = documentSnapshot.getString("phone");
+                        Log.d(TAG, "User profile loaded successfully");
+                        listener.onProfileLoaded(name, birthday, gender, phone);
+                    } else {
+                        Log.d(TAG, "User profile not found");
+                        listener.onProfileLoaded(null, null, null, null);
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error loading user profile", e);
+                    listener.onError(e.getMessage());
+                });
+    }
+
+    // ==================== CART ====================
+
+    /**
+     * Save cart items to Firestore
+     */
+    public void saveCartItems(String userId, List<com.example.fashionstoreapp.models.CartItem> cartItems,
+            OnCartSavedListener listener) {
+        // Convert cart items to map format
+        List<java.util.Map<String, Object>> cartData = new ArrayList<>();
+        for (com.example.fashionstoreapp.models.CartItem item : cartItems) {
+            java.util.Map<String, Object> itemData = new java.util.HashMap<>();
+            itemData.put("productId", item.getProduct().getId());
+            itemData.put("productName", item.getProduct().getName());
+            itemData.put("productImage", item.getProduct().getImageUrl());
+            itemData.put("productPrice", item.getProduct().getCurrentPrice());
+            itemData.put("quantity", item.getQuantity());
+            itemData.put("size", item.getSize());
+            itemData.put("color", item.getColor());
+            itemData.put("isSelected", item.isSelected());
+            cartData.add(itemData);
+        }
+
+        java.util.Map<String, Object> data = new java.util.HashMap<>();
+        data.put("items", cartData);
+        data.put("updatedAt", System.currentTimeMillis());
+
+        db.collection(COLLECTION_CARTS)
+                .document(userId)
+                .set(data)
+                .addOnSuccessListener(aVoid -> {
+                    Log.d(TAG, "Cart saved successfully");
+                    listener.onCartSaved();
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error saving cart", e);
+                    listener.onError(e.getMessage());
+                });
+    }
+
+    /**
+     * Load cart items from Firestore
+     */
+    public void loadCartItems(String userId, OnCartLoadedListener listener) {
+        db.collection(COLLECTION_CARTS)
+                .document(userId)
+                .get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (documentSnapshot.exists()) {
+                        List<java.util.Map<String, Object>> cartData = (List<java.util.Map<String, Object>>) documentSnapshot
+                                .get("items");
+
+                        if (cartData != null) {
+                            List<String> productIds = new ArrayList<>();
+                            for (java.util.Map<String, Object> itemData : cartData) {
+                                String productId = (String) itemData.get("productId");
+                                if (productId != null) {
+                                    productIds.add(productId);
+                                }
+                            }
+
+                            // Load full product details
+                            loadProductsByIds(productIds, new OnProductsLoadedListener() {
+                                @Override
+                                public void onProductsLoaded(List<Product> products) {
+                                    // Create cart items with full product data
+                                    List<com.example.fashionstoreapp.models.CartItem> cartItems = new ArrayList<>();
+                                    for (java.util.Map<String, Object> itemData : cartData) {
+                                        String productId = (String) itemData.get("productId");
+                                        Product product = findProductById(products, productId);
+
+                                        if (product != null) {
+                                            com.example.fashionstoreapp.models.CartItem cartItem = new com.example.fashionstoreapp.models.CartItem();
+                                            cartItem.setProduct(product);
+                                            cartItem.setQuantity(((Long) itemData.get("quantity")).intValue());
+                                            cartItem.setSize((String) itemData.get("size"));
+                                            cartItem.setColor((String) itemData.get("color"));
+                                            cartItem.setSelected((Boolean) itemData.get("isSelected"));
+                                            cartItems.add(cartItem);
+                                        }
+                                    }
+                                    Log.d(TAG, "Cart loaded successfully: " + cartItems.size() + " items");
+                                    listener.onCartLoaded(cartItems);
+                                }
+
+                                @Override
+                                public void onError(String error) {
+                                    Log.e(TAG, "Error loading products for cart", new Exception(error));
+                                    listener.onError(error);
+                                }
+                            });
+                        } else {
+                            listener.onCartLoaded(new ArrayList<>());
+                        }
+                    } else {
+                        Log.d(TAG, "Cart not found");
+                        listener.onCartLoaded(new ArrayList<>());
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error loading cart", e);
+                    listener.onError(e.getMessage());
+                });
+    }
+
+    /**
+     * Load products by IDs
+     */
+    private void loadProductsByIds(List<String> productIds, OnProductsLoadedListener listener) {
+        if (productIds.isEmpty()) {
+            listener.onProductsLoaded(new ArrayList<>());
+            return;
+        }
+
+        db.collection(COLLECTION_PRODUCTS)
+                .whereIn("__name__", productIds)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    List<Product> products = new ArrayList<>();
+                    for (DocumentSnapshot document : queryDocumentSnapshots) {
+                        Product product = document.toObject(Product.class);
+                        if (product != null) {
+                            product.setId(document.getId());
+                            products.add(product);
+                        }
+                    }
+                    listener.onProductsLoaded(products);
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error loading products by IDs", e);
+                    listener.onError(e.getMessage());
+                });
+    }
+
+    /**
+     * Find product by ID in list
+     */
+    private Product findProductById(List<Product> products, String productId) {
+        for (Product product : products) {
+            if (product.getId().equals(productId)) {
+                return product;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Clear cart in Firestore
+     */
+    public void clearCart(String userId, OnCartSavedListener listener) {
+        db.collection(COLLECTION_CARTS)
+                .document(userId)
+                .delete()
+                .addOnSuccessListener(aVoid -> {
+                    Log.d(TAG, "Cart cleared successfully");
+                    listener.onCartSaved();
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error clearing cart", e);
+                    listener.onError(e.getMessage());
+                });
+    }
+
     // ==================== CALLBACKS ====================
 
     public interface OnProductsLoadedListener {
@@ -335,6 +554,30 @@ public class FirestoreManager {
 
     public interface OnReviewAddedListener {
         void onReviewAdded(String reviewId);
+
+        void onError(String error);
+    }
+
+    public interface OnUserProfileSavedListener {
+        void onProfileSaved();
+
+        void onError(String error);
+    }
+
+    public interface OnUserProfileLoadedListener {
+        void onProfileLoaded(String name, String birthday, String gender, String phone);
+
+        void onError(String error);
+    }
+
+    public interface OnCartSavedListener {
+        void onCartSaved();
+
+        void onError(String error);
+    }
+
+    public interface OnCartLoadedListener {
+        void onCartLoaded(List<com.example.fashionstoreapp.models.CartItem> cartItems);
 
         void onError(String error);
     }

@@ -15,6 +15,8 @@ public class User implements Serializable {
     private String city;
     private String district;
     private String ward;
+    private String birthday;
+    private String gender;
     private List<String> favoriteProductIds;
     private long createdAt;
     private long lastLoginAt;
@@ -117,6 +119,22 @@ public class User implements Serializable {
 
     public void setWard(String ward) {
         this.ward = ward;
+    }
+
+    public String getBirthday() {
+        return birthday;
+    }
+
+    public void setBirthday(String birthday) {
+        this.birthday = birthday;
+    }
+
+    public String getGender() {
+        return gender;
+    }
+
+    public void setGender(String gender) {
+        this.gender = gender;
     }
 
     public List<String> getFavoriteProductIds() {

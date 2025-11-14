@@ -11,6 +11,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
 import com.example.fashionstoreapp.R;
 import com.example.fashionstoreapp.models.CartItem;
 
@@ -125,8 +126,32 @@ public class CartAdapter extends RecyclerView.Adapter<CartAdapter.CartViewHolder
             productColor.setText("Màu: " + item.getColor());
             quantityText.setText(String.valueOf(item.getQuantity()));
 
-            // Load product image (placeholder for now)
-            productImage.setImageResource(android.R.drawable.ic_menu_gallery);
+            // Load product image with Glide
+            String imageUrl = item.getProduct().getImageUrl();
+            if (imageUrl != null && !imageUrl.isEmpty()) {
+                if (imageUrl.startsWith("http://") || imageUrl.startsWith("https://")) {
+                    // Load from URL
+                    Glide.with(context)
+                            .load(imageUrl)
+                            .placeholder(R.drawable.ic_launcher_foreground)
+                            .error(R.drawable.ic_launcher_foreground)
+                            .into(productImage);
+                } else {
+                    // Load from drawable
+                    int resId = context.getResources().getIdentifier(imageUrl, "drawable", context.getPackageName());
+                    if (resId != 0) {
+                        Glide.with(context)
+                                .load(resId)
+                                .placeholder(R.drawable.ic_launcher_foreground)
+                                .error(R.drawable.ic_launcher_foreground)
+                                .into(productImage);
+                    } else {
+                        productImage.setImageResource(R.drawable.ic_launcher_foreground);
+                    }
+                }
+            } else {
+                productImage.setImageResource(R.drawable.ic_launcher_foreground);
+            }
 
             // Quantity controls
             decreaseButton.setEnabled(item.canDecreaseQuantity());

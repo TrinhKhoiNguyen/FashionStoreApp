@@ -27,4 +27,10 @@
     <string name="new_customer">Khách hàng mới? </string>
     <string name="create_account">Tạo tài khoản</string>
     <string name="search_hint">Tìm kiếm sản phẩm...</string>
+    
+    <!-- Facebook App ID - Thay thế bằng App ID của bạn từ Firebase Console -->
+    <string name="facebook_app_id">4170036043262777</string>
+    <string name="fb_login_protocol_scheme">fb4170036043262777</string>
+    <string name="facebook_client_token">4b8e81511a77c3ac2f1437053196b05a</string>
+
 </resources>

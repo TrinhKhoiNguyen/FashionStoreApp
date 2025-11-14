@@ -17,6 +17,13 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.fashionstoreapp.models.User;
 import com.example.fashionstoreapp.utils.SessionManager;
+import com.facebook.AccessToken;
+import com.facebook.CallbackManager;
+import com.facebook.FacebookCallback;
+import com.facebook.FacebookException;
+import com.facebook.FacebookSdk;
+import com.facebook.login.LoginManager;
+import com.facebook.login.LoginResult;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
@@ -25,9 +32,12 @@ import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.tasks.Task;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.auth.AuthCredential;
+import com.google.firebase.auth.FacebookAuthProvider;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
+
+import java.util.Arrays;
 
 public class LoginActivity extends AppCompatActivity {
 
@@ -48,6 +58,9 @@ public class LoginActivity extends AppCompatActivity {
     private GoogleSignInClient mGoogleSignInClient;
     private ActivityResultLauncher<Intent> googleSignInLauncher;
 
+    // Facebook Sign In
+    private CallbackManager callbackManager;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -64,8 +77,14 @@ public class LoginActivity extends AppCompatActivity {
             return;
         }
 
+        // Initialize Facebook SDK
+        FacebookSdk.sdkInitialize(getApplicationContext());
+
         // Configure Google Sign In
         configureGoogleSignIn();
+
+        // Configure Facebook Sign In
+        configureFacebookSignIn();
 
         // Setup Activity Result Launcher for Google Sign In
         setupGoogleSignInLauncher();
@@ -82,6 +101,37 @@ public class LoginActivity extends AppCompatActivity {
                 .build();
 
         mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
+    }
+
+    private void configureFacebookSignIn() {
+        // Initialize Facebook SDK callback manager
+        callbackManager = CallbackManager.Factory.create();
+
+        // Register Facebook callback
+        LoginManager.getInstance().registerCallback(callbackManager,
+                new FacebookCallback<LoginResult>() {
+                    @Override
+                    public void onSuccess(LoginResult loginResult) {
+                        Log.d(TAG, "facebook:onSuccess:" + loginResult);
+                        handleFacebookAccessToken(loginResult.getAccessToken());
+                    }
+
+                    @Override
+                    public void onCancel() {
+                        Log.d(TAG, "facebook:onCancel");
+                        hideLoading();
+                        Toast.makeText(LoginActivity.this, "Đăng nhập Facebook đã bị hủy",
+                                Toast.LENGTH_SHORT).show();
+                    }
+
+                    @Override
+                    public void onError(FacebookException error) {
+                        Log.d(TAG, "facebook:onError", error);
+                        hideLoading();
+                        Toast.makeText(LoginActivity.this, "Lỗi đăng nhập Facebook: " + error.getMessage(),
+                                Toast.LENGTH_SHORT).show();
+                    }
+                });
     }
 
     private void setupGoogleSignInLauncher() {
@@ -134,8 +184,7 @@ public class LoginActivity extends AppCompatActivity {
         btnLoginGoogle.setOnClickListener(v -> signInWithGoogle());
 
         btnLoginFacebook.setOnClickListener(v -> {
-            Toast.makeText(this, "Đăng nhập với Facebook đang được phát triển", Toast.LENGTH_SHORT).show();
-            // TODO: Implement Facebook Login
+            signInWithFacebook();
         });
 
         forgotPasswordText.setOnClickListener(v -> {
@@ -154,6 +203,37 @@ public class LoginActivity extends AppCompatActivity {
         showLoading();
         Intent signInIntent = mGoogleSignInClient.getSignInIntent();
         googleSignInLauncher.launch(signInIntent);
+    }
+
+    private void signInWithFacebook() {
+        showLoading();
+        LoginManager.getInstance().logInWithReadPermissions(this, Arrays.asList("email", "public_profile"));
+    }
+
+    private void handleFacebookAccessToken(AccessToken token) {
+        Log.d(TAG, "handleFacebookAccessToken:" + token);
+        showLoading();
+
+        AuthCredential credential = FacebookAuthProvider.getCredential(token.getToken());
+        mAuth.signInWithCredential(credential)
+                .addOnCompleteListener(this, task -> {
+                    if (task.isSuccessful()) {
+                        // Sign in success
+                        Log.d(TAG, "signInWithCredential:success");
+                        FirebaseUser firebaseUser = mAuth.getCurrentUser();
+                        if (firebaseUser != null) {
+                            saveUserToSession(firebaseUser);
+                            Toast.makeText(this, "Đăng nhập thành công!", Toast.LENGTH_SHORT).show();
+                            navigateToMain();
+                        }
+                    } else {
+                        // Sign in fails
+                        Log.w(TAG, "signInWithCredential:failure", task.getException());
+                        hideLoading();
+                        Toast.makeText(this, "Xác thực thất bại: " + task.getException().getMessage(),
+                                Toast.LENGTH_SHORT).show();
+                    }
+                });
     }
 
     private void firebaseAuthWithGoogle(String idToken) {
@@ -245,6 +325,16 @@ public class LoginActivity extends AppCompatActivity {
                         Toast.makeText(this, errorMessage, Toast.LENGTH_LONG).show();
                     }
                 });
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        // Pass the activity result back to the Facebook SDK
+        if (callbackManager != null) {
+            callbackManager.onActivityResult(requestCode, resultCode, data);
+        }
     }
 
     private void showLoading() {

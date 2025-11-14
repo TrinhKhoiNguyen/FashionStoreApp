@@ -16,6 +16,7 @@ import androidx.cardview.widget.CardView;
 
 import com.example.fashionstoreapp.models.User;
 import com.example.fashionstoreapp.utils.SessionManager;
+import com.example.fashionstoreapp.utils.FirestoreManager;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -34,9 +35,10 @@ public class ProfileActivity extends AppCompatActivity {
     private Button updateButton;
 
     // Menu items
-    private CardView menuProfile, menuOrders, menuSupport, menuAddress, menuVouchers, menuFavorites, menuPassword;
+    private CardView menuProfile, menuSupport, menuAddress, menuVouchers, menuFavorites, menuPassword;
 
     private SessionManager sessionManager;
+    private FirestoreManager firestoreManager;
     private FirebaseAuth mAuth;
     private Calendar calendar;
 
@@ -46,6 +48,7 @@ public class ProfileActivity extends AppCompatActivity {
         setContentView(R.layout.activity_profile);
 
         sessionManager = new SessionManager(this);
+        firestoreManager = FirestoreManager.getInstance();
         mAuth = FirebaseAuth.getInstance();
         calendar = Calendar.getInstance();
 
@@ -73,7 +76,6 @@ public class ProfileActivity extends AppCompatActivity {
 
         // Menu items
         menuProfile = findViewById(R.id.menuProfile);
-        menuOrders = findViewById(R.id.menuOrders);
         menuSupport = findViewById(R.id.menuSupport);
         menuAddress = findViewById(R.id.menuAddress);
         menuVouchers = findViewById(R.id.menuVouchers);
@@ -94,36 +96,69 @@ public class ProfileActivity extends AppCompatActivity {
         User user = sessionManager.getUser();
         FirebaseUser firebaseUser = mAuth.getCurrentUser();
 
-        if (user != null) {
+        if (firebaseUser != null) {
+            String userId = firebaseUser.getUid();
+
             // Display greeting
-            String displayName = user.getDisplayName();
-            greetingText.setText("Hi, " + displayName);
+            String displayName = firebaseUser.getDisplayName();
+            if (displayName != null) {
+                greetingText.setText("Hi, " + displayName);
+            }
 
             // Display phone or email
-            if (user.getPhone() != null) {
-                phoneNumberText.setText("Số điện thoại: " + user.getPhone());
-                phoneInput.setText(user.getPhone());
-            } else if (user.getEmail() != null) {
-                phoneNumberText.setText("Email: " + user.getEmail());
-            }
-
-            // Fill form data
-            if (user.getName() != null && !user.getName().isEmpty()) {
-                String[] nameParts = user.getName().split(" ", 2);
-                if (nameParts.length > 0) {
-                    lastNameInput.setText(nameParts[0]);
-                }
-                if (nameParts.length > 1) {
-                    firstNameInput.setText(nameParts[1]);
-                }
-            }
-        } else if (firebaseUser != null) {
-            greetingText.setText("Hi, " + firebaseUser.getDisplayName());
             if (firebaseUser.getPhoneNumber() != null) {
                 phoneNumberText.setText("Số điện thoại: " + firebaseUser.getPhoneNumber());
                 phoneInput.setText(firebaseUser.getPhoneNumber());
             } else if (firebaseUser.getEmail() != null) {
                 phoneNumberText.setText("Email: " + firebaseUser.getEmail());
+            }
+
+            // Load profile from Firestore
+            firestoreManager.loadUserProfile(userId, new FirestoreManager.OnUserProfileLoadedListener() {
+                @Override
+                public void onProfileLoaded(String name, String birthday, String gender, String phone) {
+                    if (name != null && !name.isEmpty()) {
+                        String[] nameParts = name.split(" ", 2);
+                        if (nameParts.length > 0) {
+                            lastNameInput.setText(nameParts[0]);
+                        }
+                        if (nameParts.length > 1) {
+                            firstNameInput.setText(nameParts[1]);
+                        }
+                    }
+
+                    if (birthday != null && !birthday.isEmpty()) {
+                        birthdayInput.setText(birthday);
+                    }
+
+                    if (gender != null && !gender.isEmpty()) {
+                        if (gender.equals("Nam")) {
+                            maleRadio.setChecked(true);
+                        } else if (gender.equals("Nữ")) {
+                            femaleRadio.setChecked(true);
+                        }
+                    }
+
+                    if (phone != null && !phone.isEmpty()) {
+                        phoneInput.setText(phone);
+                    }
+                }
+
+                @Override
+                public void onError(String error) {
+                    Toast.makeText(ProfileActivity.this, "Lỗi tải dữ liệu: " + error, Toast.LENGTH_SHORT).show();
+                }
+            });
+        } else if (user != null) {
+            // Fallback to session manager
+            String displayName = user.getDisplayName();
+            greetingText.setText("Hi, " + displayName);
+
+            if (user.getPhone() != null) {
+                phoneNumberText.setText("Số điện thoại: " + user.getPhone());
+                phoneInput.setText(user.getPhone());
+            } else if (user.getEmail() != null) {
+                phoneNumberText.setText("Email: " + user.getEmail());
             }
         }
     }
@@ -137,13 +172,7 @@ public class ProfileActivity extends AppCompatActivity {
 
         // Menu items
         menuProfile.setOnClickListener(v -> {
-            // Already on profile screen
-            Toast.makeText(this, "Bạn đang ở màn hình hồ sơ", Toast.LENGTH_SHORT).show();
-        });
-
-        menuOrders.setOnClickListener(v -> {
-            Toast.makeText(this, "Đơn hàng của tôi", Toast.LENGTH_SHORT).show();
-            // TODO: Navigate to orders activity
+            Toast.makeText(this, "Bạn đang ở trang Thông tin tài khoản", Toast.LENGTH_SHORT).show();
         });
 
         menuSupport.setOnClickListener(v -> {
@@ -162,7 +191,7 @@ public class ProfileActivity extends AppCompatActivity {
         });
 
         menuFavorites.setOnClickListener(v -> {
-            Toast.makeText(this, "Sản phẩm đã xem", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Sản phẩm yêu thích", Toast.LENGTH_SHORT).show();
             // TODO: Navigate to favorites activity
         });
 
@@ -195,8 +224,8 @@ public class ProfileActivity extends AppCompatActivity {
     private void updateProfile() {
         String lastName = lastNameInput.getText().toString().trim();
         String firstName = firstNameInput.getText().toString().trim();
-        String birthday = birthdayInput.getText().toString().trim();
-        String phone = phoneInput.getText().toString().trim();
+        final String birthday = birthdayInput.getText().toString().trim();
+        final String phone = phoneInput.getText().toString().trim();
 
         // Validation
         if (lastName.isEmpty()) {
@@ -213,27 +242,46 @@ public class ProfileActivity extends AppCompatActivity {
 
         // Get gender
         int selectedGenderId = genderGroup.getCheckedRadioButtonId();
-        String gender = "";
+        final String gender;
         if (selectedGenderId == R.id.maleRadio) {
             gender = "Nam";
         } else if (selectedGenderId == R.id.femaleRadio) {
             gender = "Nữ";
+        } else {
+            gender = "";
         }
 
-        // Update user data
-        User user = sessionManager.getUser();
-        if (user != null) {
-            user.setName(lastName + " " + firstName);
-            if (!phone.isEmpty()) {
-                user.setPhone(phone);
-            }
-            // Note: You may want to add birthday and gender fields to User model
-            sessionManager.updateUser(user);
+        FirebaseUser firebaseUser = mAuth.getCurrentUser();
+        if (firebaseUser != null) {
+            String userId = firebaseUser.getUid();
+            final String fullName = lastName + " " + firstName;
 
-            Toast.makeText(this, "Cập nhật thông tin thành công!", Toast.LENGTH_SHORT).show();
+            // Save to Firestore
+            firestoreManager.saveUserProfile(userId, fullName, birthday, gender, phone,
+                    new FirestoreManager.OnUserProfileSavedListener() {
+                        @Override
+                        public void onProfileSaved() {
+                            // Update session manager
+                            User user = sessionManager.getUser();
+                            if (user != null) {
+                                user.setName(fullName);
+                                user.setBirthday(birthday);
+                                user.setGender(gender);
+                                if (!phone.isEmpty()) {
+                                    user.setPhone(phone);
+                                }
+                                sessionManager.updateUser(user);
+                            }
 
-            // Reload data
-            loadUserData();
+                            Toast.makeText(ProfileActivity.this, "Cập nhật thông tin thành công!", Toast.LENGTH_SHORT)
+                                    .show();
+                        }
+
+                        @Override
+                        public void onError(String error) {
+                            Toast.makeText(ProfileActivity.this, "Lỗi cập nhật: " + error, Toast.LENGTH_SHORT).show();
+                        }
+                    });
         } else {
             Toast.makeText(this, "Lỗi: Không tìm thấy thông tin người dùng", Toast.LENGTH_SHORT).show();
         }

@@ -40,8 +40,8 @@ public class CartActivity extends AppCompatActivity implements CartAdapter.OnCar
         initViews();
         setupToolbar();
         setupRecyclerView();
-        loadCartItems();
-        updateUI();
+        setupCartChangeListener();
+        loadCartFromFirestore();
     }
 
     private void initViews() {
@@ -71,6 +71,37 @@ public class CartActivity extends AppCompatActivity implements CartAdapter.OnCar
         List<CartItem> cartItems = cartManager.getCartItems();
         cartAdapter = new CartAdapter(this, cartItems, this);
         cartRecyclerView.setAdapter(cartAdapter);
+    }
+
+    private void setupCartChangeListener() {
+        cartManager.setCartChangeListener(() -> {
+            runOnUiThread(() -> {
+                loadCartItems();
+                updateUI();
+            });
+        });
+    }
+
+    private void loadCartFromFirestore() {
+        cartManager.loadCartFromFirestore(new CartManager.OnCartLoadedListener() {
+            @Override
+            public void onCartLoaded() {
+                refreshCartItems();
+                updateUI();
+            }
+
+            @Override
+            public void onError(String error) {
+                Toast.makeText(CartActivity.this, "Lỗi tải giỏ hàng: " + error, Toast.LENGTH_SHORT).show();
+                refreshCartItems();
+                updateUI();
+            }
+        });
+    }
+
+    private void refreshCartItems() {
+        List<CartItem> cartItems = cartManager.getCartItems();
+        cartAdapter.updateCartItems(cartItems);
     }
 
     private void loadCartItems() {
