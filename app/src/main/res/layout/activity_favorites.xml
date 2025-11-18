@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F5F5F5">
+
+    <!-- Toolbar -->
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/favoritesToolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="#000000"
+        android:elevation="4dp"
+        app:navigationIcon="@android:drawable/ic_menu_revert"
+        app:title="Sản phẩm yêu thích"
+        app:titleTextColor="#FFFFFF" />
+
+    <!-- Main Content -->
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginTop="?attr/actionBarSize"
+        android:fillViewport="true">
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <!-- RecyclerView for favorite products -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/favoritesRecyclerView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="8dp"
+                android:clipToPadding="false"
+                android:visibility="gone" />
+
+            <!-- Empty State -->
+            <LinearLayout
+                android:id="@+id/emptyStateLayout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:padding="32dp"
+                android:visibility="visible">
+
+                <ImageView
+                    android:layout_width="120dp"
+                    android:layout_height="120dp"
+                    android:src="@android:drawable/btn_star_big_off"
+                    android:tint="#CCCCCC"
+                    android:alpha="0.5" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:text="Chưa có sản phẩm yêu thích"
+                    android:textColor="#666666"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:gravity="center"
+                    android:text="Thêm sản phẩm vào danh sách yêu thích\nđể dễ dàng tìm kiếm sau này"
+                    android:textColor="#999999"
+                    android:textSize="14sp" />
+
+                <Button
+                    android:id="@+id/btnShopNow"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="24dp"
+                    android:backgroundTint="#000000"
+                    android:paddingStart="32dp"
+                    android:paddingEnd="32dp"
+                    android:text="Khám phá ngay"
+                    android:textColor="#FFFFFF" />
+            </LinearLayout>
+
+            <!-- Loading Progress -->
+            <ProgressBar
+                android:id="@+id/loadingProgress"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:visibility="visible" />
+        </FrameLayout>
+    </androidx.core.widget.NestedScrollView>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

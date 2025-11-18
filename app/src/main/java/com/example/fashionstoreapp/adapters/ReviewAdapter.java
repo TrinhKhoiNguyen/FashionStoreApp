@@ -8,6 +8,7 @@ import android.widget.RatingBar;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.fashionstoreapp.R;
@@ -46,6 +47,7 @@ public class ReviewAdapter extends RecyclerView.Adapter<ReviewAdapter.ReviewView
     static class ReviewViewHolder extends RecyclerView.ViewHolder {
         private TextView tvUserName, tvDate, tvComment;
         private RatingBar ratingBar;
+        private RecyclerView rvReviewImages;
 
         public ReviewViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -53,6 +55,7 @@ public class ReviewAdapter extends RecyclerView.Adapter<ReviewAdapter.ReviewView
             tvDate = itemView.findViewById(R.id.tvDate);
             tvComment = itemView.findViewById(R.id.tvComment);
             ratingBar = itemView.findViewById(R.id.ratingBar);
+            rvReviewImages = itemView.findViewById(R.id.rvReviewImages);
         }
 
         public void bind(Review review) {
@@ -60,6 +63,20 @@ public class ReviewAdapter extends RecyclerView.Adapter<ReviewAdapter.ReviewView
             tvDate.setText(review.getFormattedDate());
             tvComment.setText(review.getComment());
             ratingBar.setRating((float) review.getRating());
+
+            // Show review images if available
+            if (review.hasImages()) {
+                rvReviewImages.setVisibility(View.VISIBLE);
+                LinearLayoutManager layoutManager = new LinearLayoutManager(
+                        itemView.getContext(), LinearLayoutManager.HORIZONTAL, false);
+                rvReviewImages.setLayoutManager(layoutManager);
+
+                ReviewImageAdapter imageAdapter = new ReviewImageAdapter(
+                        itemView.getContext(), review.getImageUrls(), false);
+                rvReviewImages.setAdapter(imageAdapter);
+            } else {
+                rvReviewImages.setVisibility(View.GONE);
+            }
         }
     }
 }

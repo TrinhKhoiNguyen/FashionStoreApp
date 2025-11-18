@@ -14,9 +14,11 @@ public class Review implements Serializable {
     private String comment;
     private long timestamp;
     private String userImageUrl;
+    private java.util.List<String> imageUrls; // Review images
 
     // Constructor
     public Review() {
+        this.imageUrls = new java.util.ArrayList<>();
     }
 
     public Review(String id, String productId, String userId, String userName,
@@ -93,6 +95,19 @@ public class Review implements Serializable {
 
     public void setUserImageUrl(String userImageUrl) {
         this.userImageUrl = userImageUrl;
+    }
+
+    public java.util.List<String> getImageUrls() {
+        return imageUrls;
+    }
+
+    public void setImageUrls(java.util.List<String> imageUrls) {
+        this.imageUrls = imageUrls;
+    }
+
+    // Check if review has images
+    public boolean hasImages() {
+        return imageUrls != null && !imageUrls.isEmpty();
     }
 
     // Format date

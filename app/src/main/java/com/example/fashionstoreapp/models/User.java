@@ -89,6 +89,15 @@ public class User implements Serializable {
         this.profileImageUrl = profileImageUrl;
     }
 
+    // Alias methods for photoUrl (for Firebase Auth compatibility)
+    public String getPhotoUrl() {
+        return profileImageUrl;
+    }
+
+    public void setPhotoUrl(String photoUrl) {
+        this.profileImageUrl = photoUrl;
+    }
+
     public String getAddress() {
         return address;
     }

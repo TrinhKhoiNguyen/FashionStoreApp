@@ -32,9 +32,15 @@ import com.example.fashionstoreapp.utils.FirestoreManager;
 import com.example.fashionstoreapp.utils.SessionManager;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.ListenerRegistration;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class MainActivity extends AppCompatActivity
         implements ProductAdapter.OnProductClickListener, BannerAdapter.OnBannerClickListener {
@@ -53,18 +59,25 @@ public class MainActivity extends AppCompatActivity
 
     private RecyclerView voucherRecyclerView, retroSportsRecyclerView;
     private RecyclerView newArrivalsRecyclerView, outletRecyclerView;
-    private RecyclerView shirtsRecyclerView, poloRecyclerView, somiRecyclerView;
+    private RecyclerView shirtsRecyclerView, poloRecyclerView, somiRecyclerView, hoodiesRecyclerView;
+    private RecyclerView aoKhoacRecyclerView, quanSotRecyclerView, quanTayRecyclerView;
 
     private ProductAdapter voucherAdapter, retroSportsAdapter;
     private ProductAdapter newArrivalsAdapter, outletAdapter;
-    private ProductAdapter shirtsAdapter, poloAdapter, somiAdapter;
+    private ProductAdapter shirtsAdapter, poloAdapter, somiAdapter, hoodiesAdapter;
+    private ProductAdapter aoKhoacAdapter, quanSotAdapter, quanTayAdapter;
 
     private Button btnViewAllRetro, btnViewAllOutlet, btnViewAllShirts, btnViewAllPolo;
+    private Button btnViewAllSomi, btnViewAllHoodies;
+    private Button btnViewAllAoKhoac, btnViewAllQuanSot, btnViewAllQuanTay;
 
     private CartManager cartManager;
     private SessionManager sessionManager;
     private FirebaseAuth mAuth;
     private FirestoreManager firestoreManager;
+
+    // Real-time listeners
+    private Map<String, ListenerRegistration> categoryListeners = new HashMap<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -119,11 +132,23 @@ public class MainActivity extends AppCompatActivity
         shirtsRecyclerView = findViewById(R.id.shirtsRecyclerView);
         poloRecyclerView = findViewById(R.id.poloRecyclerView);
         somiRecyclerView = findViewById(R.id.somiRecyclerView);
+        hoodiesRecyclerView = findViewById(R.id.hoodiesRecyclerView);
 
         btnViewAllRetro = findViewById(R.id.btnViewAllRetro);
         btnViewAllOutlet = findViewById(R.id.btnViewAllOutlet);
         btnViewAllShirts = findViewById(R.id.btnViewAllShirts);
         btnViewAllPolo = findViewById(R.id.btnViewAllPolo);
+        btnViewAllSomi = findViewById(R.id.btnViewAllSomi);
+        btnViewAllHoodies = findViewById(R.id.btnViewAllHoodies);
+
+        // New categories
+        aoKhoacRecyclerView = findViewById(R.id.aoKhoacRecyclerView);
+        quanSotRecyclerView = findViewById(R.id.quanSotRecyclerView);
+        quanTayRecyclerView = findViewById(R.id.quanTayRecyclerView);
+
+        btnViewAllAoKhoac = findViewById(R.id.btnViewAllAoKhoac);
+        btnViewAllQuanSot = findViewById(R.id.btnViewAllQuanSot);
+        btnViewAllQuanTay = findViewById(R.id.btnViewAllQuanTay);
     }
 
     private void setupBannerSlider() {
@@ -235,6 +260,10 @@ public class MainActivity extends AppCompatActivity
         setupHorizontalRecyclerView(shirtsRecyclerView);
         setupHorizontalRecyclerView(poloRecyclerView);
         setupHorizontalRecyclerView(somiRecyclerView);
+        setupHorizontalRecyclerView(hoodiesRecyclerView);
+        setupHorizontalRecyclerView(aoKhoacRecyclerView);
+        setupHorizontalRecyclerView(quanSotRecyclerView);
+        setupHorizontalRecyclerView(quanTayRecyclerView);
 
         // Grid RecyclerViews
         setupGridRecyclerView(newArrivalsRecyclerView);
@@ -373,28 +402,63 @@ public class MainActivity extends AppCompatActivity
             somiAdapter = new ProductAdapter(MainActivity.this, products, MainActivity.this);
             somiRecyclerView.setAdapter(somiAdapter);
         });
+
+        loadProductsByCategory("ao-hoodie", hoodiesRecyclerView, products -> {
+            hoodiesAdapter = new ProductAdapter(MainActivity.this, products, MainActivity.this);
+            hoodiesRecyclerView.setAdapter(hoodiesAdapter);
+        });
+
+        loadProductsByCategory("ao-khoac", aoKhoacRecyclerView, products -> {
+            aoKhoacAdapter = new ProductAdapter(MainActivity.this, products, MainActivity.this);
+            aoKhoacRecyclerView.setAdapter(aoKhoacAdapter);
+        });
+
+        loadProductsByCategory("quan-sot", quanSotRecyclerView, products -> {
+            quanSotAdapter = new ProductAdapter(MainActivity.this, products, MainActivity.this);
+            quanSotRecyclerView.setAdapter(quanSotAdapter);
+        });
+
+        loadProductsByCategory("quan-tay", quanTayRecyclerView, products -> {
+            quanTayAdapter = new ProductAdapter(MainActivity.this, products, MainActivity.this);
+            quanTayRecyclerView.setAdapter(quanTayAdapter);
+        });
     }
 
     private void loadProductsByCategory(String categoryId, RecyclerView recyclerView, OnProductsLoadCallback callback) {
-        firestoreManager.loadProductsByCategory(categoryId, new FirestoreManager.OnProductsLoadedListener() {
-            @Override
-            public void onProductsLoaded(List<Product> products) {
-                if (!products.isEmpty()) {
-                    callback.onLoaded(products);
-                } else {
-                    // Fallback to sample data
-                    List<Product> sampleProducts = createSampleProducts(categoryId, 5);
-                    callback.onLoaded(sampleProducts);
-                }
-            }
+        // Setup real-time listener for this category
+        ListenerRegistration listener = FirebaseFirestore.getInstance()
+                .collection("products")
+                .whereEqualTo("category", categoryId)
+                .limit(5) // Limit to 5 items for home screen
+                .addSnapshotListener((snapshots, error) -> {
+                    if (error != null) {
+                        Toast.makeText(MainActivity.this, "Lỗi tải danh mục " + categoryId, Toast.LENGTH_SHORT).show();
+                        List<Product> sampleProducts = createSampleProducts(categoryId, 5);
+                        callback.onLoaded(sampleProducts);
+                        return;
+                    }
 
-            @Override
-            public void onError(String error) {
-                Toast.makeText(MainActivity.this, "Lỗi tải danh mục " + categoryId, Toast.LENGTH_SHORT).show();
-                List<Product> sampleProducts = createSampleProducts(categoryId, 5);
-                callback.onLoaded(sampleProducts);
-            }
-        });
+                    if (snapshots != null) {
+                        List<Product> products = new ArrayList<>();
+                        for (QueryDocumentSnapshot doc : snapshots) {
+                            Product product = doc.toObject(Product.class);
+                            if (product != null) {
+                                product.setId(doc.getId());
+                                products.add(product);
+                            }
+                        }
+
+                        if (!products.isEmpty()) {
+                            callback.onLoaded(products);
+                        } else {
+                            List<Product> sampleProducts = createSampleProducts(categoryId, 5);
+                            callback.onLoaded(sampleProducts);
+                        }
+                    }
+                });
+
+        // Store listener for cleanup
+        categoryListeners.put(categoryId, listener);
     }
 
     private void loadCategoriesFromFirestore() {
@@ -513,19 +577,39 @@ public class MainActivity extends AppCompatActivity
         });
 
         btnViewAllRetro.setOnClickListener(v -> {
-            Toast.makeText(this, "View all Retro Sports", Toast.LENGTH_SHORT).show();
+            openCategoryProducts("retro-sports", "Retro Sports");
         });
 
         btnViewAllOutlet.setOnClickListener(v -> {
-            Toast.makeText(this, "View all Outlet", Toast.LENGTH_SHORT).show();
+            openCategoryProducts("outlet", "Outlet");
         });
 
         btnViewAllShirts.setOnClickListener(v -> {
-            Toast.makeText(this, "View all Shirts", Toast.LENGTH_SHORT).show();
+            openCategoryProducts("ao-thun", "Áo Thun");
         });
 
         btnViewAllPolo.setOnClickListener(v -> {
-            Toast.makeText(this, "View all Polo", Toast.LENGTH_SHORT).show();
+            openCategoryProducts("ao-polo", "Áo Polo");
+        });
+
+        btnViewAllSomi.setOnClickListener(v -> {
+            openCategoryProducts("ao-so-mi", "Áo Sơ Mi");
+        });
+
+        btnViewAllHoodies.setOnClickListener(v -> {
+            openCategoryProducts("ao-hoodie", "Áo Hoodie");
+        });
+
+        btnViewAllAoKhoac.setOnClickListener(v -> {
+            openCategoryProducts("ao-khoac", "Áo Khoác");
+        });
+
+        btnViewAllQuanSot.setOnClickListener(v -> {
+            openCategoryProducts("quan-sot", "Quần Sọt");
+        });
+
+        btnViewAllQuanTay.setOnClickListener(v -> {
+            openCategoryProducts("quan-tay", "Quần Tây");
         });
     }
 
@@ -629,10 +713,89 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void onFavoriteClick(Product product) {
-        if (product.isFavorite()) {
-            Toast.makeText(this, "Đã thêm vào yêu thích", Toast.LENGTH_SHORT).show();
-        } else {
-            Toast.makeText(this, "Đã bỏ yêu thích", Toast.LENGTH_SHORT).show();
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (currentUser == null) {
+            Toast.makeText(this, "Vui lòng đăng nhập để thêm vào yêu thích", Toast.LENGTH_SHORT).show();
+            return;
         }
+
+        String userId = currentUser.getUid();
+        String productId = product.getId();
+
+        if (product.isFavorite()) {
+            // Remove from favorites
+            firestoreManager.removeFavorite(userId, productId, new FirestoreManager.OnFavoriteRemovedListener() {
+                @Override
+                public void onFavoriteRemoved() {
+                    Toast.makeText(MainActivity.this, "Đã xóa khỏi yêu thích", Toast.LENGTH_SHORT).show();
+                }
+
+                @Override
+                public void onError(String error) {
+                    product.setFavorite(true); // Revert on error
+                    notifyAdaptersDataChanged();
+                    Toast.makeText(MainActivity.this, "Lỗi: " + error, Toast.LENGTH_SHORT).show();
+                }
+            });
+        } else {
+            // Add to favorites
+            firestoreManager.saveFavorite(userId, productId, new FirestoreManager.OnFavoriteSavedListener() {
+                @Override
+                public void onFavoriteSaved() {
+                    Toast.makeText(MainActivity.this, "Đã thêm vào yêu thích", Toast.LENGTH_SHORT).show();
+                }
+
+                @Override
+                public void onError(String error) {
+                    product.setFavorite(false); // Revert on error
+                    notifyAdaptersDataChanged();
+                    Toast.makeText(MainActivity.this, "Lỗi: " + error, Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
+    }
+
+    private void notifyAdaptersDataChanged() {
+        if (voucherAdapter != null)
+            voucherAdapter.notifyDataSetChanged();
+        if (retroSportsAdapter != null)
+            retroSportsAdapter.notifyDataSetChanged();
+        if (newArrivalsAdapter != null)
+            newArrivalsAdapter.notifyDataSetChanged();
+        if (outletAdapter != null)
+            outletAdapter.notifyDataSetChanged();
+        if (shirtsAdapter != null)
+            shirtsAdapter.notifyDataSetChanged();
+        if (poloAdapter != null)
+            poloAdapter.notifyDataSetChanged();
+        if (somiAdapter != null)
+            somiAdapter.notifyDataSetChanged();
+        if (hoodiesAdapter != null)
+            hoodiesAdapter.notifyDataSetChanged();
+        if (aoKhoacAdapter != null)
+            aoKhoacAdapter.notifyDataSetChanged();
+        if (quanSotAdapter != null)
+            quanSotAdapter.notifyDataSetChanged();
+        if (quanTayAdapter != null)
+            quanTayAdapter.notifyDataSetChanged();
+    }
+
+    private void openCategoryProducts(String categoryId, String categoryName) {
+        Intent intent = new Intent(this, CategoryProductsActivity.class);
+        intent.putExtra("categoryId", categoryId);
+        intent.putExtra("categoryName", categoryName);
+        startActivity(intent);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        // Remove all real-time listeners to prevent memory leaks
+        for (ListenerRegistration listener : categoryListeners.values()) {
+            if (listener != null) {
+                listener.remove();
+            }
+        }
+        categoryListeners.clear();
     }
 }

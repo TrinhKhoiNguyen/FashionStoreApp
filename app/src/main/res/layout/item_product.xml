@@ -2,14 +2,14 @@
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="180dp"
-    android:layout_height="wrap_content"
+    android:layout_height="340dp"
     android:layout_margin="8dp"
     app:cardCornerRadius="8dp"
     app:cardElevation="2dp">
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="match_parent"
         android:orientation="vertical">
 
         <!-- Product Image Container -->
@@ -91,7 +91,7 @@
                 android:background="@drawable/circle_background"
                 android:padding="6dp"
                 android:src="@android:drawable/btn_star_big_off"
-                android:tint="#666666" />
+                android:tint="#000000" />
         </FrameLayout>
 
         <!-- Product Info -->
@@ -105,11 +105,11 @@
             <TextView
                 android:id="@+id/productName"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="40dp"
                 android:ellipsize="end"
                 android:maxLines="2"
                 android:text="Áo Khoác Bomber Nam ICONDENIM Freshman..."
-                android:textColor="#000000"
+                android:textColor="#1a1a1a"
                 android:textSize="14sp" />
 
             <!-- Price Container -->
@@ -137,7 +137,7 @@
                     android:layout_height="28dp"
                     android:background="@drawable/circle_background"
                     android:padding="6dp"
-                    android:src="@android:drawable/ic_input_add"
+                    android:src="@drawable/baseline_shopping_cart_24"
                     android:tint="#000000" />
             </LinearLayout>
 

@@ -2,37 +2,49 @@ package com.example.fashionstoreapp;
 
 import android.app.DatePickerDialog;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 
+import com.bumptech.glide.Glide;
 import com.example.fashionstoreapp.models.User;
 import com.example.fashionstoreapp.utils.SessionManager;
 import com.example.fashionstoreapp.utils.FirestoreManager;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.auth.UserProfileChangeRequest;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Locale;
+import java.util.UUID;
 
 public class ProfileActivity extends AppCompatActivity {
 
     private MaterialToolbar toolbar;
+    private ImageView profileAvatar, editAvatarIcon;
     private TextView greetingText, phoneNumberText;
     private EditText lastNameInput, firstNameInput, birthdayInput, phoneInput;
     private RadioGroup genderGroup;
     private RadioButton maleRadio, femaleRadio;
     private Button updateButton;
+    private ProgressBar progressBar;
 
     // Menu items
     private CardView menuProfile, menuSupport, menuAddress, menuVouchers, menuFavorites, menuPassword;
@@ -41,6 +53,11 @@ public class ProfileActivity extends AppCompatActivity {
     private FirestoreManager firestoreManager;
     private FirebaseAuth mAuth;
     private Calendar calendar;
+
+    // Image picker
+    private ActivityResultLauncher<Intent> imagePickerLauncher;
+    private Uri selectedImageUri;
+    private boolean isImageChanged = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,14 +69,44 @@ public class ProfileActivity extends AppCompatActivity {
         mAuth = FirebaseAuth.getInstance();
         calendar = Calendar.getInstance();
 
+        // Setup image picker
+        setupImagePicker();
+
         initViews();
         setupToolbar();
         loadUserData();
         setupClickListeners();
     }
 
+    private void setupImagePicker() {
+        imagePickerLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                result -> {
+                    if (result.getResultCode() == RESULT_OK && result.getData() != null) {
+                        selectedImageUri = result.getData().getData();
+                        if (selectedImageUri != null) {
+                            isImageChanged = true;
+                            // Display selected image immediately
+                            Glide.with(this)
+                                    .load(selectedImageUri)
+                                    .circleCrop()
+                                    .placeholder(R.drawable.ic_launcher_foreground)
+                                    .into(profileAvatar);
+                        }
+                    }
+                });
+    }
+
+    private void openImagePicker() {
+        Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+        intent.setType("image/*");
+        imagePickerLauncher.launch(intent);
+    }
+
     private void initViews() {
         toolbar = findViewById(R.id.profileToolbar);
+        profileAvatar = findViewById(R.id.profileAvatar);
+        editAvatarIcon = findViewById(R.id.editAvatarIcon);
         greetingText = findViewById(R.id.greetingText);
         phoneNumberText = findViewById(R.id.phoneNumberText);
 
@@ -73,6 +120,7 @@ public class ProfileActivity extends AppCompatActivity {
         femaleRadio = findViewById(R.id.femaleRadio);
 
         updateButton = findViewById(R.id.updateButton);
+        progressBar = findViewById(R.id.uploadProgressBar);
 
         // Menu items
         menuProfile = findViewById(R.id.menuProfile);
@@ -81,6 +129,11 @@ public class ProfileActivity extends AppCompatActivity {
         menuVouchers = findViewById(R.id.menuVouchers);
         menuFavorites = findViewById(R.id.menuFavorites);
         menuPassword = findViewById(R.id.menuPassword);
+
+        // Hide progress bar initially
+        if (progressBar != null) {
+            progressBar.setVisibility(View.GONE);
+        }
     }
 
     private void setupToolbar() {
@@ -103,6 +156,16 @@ public class ProfileActivity extends AppCompatActivity {
             String displayName = firebaseUser.getDisplayName();
             if (displayName != null) {
                 greetingText.setText("Hi, " + displayName);
+            }
+
+            // Load profile photo
+            Uri photoUrl = firebaseUser.getPhotoUrl();
+            if (photoUrl != null) {
+                Glide.with(this)
+                        .load(photoUrl)
+                        .circleCrop()
+                        .placeholder(R.drawable.baseline_person_24)
+                        .into(profileAvatar);
             }
 
             // Display phone or email
@@ -164,6 +227,13 @@ public class ProfileActivity extends AppCompatActivity {
     }
 
     private void setupClickListeners() {
+        // Avatar click to change
+        profileAvatar.setOnClickListener(v -> openImagePicker());
+
+        if (editAvatarIcon != null) {
+            editAvatarIcon.setOnClickListener(v -> openImagePicker());
+        }
+
         // Birthday picker
         birthdayInput.setOnClickListener(v -> showDatePicker());
 
@@ -191,8 +261,8 @@ public class ProfileActivity extends AppCompatActivity {
         });
 
         menuFavorites.setOnClickListener(v -> {
-            Toast.makeText(this, "Sản phẩm yêu thích", Toast.LENGTH_SHORT).show();
-            // TODO: Navigate to favorites activity
+            Intent intent = new Intent(ProfileActivity.this, FavoritesActivity.class);
+            startActivity(intent);
         });
 
         menuPassword.setOnClickListener(v -> {
@@ -256,35 +326,118 @@ public class ProfileActivity extends AppCompatActivity {
             String userId = firebaseUser.getUid();
             final String fullName = lastName + " " + firstName;
 
-            // Save to Firestore
-            firestoreManager.saveUserProfile(userId, fullName, birthday, gender, phone,
-                    new FirestoreManager.OnUserProfileSavedListener() {
-                        @Override
-                        public void onProfileSaved() {
-                            // Update session manager
-                            User user = sessionManager.getUser();
-                            if (user != null) {
-                                user.setName(fullName);
-                                user.setBirthday(birthday);
-                                user.setGender(gender);
-                                if (!phone.isEmpty()) {
-                                    user.setPhone(phone);
-                                }
-                                sessionManager.updateUser(user);
-                            }
+            progressBar.setVisibility(View.VISIBLE);
+            updateButton.setEnabled(false);
 
-                            Toast.makeText(ProfileActivity.this, "Cập nhật thông tin thành công!", Toast.LENGTH_SHORT)
-                                    .show();
-                        }
-
-                        @Override
-                        public void onError(String error) {
-                            Toast.makeText(ProfileActivity.this, "Lỗi cập nhật: " + error, Toast.LENGTH_SHORT).show();
-                        }
-                    });
+            // If image changed, upload it first
+            if (isImageChanged && selectedImageUri != null) {
+                uploadProfileImage(selectedImageUri, fullName, birthday, gender, phone);
+            } else {
+                // No image change, just update Firestore
+                saveUserProfile(null, fullName, birthday, gender, phone);
+            }
         } else {
             Toast.makeText(this, "Lỗi: Không tìm thấy thông tin người dùng", Toast.LENGTH_SHORT).show();
         }
+    }
+
+    private void uploadProfileImage(Uri imageUri, String fullName, String birthday, String gender, String phone) {
+        String userId = mAuth.getCurrentUser().getUid();
+        StorageReference storageRef = FirebaseStorage.getInstance().getReference();
+        StorageReference avatarRef = storageRef.child("profiles/" + userId + "/avatar.jpg");
+
+        avatarRef.putFile(imageUri)
+                .addOnSuccessListener(taskSnapshot -> {
+                    avatarRef.getDownloadUrl().addOnSuccessListener(uri -> {
+                        String photoUrl = uri.toString();
+                        // Update Firebase Auth profile first, then Firestore
+                        updateFirebaseAuthProfile(photoUrl, fullName, birthday, gender, phone);
+                    }).addOnFailureListener(e -> {
+                        progressBar.setVisibility(View.GONE);
+                        updateButton.setEnabled(true);
+                        Toast.makeText(ProfileActivity.this, "Lỗi lấy URL ảnh: " + e.getMessage(), Toast.LENGTH_SHORT)
+                                .show();
+                    });
+                })
+                .addOnFailureListener(e -> {
+                    progressBar.setVisibility(View.GONE);
+                    updateButton.setEnabled(true);
+                    Toast.makeText(ProfileActivity.this, "Lỗi tải ảnh lên: " + e.getMessage(), Toast.LENGTH_SHORT)
+                            .show();
+                });
+    }
+
+    private void updateFirebaseAuthProfile(String photoUrl, String fullName, String birthday, String gender,
+            String phone) {
+        FirebaseUser user = mAuth.getCurrentUser();
+        if (user == null) {
+            progressBar.setVisibility(View.GONE);
+            updateButton.setEnabled(true);
+            Toast.makeText(this, "Người dùng chưa đăng nhập", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        UserProfileChangeRequest profileUpdates = new UserProfileChangeRequest.Builder()
+                .setDisplayName(fullName)
+                .setPhotoUri(Uri.parse(photoUrl))
+                .build();
+
+        user.updateProfile(profileUpdates)
+                .addOnSuccessListener(aVoid -> {
+                    // Now update Firestore with photo URL
+                    saveUserProfile(photoUrl, fullName, birthday, gender, phone);
+                })
+                .addOnFailureListener(e -> {
+                    progressBar.setVisibility(View.GONE);
+                    updateButton.setEnabled(true);
+                    Toast.makeText(ProfileActivity.this, "Lỗi cập nhật profile Auth: " + e.getMessage(),
+                            Toast.LENGTH_SHORT).show();
+                });
+    }
+
+    private void saveUserProfile(String photoUrl, String fullName, String birthday, String gender, String phone) {
+        String userId = mAuth.getCurrentUser().getUid();
+
+        // Save to Firestore
+        firestoreManager.saveUserProfile(userId, fullName, birthday, gender, phone,
+                new FirestoreManager.OnUserProfileSavedListener() {
+                    @Override
+                    public void onProfileSaved() {
+                        // Update photoUrl if provided
+                        if (photoUrl != null) {
+                            firestoreManager.updateUserPhotoUrl(userId, photoUrl);
+                        }
+
+                        // Update session manager
+                        User user = sessionManager.getUser();
+                        if (user != null) {
+                            user.setName(fullName);
+                            user.setBirthday(birthday);
+                            user.setGender(gender);
+                            if (!phone.isEmpty()) {
+                                user.setPhone(phone);
+                            }
+                            if (photoUrl != null) {
+                                user.setPhotoUrl(photoUrl);
+                            }
+                            sessionManager.updateUser(user);
+                        }
+
+                        progressBar.setVisibility(View.GONE);
+                        updateButton.setEnabled(true);
+                        isImageChanged = false;
+
+                        Toast.makeText(ProfileActivity.this, "Cập nhật thông tin thành công!", Toast.LENGTH_SHORT)
+                                .show();
+                    }
+
+                    @Override
+                    public void onError(String error) {
+                        progressBar.setVisibility(View.GONE);
+                        updateButton.setEnabled(true);
+                        Toast.makeText(ProfileActivity.this, "Lỗi cập nhật: " + error, Toast.LENGTH_SHORT).show();
+                    }
+                });
     }
 
     @Override

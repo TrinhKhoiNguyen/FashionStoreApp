@@ -1,7 +1,9 @@
 package com.example.fashionstoreapp;
 
+import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -9,10 +11,13 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.RatingBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -21,16 +26,22 @@ import androidx.viewpager2.widget.ViewPager2;
 
 import com.bumptech.glide.Glide;
 import com.example.fashionstoreapp.adapters.ReviewAdapter;
+import com.example.fashionstoreapp.adapters.ReviewImageAdapter;
 import com.example.fashionstoreapp.models.CartItem;
 import com.example.fashionstoreapp.models.Product;
 import com.example.fashionstoreapp.models.Review;
 import com.example.fashionstoreapp.utils.CartManager;
 import com.example.fashionstoreapp.utils.FirestoreManager;
 import com.example.fashionstoreapp.utils.SessionManager;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 
 public class ProductDetailActivity extends AppCompatActivity {
 
@@ -52,11 +63,25 @@ public class ProductDetailActivity extends AppCompatActivity {
     private List<String> productImages;
     private ReviewAdapter reviewAdapter;
     private List<Review> reviews;
+    private FirestoreManager firestoreManager;
+
+    // Image picker for reviews
+    private ActivityResultLauncher<Intent> imagePickerLauncher;
+    private List<Uri> selectedReviewImages = new ArrayList<>();
+    private ReviewImageAdapter reviewImageAdapter;
+    private RecyclerView rvReviewImagesDialog;
+    private AlertDialog reviewDialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_product_detail);
+
+        // Initialize FirestoreManager
+        firestoreManager = FirestoreManager.getInstance();
+
+        // Initialize image picker
+        setupImagePicker();
 
         // Get product from intent
         product = (Product) getIntent().getSerializableExtra("product");
@@ -303,10 +328,50 @@ public class ProductDetailActivity extends AppCompatActivity {
         btnBack.setOnClickListener(v -> finish());
 
         btnFavorite.setOnClickListener(v -> {
-            product.setFavorite(!product.isFavorite());
+            FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+            if (currentUser == null) {
+                Toast.makeText(this, "Vui lòng đăng nhập để thêm vào yêu thích", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            String userId = currentUser.getUid();
+            String productId = product.getId();
+            boolean newFavoriteState = !product.isFavorite();
+
+            product.setFavorite(newFavoriteState);
             updateFavoriteButton();
-            String message = product.isFavorite() ? "Đã thêm vào yêu thích" : "Đã xóa khỏi yêu thích";
-            Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+
+            if (newFavoriteState) {
+                // Add to favorites
+                firestoreManager.saveFavorite(userId, productId, new FirestoreManager.OnFavoriteSavedListener() {
+                    @Override
+                    public void onFavoriteSaved() {
+                        Toast.makeText(ProductDetailActivity.this, "Đã thêm vào yêu thích", Toast.LENGTH_SHORT).show();
+                    }
+
+                    @Override
+                    public void onError(String error) {
+                        product.setFavorite(false); // Revert on error
+                        updateFavoriteButton();
+                        Toast.makeText(ProductDetailActivity.this, "Lỗi: " + error, Toast.LENGTH_SHORT).show();
+                    }
+                });
+            } else {
+                // Remove from favorites
+                firestoreManager.removeFavorite(userId, productId, new FirestoreManager.OnFavoriteRemovedListener() {
+                    @Override
+                    public void onFavoriteRemoved() {
+                        Toast.makeText(ProductDetailActivity.this, "Đã xóa khỏi yêu thích", Toast.LENGTH_SHORT).show();
+                    }
+
+                    @Override
+                    public void onError(String error) {
+                        product.setFavorite(true); // Revert on error
+                        updateFavoriteButton();
+                        Toast.makeText(ProductDetailActivity.this, "Lỗi: " + error, Toast.LENGTH_SHORT).show();
+                    }
+                });
+            }
         });
 
         btnAddToCart.setOnClickListener(v -> {
@@ -335,18 +400,56 @@ public class ProductDetailActivity extends AppCompatActivity {
                 : "guest_" + System.currentTimeMillis();
         String userName = sessionManager.isLoggedIn() ? sessionManager.getUserName() : "Khách hàng";
 
+        // Reset selected images
+        selectedReviewImages.clear();
+
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_write_review, null);
         builder.setView(dialogView);
 
-        AlertDialog dialog = builder.create();
+        reviewDialog = builder.create();
 
         RatingBar ratingBarDialog = dialogView.findViewById(R.id.ratingBarDialog);
         EditText etReviewComment = dialogView.findViewById(R.id.etReviewComment);
+        rvReviewImagesDialog = dialogView.findViewById(R.id.rvReviewImages);
+        Button btnAddImage = dialogView.findViewById(R.id.btnAddImage);
         Button btnCancelReview = dialogView.findViewById(R.id.btnCancelReview);
         Button btnSubmitReview = dialogView.findViewById(R.id.btnSubmitReview);
 
-        btnCancelReview.setOnClickListener(v -> dialog.dismiss());
+        // Setup image RecyclerView
+        LinearLayoutManager layoutManager = new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false);
+        rvReviewImagesDialog.setLayoutManager(layoutManager);
+
+        List<String> imageUris = new ArrayList<>();
+        reviewImageAdapter = new ReviewImageAdapter(this, imageUris, true);
+        reviewImageAdapter.setOnImageClickListener(new ReviewImageAdapter.OnImageClickListener() {
+            @Override
+            public void onImageClick(String imageUrl, int position) {
+                // View full image
+                Toast.makeText(ProductDetailActivity.this, "Xem ảnh", Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onRemoveClick(int position) {
+                selectedReviewImages.remove(position);
+                updateReviewImagesUI();
+            }
+        });
+        rvReviewImagesDialog.setAdapter(reviewImageAdapter);
+
+        // Add image button
+        btnAddImage.setOnClickListener(v -> {
+            if (selectedReviewImages.size() >= 5) {
+                Toast.makeText(this, "Chỉ được chọn tối đa 5 ảnh", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            openImagePicker();
+        });
+
+        btnCancelReview.setOnClickListener(v -> {
+            selectedReviewImages.clear();
+            reviewDialog.dismiss();
+        });
 
         btnSubmitReview.setOnClickListener(v -> {
             float rating = ratingBarDialog.getRating();
@@ -362,6 +465,10 @@ public class ProductDetailActivity extends AppCompatActivity {
                 return;
             }
 
+            // Show loading
+            btnSubmitReview.setEnabled(false);
+            btnSubmitReview.setText("Đang gửi...");
+
             // Create review object
             Review review = new Review();
             review.setProductId(product.getId());
@@ -371,45 +478,131 @@ public class ProductDetailActivity extends AppCompatActivity {
             review.setComment(comment);
             review.setTimestamp(System.currentTimeMillis());
 
-            // Submit to Firestore
-            FirestoreManager.getInstance().addReview(review, new FirestoreManager.OnReviewAddedListener() {
-                @Override
-                public void onReviewAdded(String reviewId) {
-                    Toast.makeText(ProductDetailActivity.this, "Cảm ơn bạn đã đánh giá!", Toast.LENGTH_SHORT).show();
-                    dialog.dismiss();
+            // Upload images if any
+            if (!selectedReviewImages.isEmpty()) {
+                uploadReviewImages(review, reviewDialog, btnSubmitReview);
+            } else {
+                // Submit without images
+                submitReview(review, reviewDialog, btnSubmitReview);
+            }
+        });
 
-                    // Set review ID
-                    review.setId(reviewId);
+        reviewDialog.show();
+    }
 
-                    // Add review to list immediately for instant UI update
-                    reviews.add(0, review); // Add at top (newest first)
+    private void setupImagePicker() {
+        imagePickerLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                result -> {
+                    if (result.getResultCode() == RESULT_OK && result.getData() != null) {
+                        Intent data = result.getData();
 
-                    // Update UI immediately
-                    if (reviews.size() == 1) {
-                        // First review, show RecyclerView
-                        tvNoReviews.setVisibility(View.GONE);
-                        reviewsRecyclerView.setVisibility(View.VISIBLE);
+                        // Handle multiple images
+                        if (data.getClipData() != null) {
+                            int count = data.getClipData().getItemCount();
+                            for (int i = 0; i < count && selectedReviewImages.size() < 5; i++) {
+                                Uri imageUri = data.getClipData().getItemAt(i).getUri();
+                                selectedReviewImages.add(imageUri);
+                            }
+                        } else if (data.getData() != null) {
+                            // Single image
+                            Uri imageUri = data.getData();
+                            selectedReviewImages.add(imageUri);
+                        }
+
+                        updateReviewImagesUI();
                     }
-                    reviewAdapter.notifyItemInserted(0);
-                    reviewsRecyclerView.smoothScrollToPosition(0);
+                });
+    }
 
-                    // Update rating count immediately
-                    int newReviewCount = product.getReviewCount() + 1;
-                    product.setReviewCount(newReviewCount);
-                    tvReviewCount.setText("(" + newReviewCount + " đánh giá)");
+    private void openImagePicker() {
+        Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+        intent.setType("image/*");
+        intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
+        imagePickerLauncher.launch(Intent.createChooser(intent, "Chọn ảnh"));
+    }
 
-                    // Reload product info from Firestore to get accurate rating
-                    reloadProductInfo();
+    private void updateReviewImagesUI() {
+        List<String> uriStrings = new ArrayList<>();
+        for (Uri uri : selectedReviewImages) {
+            uriStrings.add(uri.toString());
+        }
+        reviewImageAdapter.updateImages(uriStrings);
+    }
+
+    private void uploadReviewImages(Review review, AlertDialog dialog, Button submitButton) {
+        StorageReference storageRef = FirebaseStorage.getInstance().getReference();
+        List<String> uploadedUrls = new ArrayList<>();
+        final int[] uploadCount = { 0 };
+        final int totalImages = selectedReviewImages.size();
+
+        for (Uri imageUri : selectedReviewImages) {
+            // Create unique filename
+            String filename = "reviews/" + product.getId() + "/" + UUID.randomUUID().toString() + ".jpg";
+            StorageReference imageRef = storageRef.child(filename);
+
+            imageRef.putFile(imageUri)
+                    .addOnSuccessListener(taskSnapshot -> {
+                        imageRef.getDownloadUrl().addOnSuccessListener(uri -> {
+                            uploadedUrls.add(uri.toString());
+                            uploadCount[0]++;
+
+                            // Check if all images uploaded
+                            if (uploadCount[0] == totalImages) {
+                                review.setImageUrls(uploadedUrls);
+                                submitReview(review, dialog, submitButton);
+                            }
+                        });
+                    })
+                    .addOnFailureListener(e -> {
+                        Toast.makeText(this, "Lỗi upload ảnh: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                        submitButton.setEnabled(true);
+                        submitButton.setText("Gửi đánh giá");
+                    });
+        }
+    }
+
+    private void submitReview(Review review, AlertDialog dialog, Button submitButton) {
+        // Submit to Firestore
+        FirestoreManager.getInstance().addReview(review, new FirestoreManager.OnReviewAddedListener() {
+            @Override
+            public void onReviewAdded(String reviewId) {
+                Toast.makeText(ProductDetailActivity.this, "Cảm ơn bạn đã đánh giá!", Toast.LENGTH_SHORT).show();
+                selectedReviewImages.clear();
+                dialog.dismiss();
+
+                // Set review ID
+                review.setId(reviewId);
+
+                // Add review to list immediately for instant UI update
+                reviews.add(0, review); // Add at top (newest first)
+
+                // Update UI immediately
+                if (reviews.size() == 1) {
+                    // First review, show RecyclerView
+                    tvNoReviews.setVisibility(View.GONE);
+                    reviewsRecyclerView.setVisibility(View.VISIBLE);
                 }
+                reviewAdapter.notifyItemInserted(0);
+                reviewsRecyclerView.smoothScrollToPosition(0);
 
-                @Override
-                public void onError(String error) {
-                    Toast.makeText(ProductDetailActivity.this, "Lỗi: " + error, Toast.LENGTH_SHORT).show();
-                }
-            });
+                // Update rating count immediately
+                int newReviewCount = product.getReviewCount() + 1;
+                product.setReviewCount(newReviewCount);
+                tvReviewCount.setText("(" + newReviewCount + " đánh giá)");
+
+                // Reload product info from Firestore to get accurate rating
+                reloadProductInfo();
+            }
+
+            @Override
+            public void onError(String error) {
+                Toast.makeText(ProductDetailActivity.this, "Lỗi: " + error, Toast.LENGTH_SHORT).show();
+            }
         });
 
         dialog.show();
+
     }
 
     private void reloadProductInfo() {
@@ -440,9 +633,9 @@ public class ProductDetailActivity extends AppCompatActivity {
 
     private void updateFavoriteButton() {
         if (product.isFavorite()) {
-            btnFavorite.setImageResource(android.R.drawable.btn_star_big_on);
+            btnFavorite.setImageResource(R.drawable.baseline_favorite_24);
         } else {
-            btnFavorite.setImageResource(android.R.drawable.btn_star_big_off);
+            btnFavorite.setImageResource(R.drawable.baseline_favorite_border_24);
         }
     }
 

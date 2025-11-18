@@ -1,77 +1,144 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FFFFFF"
-    android:orientation="vertical"
-    android:padding="24dp">
+    android:fillViewport="true"
+    android:background="#FFFFFF">
 
-    <FrameLayout
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp">
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical">
-
-            <!-- Title -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:layout_marginTop="40dp"
-                android:text="TẠO TÀI KHOẢN"
-                android:textColor="#000000"
-                android:textSize="24sp"
-                android:textStyle="bold" />
-
-            <!-- Phone Input -->
-            <EditText
-                android:id="@+id/phoneInput"
-                android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:layout_marginTop="40dp"
-                android:background="@drawable/edittext_background"
-                android:hint="Nhập số điện thoại"
-                android:inputType="phone"
-                android:maxLength="15"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp"
-                android:textColor="#000000"
-                android:textSize="16sp" />
-
-            <!-- Send OTP Button -->
-            <Button
-                android:id="@+id/btnSendOTP"
-                android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:layout_marginTop="24dp"
-                android:backgroundTint="#000000"
-                android:text="GỬI MÃ XÁC NHẬN"
-                android:textColor="#FFFFFF"
-                android:textSize="16sp"
-                android:textStyle="bold" />
-
-            <!-- Back to Login -->
-            <TextView
-                android:id="@+id/backToLoginText"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:layout_marginTop="24dp"
-                android:text="Quay về"
-                android:textColor="#000000"
-                android:textSize="14sp" />
-
-        </LinearLayout>
-
-        <!-- Loading ProgressBar -->
-        <ProgressBar
-            android:id="@+id/registerProgressBar"
+        <!-- Title -->
+        <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
+            android:layout_marginTop="40dp"
+            android:text="TẠO TÀI KHOẢN"
+            android:textColor="#000000"
+            android:textSize="28sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginTop="8dp"
+            android:text="Đăng ký để bắt đầu mua sắm"
+            android:textColor="#666666"
+            android:textSize="14sp" />
+
+        <!-- Email Input -->
+        <EditText
+            android:id="@+id/etEmail"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_marginTop="32dp"
+            android:background="@drawable/edittext_background"
+            android:hint="Email"
+            android:inputType="textEmailAddress"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:textColor="#000000"
+            android:textSize="16sp" />
+
+        <!-- Full Name Input -->
+        <EditText
+            android:id="@+id/etFullName"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_marginTop="16dp"
+            android:background="@drawable/edittext_background"
+            android:hint="Họ và tên"
+            android:inputType="textPersonName"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:textColor="#000000"
+            android:textSize="16sp" />
+
+        <!-- Password Input -->
+        <EditText
+            android:id="@+id/etPassword"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_marginTop="16dp"
+            android:background="@drawable/edittext_background"
+            android:hint="Mật khẩu"
+            android:inputType="textPassword"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:textColor="#000000"
+            android:textSize="16sp" />
+
+        <!-- Confirm Password Input -->
+        <EditText
+            android:id="@+id/etConfirmPassword"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_marginTop="16dp"
+            android:background="@drawable/edittext_background"
+            android:hint="Xác nhận mật khẩu"
+            android:inputType="textPassword"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:textColor="#000000"
+            android:textSize="16sp" />
+
+        <!-- Password Hint -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="Mật khẩu phải có ít nhất 6 ký tự, bao gồm chữ hoa, chữ thường và số"
+            android:textColor="#666666"
+            android:textSize="12sp" />
+
+        <!-- Terms Checkbox -->
+        <CheckBox
+            android:id="@+id/cbTerms"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Tôi đồng ý với Điều khoản sử dụng và Chính sách bảo mật"
+            android:textSize="14sp"
+            android:textColor="#000000" />
+
+        <!-- Register Button -->
+        <Button
+            android:id="@+id/btnRegister"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_marginTop="24dp"
+            android:backgroundTint="#000000"
+            android:text="ĐĂNG KÝ NGAY"
+            android:textColor="#FFFFFF"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <!-- Progress Bar -->
+        <ProgressBar
+            android:id="@+id/progressBar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginTop="16dp"
             android:visibility="gone" />
-    </FrameLayout>
-</LinearLayout>
+
+        <!-- Login Link -->
+        <TextView
+            android:id="@+id/tvLogin"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginTop="24dp"
+            android:layout_marginBottom="24dp"
+            android:text="Đã có tài khoản? Đăng nhập"
+            android:textColor="#000000"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+</ScrollView>

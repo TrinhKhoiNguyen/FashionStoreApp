@@ -3,6 +3,8 @@
     xmlns:tools="http://schemas.android.com/tools">
     
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
 
     <application
         android:allowBackup="true"
@@ -53,6 +55,12 @@
             android:screenOrientation="portrait" />
         
         <activity
+            android:name=".ForgotPasswordActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:parentActivityName=".LoginActivity" />
+        
+        <activity
             android:name=".RegisterActivity"
             android:exported="false"
             android:screenOrientation="portrait"
@@ -77,6 +85,12 @@
             android:parentActivityName=".MainActivity" />
         
         <activity
+            android:name=".FavoritesActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:parentActivityName=".ProfileActivity" />
+        
+        <activity
             android:name=".ProductDetailActivity"
             android:exported="false"
             android:screenOrientation="portrait"
@@ -88,6 +102,12 @@
             android:screenOrientation="portrait"
             android:parentActivityName=".MainActivity"
             android:windowSoftInputMode="stateVisible|adjustResize" />
+        
+        <activity
+            android:name=".CategoryProductsActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:parentActivityName=".MainActivity" />
     </application>
 
 </manifest>

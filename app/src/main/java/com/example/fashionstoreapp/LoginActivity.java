@@ -188,8 +188,9 @@ public class LoginActivity extends AppCompatActivity {
         });
 
         forgotPasswordText.setOnClickListener(v -> {
-            Toast.makeText(this, "Quên mật khẩu", Toast.LENGTH_SHORT).show();
-            // TODO: Navigate to forgot password activity
+            // Navigate to forgot password activity
+            Intent intent = new Intent(LoginActivity.this, ForgotPasswordActivity.class);
+            startActivity(intent);
         });
 
         registerText.setOnClickListener(v -> {

@@ -24,6 +24,7 @@ public class FirestoreManager {
     private static final String COLLECTION_REVIEWS = "reviews";
     private static final String COLLECTION_USERS = "users";
     private static final String COLLECTION_CARTS = "carts";
+    private static final String COLLECTION_FAVORITES = "favorites";
 
     private FirestoreManager() {
         db = FirebaseFirestore.getInstance();
@@ -67,23 +68,28 @@ public class FirestoreManager {
      * Load products by category
      */
     public void loadProductsByCategory(String categoryId, OnProductsLoadedListener listener) {
+        Log.d(TAG, "Loading products for category: " + categoryId);
         db.collection(COLLECTION_PRODUCTS)
                 .whereEqualTo("category", categoryId)
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     List<Product> products = new ArrayList<>();
+                    Log.d(TAG, "Total documents found: " + queryDocumentSnapshots.size());
                     for (DocumentSnapshot document : queryDocumentSnapshots) {
                         Product product = document.toObject(Product.class);
                         if (product != null) {
                             product.setId(document.getId());
                             products.add(product);
+                            Log.d(TAG, "Product loaded: " + product.getName() + " (ID: " + document.getId() + ")");
+                        } else {
+                            Log.w(TAG, "Failed to parse document: " + document.getId());
                         }
                     }
                     Log.d(TAG, "Loaded " + products.size() + " products for category: " + categoryId);
                     listener.onProductsLoaded(products);
                 })
                 .addOnFailureListener(e -> {
-                    Log.e(TAG, "Error loading products by category", e);
+                    Log.e(TAG, "Error loading products by category: " + categoryId, e);
                     listener.onError(e.getMessage());
                 });
     }
@@ -158,7 +164,154 @@ public class FirestoreManager {
                 });
     }
 
-    // ==================== CATEGORIES ====================
+    // ==================== FAVORITES ====================
+
+    /**
+     * Save favorite product to Firestore
+     */
+    public void saveFavorite(String userId, String productId, OnFavoriteSavedListener listener) {
+        java.util.Map<String, Object> favoriteData = new java.util.HashMap<>();
+        favoriteData.put("userId", userId);
+        favoriteData.put("productId", productId);
+        favoriteData.put("addedAt", System.currentTimeMillis());
+
+        db.collection(COLLECTION_USERS)
+                .document(userId)
+                .collection(COLLECTION_FAVORITES)
+                .document(productId)
+                .set(favoriteData)
+                .addOnSuccessListener(aVoid -> {
+                    Log.d(TAG, "Favorite saved successfully");
+                    if (listener != null) {
+                        listener.onFavoriteSaved();
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error saving favorite", e);
+                    if (listener != null) {
+                        listener.onError(e.getMessage());
+                    }
+                });
+    }
+
+    /**
+     * Remove favorite product from Firestore
+     */
+    public void removeFavorite(String userId, String productId, OnFavoriteRemovedListener listener) {
+        db.collection(COLLECTION_USERS)
+                .document(userId)
+                .collection(COLLECTION_FAVORITES)
+                .document(productId)
+                .delete()
+                .addOnSuccessListener(aVoid -> {
+                    Log.d(TAG, "Favorite removed successfully");
+                    if (listener != null) {
+                        listener.onFavoriteRemoved();
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error removing favorite", e);
+                    if (listener != null) {
+                        listener.onError(e.getMessage());
+                    }
+                });
+    }
+
+    /**
+     * Load all favorite product IDs for a user
+     */
+    public void loadUserFavorites(String userId, OnFavoritesLoadedListener listener) {
+        db.collection(COLLECTION_USERS)
+                .document(userId)
+                .collection(COLLECTION_FAVORITES)
+                .orderBy("addedAt", Query.Direction.DESCENDING)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    List<String> favoriteProductIds = new ArrayList<>();
+                    for (DocumentSnapshot document : queryDocumentSnapshots) {
+                        String productId = document.getString("productId");
+                        if (productId != null) {
+                            favoriteProductIds.add(productId);
+                        }
+                    }
+                    Log.d(TAG, "Loaded " + favoriteProductIds.size() + " favorites");
+                    listener.onFavoritesLoaded(favoriteProductIds);
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error loading favorites", e);
+                    listener.onError(e.getMessage());
+                });
+    }
+
+    /**
+     * Load favorite products with full product details
+     */
+    public void loadFavoriteProducts(String userId, OnFavoriteProductsLoadedListener listener) {
+        loadUserFavorites(userId, new OnFavoritesLoadedListener() {
+            @Override
+            public void onFavoritesLoaded(List<String> favoriteProductIds) {
+                if (favoriteProductIds.isEmpty()) {
+                    listener.onFavoriteProductsLoaded(new ArrayList<>());
+                    return;
+                }
+
+                // Load full product details for each favorite
+                List<Product> favoriteProducts = new ArrayList<>();
+                int[] loadedCount = { 0 };
+
+                for (String productId : favoriteProductIds) {
+                    db.collection(COLLECTION_PRODUCTS)
+                            .document(productId)
+                            .get()
+                            .addOnSuccessListener(documentSnapshot -> {
+                                if (documentSnapshot.exists()) {
+                                    Product product = documentSnapshot.toObject(Product.class);
+                                    if (product != null) {
+                                        product.setFavorite(true);
+                                        favoriteProducts.add(product);
+                                    }
+                                }
+                                loadedCount[0]++;
+                                if (loadedCount[0] == favoriteProductIds.size()) {
+                                    listener.onFavoriteProductsLoaded(favoriteProducts);
+                                }
+                            })
+                            .addOnFailureListener(e -> {
+                                loadedCount[0]++;
+                                if (loadedCount[0] == favoriteProductIds.size()) {
+                                    listener.onFavoriteProductsLoaded(favoriteProducts);
+                                }
+                            });
+                }
+            }
+
+            @Override
+            public void onError(String error) {
+                listener.onError(error);
+            }
+        });
+    }
+
+    /**
+     * Check if a product is in user's favorites
+     */
+    public void checkIfFavorite(String userId, String productId, OnFavoriteCheckListener listener) {
+        db.collection(COLLECTION_USERS)
+                .document(userId)
+                .collection(COLLECTION_FAVORITES)
+                .document(productId)
+                .get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    boolean isFavorite = documentSnapshot.exists();
+                    listener.onFavoriteChecked(isFavorite);
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error checking favorite", e);
+                    listener.onFavoriteChecked(false);
+                });
+    }
+
+    // ==================== INTERFACES ====================
 
     /**
      * Load all categories from Firestore
@@ -330,6 +483,21 @@ public class FirestoreManager {
                     Log.e(TAG, "Error saving user profile", e);
                     listener.onError(e.getMessage());
                 });
+    }
+
+    /**
+     * Update user photo URL in Firestore
+     */
+    public void updateUserPhotoUrl(String userId, String photoUrl) {
+        java.util.Map<String, Object> updates = new java.util.HashMap<>();
+        updates.put("photoUrl", photoUrl);
+        updates.put("updatedAt", System.currentTimeMillis());
+
+        db.collection(COLLECTION_USERS)
+                .document(userId)
+                .set(updates, com.google.firebase.firestore.SetOptions.merge())
+                .addOnSuccessListener(aVoid -> Log.d(TAG, "Photo URL updated successfully"))
+                .addOnFailureListener(e -> Log.e(TAG, "Error updating photo URL", e));
     }
 
     /**
@@ -580,5 +748,33 @@ public class FirestoreManager {
         void onCartLoaded(List<com.example.fashionstoreapp.models.CartItem> cartItems);
 
         void onError(String error);
+    }
+
+    public interface OnFavoriteSavedListener {
+        void onFavoriteSaved();
+
+        void onError(String error);
+    }
+
+    public interface OnFavoriteRemovedListener {
+        void onFavoriteRemoved();
+
+        void onError(String error);
+    }
+
+    public interface OnFavoritesLoadedListener {
+        void onFavoritesLoaded(List<String> favoriteProductIds);
+
+        void onError(String error);
+    }
+
+    public interface OnFavoriteProductsLoadedListener {
+        void onFavoriteProductsLoaded(List<Product> favoriteProducts);
+
+        void onError(String error);
+    }
+
+    public interface OnFavoriteCheckListener {
+        void onFavoriteChecked(boolean isFavorite);
     }
 }

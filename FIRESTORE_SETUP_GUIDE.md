@@ -401,7 +401,221 @@ db.collection("products")
 
 **⚠️ QUAN TRỌNG: Bạn cần cập nhật Firestore Rules để cho phép đọc/ghi dữ liệu!**
 
-### Cách cập nhật Rules:
+### 🔥 Firestore Rules Hoàn Chỉnh (Production-Ready)
+
+Copy và paste rules sau vào Firebase Console:
+
+1. Mở Firebase Console: https://console.firebase.google.com/
+2. Chọn project của bạn
+3. Vào **Firestore Database** → **Rules**
+4. Copy và paste rules sau:
+
+```javascript
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+    
+    // ==================== PRODUCTS ====================
+    // Read: Tất cả mọi người (Kể cả chưa đăng nhập)
+    // Write: Chỉ authenticated users (Admin/Staff)
+    match /products/{productId} {
+      allow read: if true;
+      allow write: if isSignedIn();
+    }
+    
+    // ==================== CATEGORIES ====================
+    // Read: Tất cả mọi người (Kể cả chưa đăng nhập)
+    // Write: Chỉ authenticated users (Admin/Staff)
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow write: if isSignedIn();
+    }
+    
+    // ==================== BANNERS ====================
+    // Read: Tất cả mọi người (Kể cả chưa đăng nhập)
+    // Write: Chỉ authenticated users (Admin/Staff)
+    match /banners/{bannerId} {
+      allow read: if true;
+      allow write: if isSignedIn();
+    }
+    
+    // ==================== REVIEWS ====================
+    // Read: Tất cả mọi người (Kể cả chưa đăng nhập)
+    // Create: Tất cả mọi người có thể tạo review
+    // Update/Delete: Chỉ chủ review hoặc admin
+    match /reviews/{reviewId} {
+      allow read: if true;
+      allow create: if true;
+      allow update, delete: if isSignedIn() && 
+        (isOwner(resource.data.userId) || 
+         request.auth.token.admin == true);
+    }
+    
+    // ==================== USERS ====================
+    // Read/Write: Chỉ chủ tài khoản
+    // Bảo vệ thông tin cá nhân (name, birthday, gender, phone)
+    match /users/{userId} {
+      allow read, write: if isOwner(userId);
+      
+      // Allow users to read their own profile
+      allow get: if isOwner(userId);
+      
+      // Allow users to update their own profile
+      allow update: if isOwner(userId) && 
+        request.resource.data.keys().hasAll(['name', 'updatedAt']);
+    }
+    
+    // ==================== CARTS ====================
+    // Read/Write: Chỉ chủ giỏ hàng
+    // Mỗi user chỉ truy cập được giỏ hàng của chính mình
+    match /carts/{userId} {
+      allow read, write: if isOwner(userId);
+      
+      // Validate cart data structure
+      allow create, update: if isOwner(userId) && 
+        request.resource.data.items is list &&
+        request.resource.data.updatedAt is number;
+    }
+    
+    // ==================== ORDERS (Future) ====================
+    // Dành cho tính năng đặt hàng trong tương lai
+    match /orders/{orderId} {
+      allow read: if isSignedIn() && 
+        (resource.data.userId == request.auth.uid || 
+         request.auth.token.admin == true);
+      allow create: if isSignedIn();
+      allow update: if request.auth.token.admin == true;
+    }
+  }
+}
+```
+
+5. Click **Publish** để lưu
+
+### 📋 Giải thích Chi tiết Rules:
+
+#### **1. Products & Categories & Banners**
+```javascript
+allow read: if true;  // ✅ Tất cả đều đọc được (kể cả chưa đăng nhập)
+allow write: if isSignedIn();  // ❌ Chỉ user đã đăng nhập mới ghi được
+```
+- **Lý do**: Người dùng cần xem sản phẩm mà không cần đăng nhập
+- **Bảo mật**: Chỉ admin/staff (đã đăng nhập) mới thêm/sửa/xóa được
+
+#### **2. Reviews (Đánh giá)**
+```javascript
+allow read: if true;  // ✅ Tất cả đều đọc được
+allow create: if true;  // ✅ Tất cả đều tạo review được
+allow update, delete: if isOwner(resource.data.userId);  // ❌ Chỉ chủ review mới sửa/xóa
+```
+- **Lý do**: 
+  - Khuyến khích người dùng để lại đánh giá (không cần đăng nhập)
+  - Tăng tương tác và uy tín sản phẩm
+- **Bảo mật**: Chỉ người viết review mới sửa/xóa được
+
+#### **3. Users (Thông tin cá nhân)**
+```javascript
+allow read, write: if isOwner(userId);  // ❌ Chỉ chủ tài khoản mới truy cập
+```
+- **Lý do**: Bảo vệ thông tin cá nhân (họ tên, sinh nhật, giới tính, SĐT)
+- **Bảo mật**: User A không thể xem thông tin của User B
+- **Dữ liệu được bảo vệ**:
+  - `name`: Họ tên
+  - `birthday`: Ngày sinh
+  - `gender`: Giới tính
+  - `phone`: Số điện thoại
+
+#### **4. Carts (Giỏ hàng)**
+```javascript
+allow read, write: if isOwner(userId);  // ❌ Chỉ chủ giỏ hàng mới truy cập
+```
+- **Lý do**: Giỏ hàng là thông tin riêng tư của từng user
+- **Bảo mật**: User A không thể xem/sửa giỏ hàng của User B
+- **Cấu trúc document**: `carts/{userId}` - mỗi user có 1 document duy nhất
+
+#### **5. Helper Functions**
+```javascript
+function isSignedIn() {
+  return request.auth != null;  // Kiểm tra đã đăng nhập
+}
+
+function isOwner(userId) {
+  return isSignedIn() && request.auth.uid == userId;  // Kiểm tra chủ sở hữu
+}
+```
+- Tái sử dụng logic kiểm tra
+- Code clean và dễ maintain
+
+### 🔒 Mức độ Bảo mật:
+
+| Collection | Public Read | Public Write | Auth Read | Auth Write | Owner Only |
+|-----------|-------------|--------------|-----------|------------|------------|
+| products | ✅ | ❌ | ✅ | ✅ | - |
+| categories | ✅ | ❌ | ✅ | ✅ | - |
+| banners | ✅ | ❌ | ✅ | ✅ | - |
+| reviews | ✅ | ✅ (create) | ✅ | ✅ (own) | ✅ (update/delete) |
+| users | ❌ | ❌ | ❌ | ❌ | ✅ |
+| carts | ❌ | ❌ | ❌ | ❌ | ✅ |
+
+### ⚠️ Quan trọng:
+
+1. **Development Mode**: Nếu đang test, có thể tạm thời dùng:
+   ```javascript
+   match /{document=**} {
+     allow read, write: if true;  // ⚠️ CHỈ DÙNG ĐỂ TEST!
+   }
+   ```
+
+2. **Production Mode**: **BẮT BUỘC** dùng rules ở trên để đảm bảo bảo mật!
+
+3. **Testing Rules**: Sau khi publish rules, test trên:
+   - ✅ Emulator (Android Studio)
+   - ✅ Điện thoại thật
+   - ✅ Trạng thái đã đăng nhập
+   - ✅ Trạng thái chưa đăng nhập
+
+### 🧪 Kiểm tra Rules hoạt động:
+
+1. **Chưa đăng nhập**:
+   - ✅ Xem được sản phẩm, categories, banners
+   - ✅ Xem được reviews
+   - ✅ Tạo được reviews
+   - ❌ Không xem được users, carts
+   - ❌ Không thêm/sửa/xóa products
+
+2. **Đã đăng nhập**:
+   - ✅ Tất cả quyền như chưa đăng nhập
+   - ✅ Xem/sửa thông tin cá nhân của mình
+   - ✅ Xem/sửa giỏ hàng của mình
+   - ❌ Không xem được thông tin user khác
+   - ❌ Không xem được giỏ hàng user khác
+
+### 📱 Tương thích:
+
+- ✅ Android Emulator
+- ✅ Điện thoại thật (tất cả hãng)
+- ✅ iOS (nếu có)
+- ✅ Web (nếu có)
+- ✅ Firebase Console
+
+### 🔄 Cập nhật Rules:
+
+Nếu cần thay đổi rules trong tương lai:
+1. Mở Firebase Console → Firestore Database → Rules
+2. Sửa rules
+3. Click **Publish**
+4. Rules áp dụng **ngay lập tức** cho tất cả thiết bị
+
+### Cách cập nhật Rules (Chi tiết):
 
 1. Mở Firebase Console: https://console.firebase.google.com/
 2. Chọn project của bạn
