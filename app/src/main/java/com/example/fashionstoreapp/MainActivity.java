@@ -31,6 +31,7 @@ import com.example.fashionstoreapp.utils.CartManager;
 import com.example.fashionstoreapp.utils.FirestoreManager;
 import com.example.fashionstoreapp.utils.SessionManager;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -48,6 +49,7 @@ public class MainActivity extends AppCompatActivity
     private ImageView menuIcon, searchIcon, accountIcon, cartIcon;
     private TextView cartBadge;
     private FloatingActionButton fabCall;
+    private BottomNavigationView bottomNavigation;
 
     // Banner ViewPager
     private ViewPager2 bannerViewPager;
@@ -120,6 +122,7 @@ public class MainActivity extends AppCompatActivity
         cartIcon = findViewById(R.id.cartIcon);
         cartBadge = findViewById(R.id.cartBadge);
         fabCall = findViewById(R.id.fabCall);
+        bottomNavigation = findViewById(R.id.bottomNavigation);
 
         // Banner ViewPager
         bannerViewPager = findViewById(R.id.bannerViewPager);
@@ -611,6 +614,9 @@ public class MainActivity extends AppCompatActivity
         btnViewAllQuanTay.setOnClickListener(v -> {
             openCategoryProducts("quan-tay", "Quần Tây");
         });
+
+        // Setup Bottom Navigation
+        setupBottomNavigation();
     }
 
     private void updateCartBadge() {
@@ -621,6 +627,52 @@ public class MainActivity extends AppCompatActivity
         } else {
             cartBadge.setVisibility(View.GONE);
         }
+    }
+
+    private void setupBottomNavigation() {
+        // Set Home as selected by default
+        bottomNavigation.setSelectedItemId(R.id.nav_home);
+
+        bottomNavigation.setOnItemSelectedListener(item -> {
+            int itemId = item.getItemId();
+
+            if (itemId == R.id.nav_home) {
+                // Already on home, do nothing or scroll to top
+                return true;
+            } else if (itemId == R.id.nav_categories) {
+                // Navigate to Categories
+                Intent intent = new Intent(MainActivity.this, CategoriesActivity.class);
+                startActivity(intent);
+                overridePendingTransition(0, 0);
+                return true;
+            } else if (itemId == R.id.nav_wishlist) {
+                // Navigate to Wishlist
+                if (mAuth.getCurrentUser() == null) {
+                    Toast.makeText(this, "Vui lòng đăng nhập để xem danh sách yêu thích", Toast.LENGTH_SHORT).show();
+                    Intent intent = new Intent(MainActivity.this, LoginActivity.class);
+                    startActivity(intent);
+                } else {
+                    Intent intent = new Intent(MainActivity.this, FavoritesActivity.class);
+                    startActivity(intent);
+                    overridePendingTransition(0, 0);
+                }
+                return true;
+            } else if (itemId == R.id.nav_account) {
+                // Navigate to Account/Profile
+                if (mAuth.getCurrentUser() == null) {
+                    Toast.makeText(this, "Vui lòng đăng nhập", Toast.LENGTH_SHORT).show();
+                    Intent intent = new Intent(MainActivity.this, LoginActivity.class);
+                    startActivity(intent);
+                } else {
+                    Intent intent = new Intent(MainActivity.this, ProfileActivity.class);
+                    startActivity(intent);
+                    overridePendingTransition(0, 0);
+                }
+                return true;
+            }
+
+            return false;
+        });
     }
 
     private void showUserMenu() {

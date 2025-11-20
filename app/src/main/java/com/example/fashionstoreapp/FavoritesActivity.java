@@ -17,6 +17,7 @@ import com.example.fashionstoreapp.models.Product;
 import com.example.fashionstoreapp.utils.FirestoreManager;
 import com.example.fashionstoreapp.utils.SessionManager;
 import com.google.android.material.appbar.MaterialToolbar;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
@@ -30,6 +31,7 @@ public class FavoritesActivity extends AppCompatActivity implements ProductAdapt
     private LinearLayout emptyStateLayout;
     private ProgressBar loadingProgress;
     private Button btnShopNow;
+    private BottomNavigationView bottomNavigation;
 
     private ProductAdapter productAdapter;
     private List<Product> favoriteProducts;
@@ -56,6 +58,9 @@ public class FavoritesActivity extends AppCompatActivity implements ProductAdapt
         // Setup RecyclerView
         setupRecyclerView();
 
+        // Setup Bottom Navigation
+        setupBottomNavigation();
+
         // Load favorites
         loadFavorites();
 
@@ -69,6 +74,7 @@ public class FavoritesActivity extends AppCompatActivity implements ProductAdapt
         emptyStateLayout = findViewById(R.id.emptyStateLayout);
         loadingProgress = findViewById(R.id.loadingProgress);
         btnShopNow = findViewById(R.id.btnShopNow);
+        bottomNavigation = findViewById(R.id.bottomNavigation);
     }
 
     private void setupToolbar() {
@@ -224,5 +230,40 @@ public class FavoritesActivity extends AppCompatActivity implements ProductAdapt
         super.onResume();
         // Reload favorites when returning to this screen
         loadFavorites();
+    }
+
+    private void setupBottomNavigation() {
+        // Set Wishlist as selected
+        bottomNavigation.setSelectedItemId(R.id.nav_wishlist);
+
+        bottomNavigation.setOnItemSelectedListener(item -> {
+            int itemId = item.getItemId();
+
+            if (itemId == R.id.nav_home) {
+                Intent intent = new Intent(FavoritesActivity.this, MainActivity.class);
+                intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                startActivity(intent);
+                overridePendingTransition(0, 0);
+                finish();
+                return true;
+            } else if (itemId == R.id.nav_categories) {
+                Intent intent = new Intent(FavoritesActivity.this, CategoriesActivity.class);
+                startActivity(intent);
+                overridePendingTransition(0, 0);
+                finish();
+                return true;
+            } else if (itemId == R.id.nav_wishlist) {
+                // Already on wishlist
+                return true;
+            } else if (itemId == R.id.nav_account) {
+                Intent intent = new Intent(FavoritesActivity.this, ProfileActivity.class);
+                startActivity(intent);
+                overridePendingTransition(0, 0);
+                finish();
+                return true;
+            }
+
+            return false;
+        });
     }
 }

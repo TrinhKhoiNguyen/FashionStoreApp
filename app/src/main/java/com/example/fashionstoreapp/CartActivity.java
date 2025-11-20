@@ -139,8 +139,9 @@ public class CartActivity extends AppCompatActivity implements CartAdapter.OnCar
         checkoutButton.setEnabled(itemCount > 0);
         checkoutButton.setOnClickListener(v -> {
             if (itemCount > 0) {
-                Toast.makeText(this, "Thanh toán " + itemCount + " sản phẩm", Toast.LENGTH_SHORT).show();
-                // TODO: Navigate to checkout activity
+                // Navigate to checkout activity
+                Intent intent = new Intent(this, CheckoutActivity.class);
+                startActivity(intent);
             } else {
                 Toast.makeText(this, "Vui lòng chọn sản phẩm để thanh toán", Toast.LENGTH_SHORT).show();
             }

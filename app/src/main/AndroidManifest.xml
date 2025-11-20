@@ -108,6 +108,24 @@
             android:exported="false"
             android:screenOrientation="portrait"
             android:parentActivityName=".MainActivity" />
+        
+        <activity
+            android:name=".CategoriesActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:parentActivityName=".MainActivity" />
+        
+        <activity
+            android:name=".CheckoutActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:parentActivityName=".CartActivity" />
+        
+        <activity
+            android:name=".OrderHistoryActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:parentActivityName=".ProfileActivity" />
     </application>
 
 </manifest>

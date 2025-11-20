@@ -25,6 +25,7 @@ public class FirestoreManager {
     private static final String COLLECTION_USERS = "users";
     private static final String COLLECTION_CARTS = "carts";
     private static final String COLLECTION_FAVORITES = "favorites";
+    private static final String COLLECTION_ORDERS = "orders";
 
     private FirestoreManager() {
         db = FirebaseFirestore.getInstance();
@@ -776,5 +777,123 @@ public class FirestoreManager {
 
     public interface OnFavoriteCheckListener {
         void onFavoriteChecked(boolean isFavorite);
+    }
+
+    // ==================== ORDERS ====================
+
+    /**
+     * Save order to Firestore
+     */
+    public void saveOrder(com.example.fashionstoreapp.models.Order order, OnOrderSavedListener listener) {
+        java.util.Map<String, Object> orderData = new java.util.HashMap<>();
+        orderData.put("orderId", order.getOrderId());
+        orderData.put("userId", order.getUserId());
+        orderData.put("totalAmount", order.getTotalAmount());
+        orderData.put("status", order.getStatus());
+        orderData.put("paymentMethod", order.getPaymentMethod());
+        orderData.put("recipientName", order.getRecipientName());
+        orderData.put("recipientPhone", order.getRecipientPhone());
+        orderData.put("shippingAddress", order.getShippingAddress());
+        orderData.put("note", order.getNote());
+        orderData.put("createdAt", order.getCreatedAt());
+        orderData.put("updatedAt", order.getUpdatedAt());
+
+        // Convert order items to map format
+        List<java.util.Map<String, Object>> itemsData = new ArrayList<>();
+        for (com.example.fashionstoreapp.models.CartItem item : order.getItems()) {
+            java.util.Map<String, Object> itemData = new java.util.HashMap<>();
+            itemData.put("productId", item.getProduct().getId());
+            itemData.put("productName", item.getProduct().getName());
+            itemData.put("productImage", item.getProduct().getImageUrl());
+            itemData.put("productPrice", item.getProduct().getCurrentPrice());
+            itemData.put("quantity", item.getQuantity());
+            itemData.put("size", item.getSize());
+            itemData.put("color", item.getColor());
+            itemData.put("totalPrice", item.getTotalPrice());
+            itemsData.add(itemData);
+        }
+        orderData.put("items", itemsData);
+
+        db.collection(COLLECTION_ORDERS)
+                .document(order.getOrderId())
+                .set(orderData)
+                .addOnSuccessListener(aVoid -> {
+                    Log.d(TAG, "Order saved successfully: " + order.getOrderId());
+                    listener.onOrderSaved(order.getOrderId());
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error saving order", e);
+                    listener.onError(e.getMessage());
+                });
+    }
+
+    /**
+     * Load orders from Firestore for a specific user
+     */
+    public void loadOrders(String userId, OnOrdersLoadedListener listener) {
+        db.collection(COLLECTION_ORDERS)
+                .whereEqualTo("userId", userId)
+                .orderBy("createdAt", Query.Direction.DESCENDING)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    List<com.example.fashionstoreapp.models.Order> orders = new ArrayList<>();
+                    for (DocumentSnapshot document : queryDocumentSnapshots.getDocuments()) {
+                        com.example.fashionstoreapp.models.Order order = new com.example.fashionstoreapp.models.Order();
+                        order.setOrderId(document.getString("orderId"));
+                        order.setUserId(document.getString("userId"));
+                        order.setTotalAmount(document.getDouble("totalAmount"));
+                        order.setStatus(document.getString("status"));
+                        order.setPaymentMethod(document.getString("paymentMethod"));
+                        order.setRecipientName(document.getString("recipientName"));
+                        order.setRecipientPhone(document.getString("recipientPhone"));
+                        order.setShippingAddress(document.getString("shippingAddress"));
+                        order.setNote(document.getString("note"));
+                        order.setCreatedAt(document.getLong("createdAt"));
+                        order.setUpdatedAt(document.getLong("updatedAt"));
+
+                        // Load order items
+                        List<java.util.Map<String, Object>> itemsData = (List<java.util.Map<String, Object>>) document
+                                .get("items");
+                        if (itemsData != null) {
+                            List<com.example.fashionstoreapp.models.CartItem> items = new ArrayList<>();
+                            for (java.util.Map<String, Object> itemData : itemsData) {
+                                // Create a simplified product for the cart item
+                                Product product = new Product();
+                                product.setId((String) itemData.get("productId"));
+                                product.setName((String) itemData.get("productName"));
+                                product.setImageUrl((String) itemData.get("productImage"));
+                                product.setCurrentPrice(((Number) itemData.get("productPrice")).doubleValue());
+
+                                com.example.fashionstoreapp.models.CartItem item = new com.example.fashionstoreapp.models.CartItem();
+                                item.setProduct(product);
+                                item.setQuantity(((Number) itemData.get("quantity")).intValue());
+                                item.setSize((String) itemData.get("size"));
+                                item.setColor((String) itemData.get("color"));
+                                items.add(item);
+                            }
+                            order.setItems(items);
+                        }
+
+                        orders.add(order);
+                    }
+                    Log.d(TAG, "Loaded " + orders.size() + " orders");
+                    listener.onOrdersLoaded(orders);
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error loading orders", e);
+                    listener.onError(e.getMessage());
+                });
+    }
+
+    public interface OnOrderSavedListener {
+        void onOrderSaved(String orderId);
+
+        void onError(String error);
+    }
+
+    public interface OnOrdersLoadedListener {
+        void onOrdersLoaded(List<com.example.fashionstoreapp.models.Order> orders);
+
+        void onError(String error);
     }
 }

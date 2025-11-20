@@ -24,6 +24,7 @@ import com.example.fashionstoreapp.models.User;
 import com.example.fashionstoreapp.utils.SessionManager;
 import com.example.fashionstoreapp.utils.FirestoreManager;
 import com.google.android.material.appbar.MaterialToolbar;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.UserProfileChangeRequest;
@@ -47,7 +48,8 @@ public class ProfileActivity extends AppCompatActivity {
     private ProgressBar progressBar;
 
     // Menu items
-    private CardView menuProfile, menuSupport, menuAddress, menuVouchers, menuFavorites, menuPassword;
+    private CardView menuProfile, menuSupport, menuAddress, menuVouchers, menuFavorites, menuPassword, menuOrderHistory;
+    private BottomNavigationView bottomNavigation;
 
     private SessionManager sessionManager;
     private FirestoreManager firestoreManager;
@@ -76,6 +78,7 @@ public class ProfileActivity extends AppCompatActivity {
         setupToolbar();
         loadUserData();
         setupClickListeners();
+        setupBottomNavigation();
     }
 
     private void setupImagePicker() {
@@ -129,6 +132,8 @@ public class ProfileActivity extends AppCompatActivity {
         menuVouchers = findViewById(R.id.menuVouchers);
         menuFavorites = findViewById(R.id.menuFavorites);
         menuPassword = findViewById(R.id.menuPassword);
+        menuOrderHistory = findViewById(R.id.menuOrderHistory);
+        bottomNavigation = findViewById(R.id.bottomNavigation);
 
         // Hide progress bar initially
         if (progressBar != null) {
@@ -268,6 +273,11 @@ public class ProfileActivity extends AppCompatActivity {
         menuPassword.setOnClickListener(v -> {
             Toast.makeText(this, "Đổi mật khẩu", Toast.LENGTH_SHORT).show();
             // TODO: Navigate to change password activity
+        });
+
+        menuOrderHistory.setOnClickListener(v -> {
+            Intent intent = new Intent(ProfileActivity.this, OrderHistoryActivity.class);
+            startActivity(intent);
         });
     }
 
@@ -438,6 +448,32 @@ public class ProfileActivity extends AppCompatActivity {
                         Toast.makeText(ProfileActivity.this, "Lỗi cập nhật: " + error, Toast.LENGTH_SHORT).show();
                     }
                 });
+    }
+
+    private void setupBottomNavigation() {
+        bottomNavigation.setSelectedItemId(R.id.nav_account);
+        bottomNavigation.setOnItemSelectedListener(item -> {
+            int itemId = item.getItemId();
+            if (itemId == R.id.nav_home) {
+                startActivity(new Intent(this, MainActivity.class));
+                overridePendingTransition(0, 0);
+                finish();
+                return true;
+            } else if (itemId == R.id.nav_categories) {
+                startActivity(new Intent(this, CategoriesActivity.class));
+                overridePendingTransition(0, 0);
+                finish();
+                return true;
+            } else if (itemId == R.id.nav_wishlist) {
+                startActivity(new Intent(this, FavoritesActivity.class));
+                overridePendingTransition(0, 0);
+                finish();
+                return true;
+            } else if (itemId == R.id.nav_account) {
+                return true;
+            }
+            return false;
+        });
     }
 
     @Override
