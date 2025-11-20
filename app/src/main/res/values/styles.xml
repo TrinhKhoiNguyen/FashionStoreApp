@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <style name="AppTheme" parent="Theme.MaterialComponents.Light.NoActionBar">
-        <item name="colorPrimary">@color/primary_charcoal</item>
-        <item name="colorPrimaryDark">@color/primary_dark</item>
-        <item name="colorAccent">@color/accent_burgundy</item>
-        <item name="android:windowBackground">@color/background_cream</item>
+        <item name="colorPrimary">@color/primary_maroon</item>
+        <item name="colorPrimaryDark">@color/primary_maroon_dark</item>
+        <item name="colorAccent">@color/accent_terracotta</item>
+        <item name="android:windowBackground">@drawable/background_gradient</item>
         <item name="android:textColorPrimary">@color/text_primary</item>
         <item name="android:textColorSecondary">@color/text_secondary</item>
     </style>
 
-    <!-- Primary Button - Elegant & Fashionable -->
+    <!-- Primary Button - Elegant Maroon -->
     <style name="PrimaryButton" parent="Widget.MaterialComponents.Button">
-        <item name="backgroundTint">@color/primary_charcoal</item>
-        <item name="android:textColor">@color/primary_white</item>
+        <item name="backgroundTint">@color/primary_maroon</item>
+        <item name="android:textColor">@color/text_on_dark</item>
         <item name="cornerRadius">12dp</item>
         <item name="android:paddingStart">24dp</item>
         <item name="android:paddingEnd">24dp</item>
@@ -21,14 +21,14 @@
         <item name="android:textSize">15sp</item>
         <item name="android:textStyle">bold</item>
         <item name="android:letterSpacing">0.05</item>
-        <item name="android:elevation">2dp</item>
+        <item name="android:elevation">4dp</item>
     </style>
 
     <!-- Secondary Button - Outlined Style -->
     <style name="SecondaryButton" parent="Widget.MaterialComponents.Button.OutlinedButton">
-        <item name="strokeColor">@color/primary_charcoal</item>
-        <item name="strokeWidth">1.5dp</item>
-        <item name="android:textColor">@color/primary_charcoal</item>
+        <item name="strokeColor">@color/primary_maroon</item>
+        <item name="strokeWidth">2dp</item>
+        <item name="android:textColor">@color/primary_maroon</item>
         <item name="cornerRadius">12dp</item>
         <item name="android:paddingStart">24dp</item>
         <item name="android:paddingEnd">24dp</item>
@@ -39,10 +39,10 @@
         <item name="android:letterSpacing">0.05</item>
     </style>
 
-    <!-- Accent Button - Burgundy -->
+    <!-- Accent Button - Terracotta -->
     <style name="AccentButton" parent="Widget.MaterialComponents.Button">
-        <item name="backgroundTint">@color/accent_burgundy</item>
-        <item name="android:textColor">@color/primary_white</item>
+        <item name="backgroundTint">@color/accent_terracotta</item>
+        <item name="android:textColor">@color/text_on_dark</item>
         <item name="cornerRadius">12dp</item>
         <item name="android:paddingStart">24dp</item>
         <item name="android:paddingEnd">24dp</item>
@@ -51,12 +51,12 @@
         <item name="android:textSize">15sp</item>
         <item name="android:textStyle">bold</item>
         <item name="android:letterSpacing">0.05</item>
-        <item name="android:elevation">2dp</item>
+        <item name="android:elevation">4dp</item>
     </style>
 
-    <!-- Fashion Palette - Refined -->
+    <!-- Fashion Palette - Elegant Maroon -->
     <style name="FashionButton" parent="Widget.MaterialComponents.Button">
-        <item name="backgroundTint">@color/primary_charcoal</item>
+        <item name="backgroundTint">@color/primary_maroon</item>
         <item name="android:textColor">@color/text_on_dark</item>
         <item name="cornerRadius">28dp</item>
         <item name="android:paddingStart">32dp</item>
@@ -66,25 +66,26 @@
         <item name="android:textSize">16sp</item>
         <item name="android:textStyle">bold</item>
         <item name="android:letterSpacing">0.08</item>
-        <item name="elevation">4dp</item>
+        <item name="elevation">6dp</item>
         <item name="android:stateListAnimator">@null</item>
     </style>
 
     <style name="FashionButton.Outlined" parent="Widget.MaterialComponents.Button.OutlinedButton">
-        <item name="strokeColor">@color/primary_charcoal</item>
-        <item name="strokeWidth">1.5dp</item>
-        <item name="android:textColor">@color/primary_charcoal</item>
+        <item name="strokeColor">@color/primary_maroon</item>
+        <item name="strokeWidth">2dp</item>
+        <item name="android:textColor">@color/primary_maroon</item>
         <item name="cornerRadius">28dp</item>
         <item name="backgroundTint">@android:color/transparent</item>
-        <item name="rippleColor">@color/shadow_light</item>
+        <item name="rippleColor">@color/shadow_maroon</item>
     </style>
 
     <style name="FashionCard" parent="Widget.MaterialComponents.CardView">
         <item name="cardCornerRadius">20dp</item>
-        <item name="cardElevation">4dp</item>
+        <item name="cardElevation">6dp</item>
         <item name="cardBackgroundColor">@color/background_card</item>
         <item name="android:layout_margin">8dp</item>
         <item name="contentPadding">16dp</item>
+        <item name="strokeWidth">0dp</item>
     </style>
 
     <!-- Section Title Style -->

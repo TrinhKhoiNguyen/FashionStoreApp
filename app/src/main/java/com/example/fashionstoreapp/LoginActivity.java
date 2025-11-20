@@ -2,6 +2,8 @@ package com.example.fashionstoreapp;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
@@ -16,6 +18,7 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.fashionstoreapp.models.User;
+import com.example.fashionstoreapp.utils.FirestoreManager;
 import com.example.fashionstoreapp.utils.SessionManager;
 import com.facebook.AccessToken;
 import com.facebook.CallbackManager;
@@ -359,7 +362,44 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void navigateToMain() {
-        Intent intent = new Intent(LoginActivity.this, MainActivity.class);
+        FirebaseUser firebaseUser = mAuth.getCurrentUser();
+        if (firebaseUser != null) {
+            // Check user role and navigate accordingly with timeout
+            final boolean[] roleLoaded = {false};
+            
+            // Set timeout - if role check takes too long, default to customer
+            new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                if (!roleLoaded[0]) {
+                    // Timeout - default to customer
+                    Log.d(TAG, "Role check timeout, defaulting to customer");
+                    navigateToActivity(MainActivity.class);
+                }
+            }, 2000); // 2 second timeout
+            
+            FirestoreManager.getInstance().loadUserRole(firebaseUser.getUid(), role -> {
+                if (!roleLoaded[0]) {
+                    roleLoaded[0] = true;
+                    Intent intent;
+                    if (role != null && role.toLowerCase().contains("admin")) {
+                        // User is admin, go to Admin Dashboard
+                        intent = new Intent(LoginActivity.this, com.example.fashionstoreapp.admin.AdminActivity.class);
+                    } else {
+                        // User is customer, go to Main Activity
+                        intent = new Intent(LoginActivity.this, MainActivity.class);
+                    }
+                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                    startActivity(intent);
+                    finish();
+                }
+            });
+        } else {
+            // Fallback to MainActivity if no user
+            navigateToActivity(MainActivity.class);
+        }
+    }
+    
+    private void navigateToActivity(Class<?> activityClass) {
+        Intent intent = new Intent(LoginActivity.this, activityClass);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
         finish();

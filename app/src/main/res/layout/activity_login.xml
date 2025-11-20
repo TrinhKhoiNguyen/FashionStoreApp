@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/background_cream"
+    android:background="@drawable/background_gradient"
     android:orientation="vertical">
 
     <!-- Header -->
@@ -11,7 +11,7 @@
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
-        android:background="@color/primary_charcoal"
+        android:background="@drawable/toolbar_maroon_gradient"
         android:elevation="0dp">
 
         <RelativeLayout
@@ -149,11 +149,15 @@
                 <Button
                     android:id="@+id/btnLogin"
                     android:layout_width="match_parent"
-                    android:layout_height="56dp"
+                    android:layout_height="64dp"
+                    android:minHeight="64dp"
                     android:layout_marginTop="32dp"
                     style="@style/PrimaryButton"
                     android:text="ĐĂNG NHẬP"
-                    android:textColor="@color/text_on_dark" />
+                    android:textColor="@color/text_on_dark"
+                    android:paddingTop="18dp"
+                    android:paddingBottom="18dp"
+                    android:gravity="center" />
 
                 <!-- Divider -->
                 <LinearLayout

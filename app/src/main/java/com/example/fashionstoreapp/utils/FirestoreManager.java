@@ -169,6 +169,52 @@ public class FirestoreManager {
                 });
     }
 
+    /**
+     * Load all products from Firestore (Admin)
+     */
+    public void loadAllProducts(OnProductsLoadedListener listener) {
+        loadProducts(listener); // Reuse existing method
+    }
+
+    /**
+     * Update a product
+     */
+    public void updateProduct(Product product, OnActionCompleteListener listener) {
+        db.collection(COLLECTION_PRODUCTS)
+                .document(product.getId())
+                .set(product)
+                .addOnSuccessListener(aVoid -> {
+                    Log.d(TAG, "Product updated successfully: " + product.getId());
+                    listener.onSuccess();
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error updating product", e);
+                    listener.onError(e.getMessage());
+                });
+    }
+
+    /**
+     * Delete a product
+     */
+    public void deleteProduct(String productId, OnActionCompleteListener listener) {
+        db.collection(COLLECTION_PRODUCTS)
+                .document(productId)
+                .delete()
+                .addOnSuccessListener(aVoid -> {
+                    Log.d(TAG, "Product deleted successfully: " + productId);
+                    listener.onSuccess();
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error deleting product", e);
+                    listener.onError(e.getMessage());
+                });
+    }
+
+    public interface OnActionCompleteListener {
+        void onSuccess();
+        void onError(String error);
+    }
+
     // ==================== FAVORITES ====================
 
     /**
@@ -518,16 +564,40 @@ public class FirestoreManager {
                         String birthday = documentSnapshot.getString("birthday");
                         String gender = documentSnapshot.getString("gender");
                         String phone = documentSnapshot.getString("phone");
+                        String role = documentSnapshot.getString("role");
                         Log.d(TAG, "User profile loaded successfully");
-                        listener.onProfileLoaded(name, birthday, gender, phone);
+                        listener.onProfileLoaded(name, birthday, gender, phone, role);
                     } else {
                         Log.d(TAG, "User profile not found");
-                        listener.onProfileLoaded(null, null, null, null);
+                        listener.onProfileLoaded(null, null, null, null, null);
                     }
                 })
                 .addOnFailureListener(e -> {
                     Log.e(TAG, "Error loading user profile", e);
                     listener.onError(e.getMessage());
+                });
+    }
+
+    /**
+     * Load user role from Firestore
+     */
+    public void loadUserRole(String userId, OnUserRoleLoadedListener listener) {
+        db.collection(COLLECTION_USERS)
+                .document(userId)
+                .get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (documentSnapshot.exists()) {
+                        String role = documentSnapshot.getString("role");
+                        Log.d(TAG, "User role loaded: " + role);
+                        listener.onRoleLoaded(role);
+                    } else {
+                        Log.d(TAG, "User not found, defaulting to customer");
+                        listener.onRoleLoaded("customer");
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error loading user role", e);
+                    listener.onRoleLoaded("customer"); // Default to customer on error
                 });
     }
 
@@ -739,9 +809,13 @@ public class FirestoreManager {
     }
 
     public interface OnUserProfileLoadedListener {
-        void onProfileLoaded(String name, String birthday, String gender, String phone);
+        void onProfileLoaded(String name, String birthday, String gender, String phone, String role);
 
         void onError(String error);
+    }
+
+    public interface OnUserRoleLoadedListener {
+        void onRoleLoaded(String role);
     }
 
     public interface OnCartSavedListener {

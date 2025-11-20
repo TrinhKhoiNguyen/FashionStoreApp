@@ -4,18 +4,21 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.fashionstoreapp.adapters.ProductAdapter;
 import com.example.fashionstoreapp.models.Product;
 import com.example.fashionstoreapp.utils.FirestoreManager;
 import com.example.fashionstoreapp.utils.SessionManager;
+import com.example.fashionstoreapp.utils.AnimationHelper;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
@@ -32,12 +35,15 @@ public class FavoritesActivity extends AppCompatActivity implements ProductAdapt
     private ProgressBar loadingProgress;
     private Button btnShopNow;
     private BottomNavigationView bottomNavigation;
+    private ImageView btnGridView, btnListView;
 
     private ProductAdapter productAdapter;
     private List<Product> favoriteProducts;
     private FirestoreManager firestoreManager;
     private SessionManager sessionManager;
     private FirebaseAuth mAuth;
+    
+    private boolean isGridView = true; // Default to grid view
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -75,6 +81,8 @@ public class FavoritesActivity extends AppCompatActivity implements ProductAdapt
         loadingProgress = findViewById(R.id.loadingProgress);
         btnShopNow = findViewById(R.id.btnShopNow);
         bottomNavigation = findViewById(R.id.bottomNavigation);
+        btnGridView = findViewById(R.id.btnGridView);
+        btnListView = findViewById(R.id.btnListView);
     }
 
     private void setupToolbar() {
@@ -90,9 +98,35 @@ public class FavoritesActivity extends AppCompatActivity implements ProductAdapt
         favoriteProducts = new ArrayList<>();
         productAdapter = new ProductAdapter(this, favoriteProducts, this);
 
+        // Default to grid view
+        switchToGridView();
+        favoritesRecyclerView.setAdapter(productAdapter);
+    }
+    
+    private void switchToGridView() {
+        isGridView = true;
         GridLayoutManager layoutManager = new GridLayoutManager(this, 2);
         favoritesRecyclerView.setLayoutManager(layoutManager);
-        favoritesRecyclerView.setAdapter(productAdapter);
+        productAdapter.setGridView(true);
+        
+        // Update icon colors
+        btnGridView.setColorFilter(getResources().getColor(R.color.white));
+        btnListView.setColorFilter(getResources().getColor(R.color.white));
+        btnListView.setAlpha(0.6f);
+        btnGridView.setAlpha(1.0f);
+    }
+    
+    private void switchToListView() {
+        isGridView = false;
+        LinearLayoutManager layoutManager = new LinearLayoutManager(this);
+        favoritesRecyclerView.setLayoutManager(layoutManager);
+        productAdapter.setGridView(false);
+        
+        // Update icon colors
+        btnListView.setColorFilter(getResources().getColor(R.color.white));
+        btnGridView.setColorFilter(getResources().getColor(R.color.white));
+        btnGridView.setAlpha(0.6f);
+        btnListView.setAlpha(1.0f);
     }
 
     private void setupClickListeners() {
@@ -102,6 +136,20 @@ public class FavoritesActivity extends AppCompatActivity implements ProductAdapt
             intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
             startActivity(intent);
             finish();
+        });
+        
+        btnGridView.setOnClickListener(v -> {
+            if (!isGridView) {
+                AnimationHelper.animateScaleUpSmall(v);
+                switchToGridView();
+            }
+        });
+        
+        btnListView.setOnClickListener(v -> {
+            if (isGridView) {
+                AnimationHelper.animateScaleUpSmall(v);
+                switchToListView();
+            }
         });
     }
 

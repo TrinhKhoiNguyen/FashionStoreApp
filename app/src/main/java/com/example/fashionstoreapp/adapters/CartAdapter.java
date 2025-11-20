@@ -4,6 +4,8 @@ import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -14,6 +16,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import com.example.fashionstoreapp.R;
 import com.example.fashionstoreapp.models.CartItem;
+import com.example.fashionstoreapp.utils.AnimationHelper;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -49,7 +52,21 @@ public class CartAdapter extends RecyclerView.Adapter<CartAdapter.CartViewHolder
     public void onBindViewHolder(@NonNull CartViewHolder holder, int position) {
         CartItem item = cartItems.get(position);
         holder.bind(item);
+        
+        // Add animation for item appearance
+        setAnimation(holder.itemView, position);
     }
+    
+    private void setAnimation(View view, int position) {
+        // Only animate items that are not already visible
+        if (position > lastPosition) {
+            Animation animation = AnimationUtils.loadAnimation(view.getContext(), R.anim.slide_in_left);
+            view.startAnimation(animation);
+            lastPosition = position;
+        }
+    }
+    
+    private int lastPosition = -1;
 
     @Override
     public int getItemCount() {
@@ -159,6 +176,7 @@ public class CartAdapter extends RecyclerView.Adapter<CartAdapter.CartViewHolder
 
             decreaseButton.setOnClickListener(v -> {
                 if (item.canDecreaseQuantity()) {
+                    AnimationHelper.animateScaleUpSmall(v);
                     item.decreaseQuantity();
                     quantityText.setText(String.valueOf(item.getQuantity()));
                     decreaseButton.setEnabled(item.canDecreaseQuantity());
@@ -166,11 +184,14 @@ public class CartAdapter extends RecyclerView.Adapter<CartAdapter.CartViewHolder
                     if (listener != null) {
                         listener.onQuantityChanged(item);
                     }
+                } else {
+                    AnimationHelper.animateShake(v);
                 }
             });
 
             increaseButton.setOnClickListener(v -> {
                 if (item.canIncreaseQuantity()) {
+                    AnimationHelper.animateScaleUpSmall(v);
                     item.increaseQuantity();
                     quantityText.setText(String.valueOf(item.getQuantity()));
                     decreaseButton.setEnabled(item.canDecreaseQuantity());
@@ -178,11 +199,14 @@ public class CartAdapter extends RecyclerView.Adapter<CartAdapter.CartViewHolder
                     if (listener != null) {
                         listener.onQuantityChanged(item);
                     }
+                } else {
+                    AnimationHelper.animateShake(v);
                 }
             });
 
             // Remove button
             removeButton.setOnClickListener(v -> {
+                AnimationHelper.animateRotate360(v);
                 if (listener != null) {
                     listener.onItemRemoved(item);
                     removeItem(getAdapterPosition());

@@ -126,6 +126,24 @@
             android:exported="false"
             android:screenOrientation="portrait"
             android:parentActivityName=".ProfileActivity" />
+
+        <!-- Admin Activities -->
+        <activity
+            android:name=".admin.AdminActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+        
+        <activity
+            android:name=".admin.AdminProductActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:parentActivityName=".admin.AdminActivity" />
+            
+        <activity
+            android:name=".admin.AdminProductEditActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:parentActivityName=".admin.AdminProductActivity" />
     </application>
 
 </manifest>

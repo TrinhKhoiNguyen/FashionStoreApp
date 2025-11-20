@@ -15,6 +15,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.fashionstoreapp.adapters.CartAdapter;
 import com.example.fashionstoreapp.models.CartItem;
 import com.example.fashionstoreapp.utils.CartManager;
+import com.example.fashionstoreapp.utils.AnimationHelper;
 import com.google.android.material.appbar.MaterialToolbar;
 
 import java.util.List;
@@ -74,14 +75,17 @@ public class CartActivity extends AppCompatActivity implements CartAdapter.OnCar
         
         // Setup checkout button once
         checkoutButton.setOnClickListener(v -> {
-            List<CartItem> selectedItems = cartAdapter.getSelectedItems();
-            if (selectedItems.size() > 0) {
-                // Navigate to checkout activity
-                Intent intent = new Intent(this, CheckoutActivity.class);
-                startActivity(intent);
-            } else {
-                Toast.makeText(this, "Vui lòng chọn sản phẩm để thanh toán", Toast.LENGTH_SHORT).show();
-            }
+            AnimationHelper.animateButtonPress(v, () -> {
+                List<CartItem> selectedItems = cartAdapter.getSelectedItems();
+                if (selectedItems.size() > 0) {
+                    // Navigate to checkout activity
+                    Intent intent = new Intent(this, CheckoutActivity.class);
+                    startActivity(intent);
+                } else {
+                    AnimationHelper.animateShake(v);
+                    Toast.makeText(this, "Vui lòng chọn sản phẩm để thanh toán", Toast.LENGTH_SHORT).show();
+                }
+            });
         });
     }
 

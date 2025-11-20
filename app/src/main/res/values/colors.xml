@@ -1,53 +1,170 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Fashion Palette - Elegant & Artistic -->
+    <!-- Fashion Palette - Elegant Maroon & Burgundy Theme -->
+    <!-- Professional, Artistic, Harmonious Color Scheme -->
     
-    <!-- Primary Colors - Deep Charcoal for sophistication -->
-    <color name="primary_charcoal">#1A1A1A</color>
-    <color name="primary_dark">#0F0F0F</color>
-    <color name="primary_light">#2D2D2D</color>
+    <!-- Primary Colors - Deep Maroon/Burgundy (Main Theme) -->
+    <color name="primary_maroon">#722F37</color>
+    <color name="primary_maroon_dark">#5A2429</color>
+    <color name="primary_maroon_light">#8B3A44</color>
+    <color name="primary_burgundy">#800020</color>
+    <color name="primary_charcoal">#2C2C2C</color>
+    <color name="primary_dark">#1A1A1A</color>
+    <color name="primary_light">#3D3D3D</color>
     
-    <!-- Accent Colors - Elegant Burgundy/Rose Gold -->
-    <color name="accent_burgundy">#8B4A6B</color>
-    <color name="accent_rose">#C9A88B</color>
+    <!-- Accent Colors - Harmonious Palette -->
+    <color name="accent_terracotta">#C97D60</color>
+    <color name="accent_rust">#B85C3A</color>
     <color name="accent_gold">#D4AF37</color>
+    <color name="accent_gold_light">#E8C547</color>
+    <color name="accent_rose">#D4C4B0</color>
+    <color name="accent_rose_light">#E8D5C4</color>
     <color name="accent_light">#E8D5C4</color>
+    <color name="accent_burgundy">#722F37</color>
+    <color name="accent_warm">#C9A88B</color>
     
-    <!-- Neutral Colors -->
+    <!-- Neutral & Background Colors - Soft & Elegant -->
+    <color name="white">#FFFFFF</color>
     <color name="primary_white">#FFFFFF</color>
     <color name="background_cream">#FAF8F5</color>
-    <color name="background_soft">#F5F3F0</color>
+    <color name="background_soft">#F5F1EB</color>
+    <color name="background_warm">#F9F6F2</color>
     <color name="background_card">#FFFFFF</color>
+    <color name="background_gradient_start">#FAF8F5</color>
+    <color name="background_gradient_mid">#F5F1EB</color>
+    <color name="background_gradient_end">#FFFFFF</color>
     
     <!-- Text Colors - Rich & Readable -->
-    <color name="text_primary">#1A1A1A</color>
+    <color name="text_primary">#2C2C2C</color>
     <color name="text_secondary">#5A5A5A</color>
     <color name="text_hint">#9A9A9A</color>
     <color name="text_light">#BABABA</color>
     <color name="text_on_dark">#FFFFFF</color>
+    <color name="text_on_maroon">#FFFFFF</color>
     
-    <!-- Status Colors -->
+    <!-- Status Colors - Refined -->
     <color name="success_green">#4A7C59</color>
     <color name="error_red">#C85A5A</color>
     <color name="warning_amber">#D4AF37</color>
     <color name="info_blue">#6B8BA4</color>
     
     <!-- Price & Discount -->
-    <color name="price_primary">#8B4A6B</color>
+    <color name="price_primary">#722F37</color>
     <color name="price_discount">#C85A5A</color>
-    <color name="discount_badge">#C85A5A</color>
+    <color name="discount_badge">#B85C3A</color>
     
-    <!-- UI Elements -->
-    <color name="divider">#E5E5E5</color>
-    <color name="border_light">#E0E0E0</color>
+    <!-- UI Elements - Subtle & Elegant -->
+    <color name="divider">#E8D5C4</color>
+    <color name="border_light">#D4C4B0</color>
+    <color name="border_warm">#C9A88B</color>
     <color name="shadow_light">#20000000</color>
+    <color name="shadow_maroon">#30722F37</color>
     <color name="overlay_dark">#80000000</color>
+    <color name="overlay_warm">#40C9A88B</color>
     
     <!-- Legacy support -->
-    <color name="primary_black">#1A1A1A</color>
+    <color name="primary_black">#2C2C2C</color>
     <color name="accent_yellow">#D4AF37</color>
-    <color name="accent_red">#C85A5A</color>
+    <color name="accent_red">#722F37</color>
     <color name="background_gray">#FAF8F5</color>
     <color name="brown_retro">#C9A88B</color>
     <color name="green_call">#4A7C59</color>
+    
+    <!-- Extended Color Palette - Rich & Varied -->
+    <!-- Deep Reds & Burgundies -->
+    <color name="deep_red">#8B0000</color>
+    <color name="wine_red">#722F37</color>
+    <color name="burgundy_dark">#5A2429</color>
+    <color name="burgundy_light">#A04A5A</color>
+    <color name="crimson">#DC143C</color>
+    <color name="dark_red">#8B0000</color>
+    <color name="mahogany">#C04000</color>
+    
+    <!-- Warm Browns & Tans -->
+    <color name="warm_brown">#8B4513</color>
+    <color name="tan">#D2B48C</color>
+    <color name="beige">#F5F5DC</color>
+    <color name="camel">#C19A6B</color>
+    <color name="coffee">#6F4E37</color>
+    <color name="caramel">#AF6E4D</color>
+    <color name="sand">#C2B280</color>
+    <color name="khaki">#C3B091</color>
+    
+    <!-- Elegant Grays -->
+    <color name="charcoal_gray">#36454F</color>
+    <color name="slate_gray">#708090</color>
+    <color name="warm_gray">#A9A9A9</color>
+    <color name="cool_gray">#808080</color>
+    <color name="pearl_gray">#E8E8E8</color>
+    <color name="silver">#C0C0C0</color>
+    <color name="platinum">#E5E4E2</color>
+    
+    <!-- Soft Pinks & Roses -->
+    <color name="dusty_rose">#B88685</color>
+    <color name="blush_pink">#F4C2C2</color>
+    <color name="rose_quartz">#F7CAC9</color>
+    <color name="mauve">#E0B0FF</color>
+    <color name="lavender_rose">#FBAED2</color>
+    <color name="peach">#FFCBA4</color>
+    <color name="coral">#FF7F50</color>
+    
+    <!-- Rich Golds & Yellows -->
+    <color name="golden_yellow">#FFD700</color>
+    <color name="amber">#FFBF00</color>
+    <color name="honey">#F0E68C</color>
+    <color name="mustard">#FFDB58</color>
+    <color name="brass">#B5A642</color>
+    <color name="bronze">#CD7F32</color>
+    <color name="copper">#B87333</color>
+    
+    <!-- Deep Blues & Teals -->
+    <color name="navy_blue">#000080</color>
+    <color name="royal_blue">#4169E1</color>
+    <color name="steel_blue">#4682B4</color>
+    <color name="teal">#008080</color>
+    <color name="turquoise">#40E0D0</color>
+    <color name="aqua">#00FFFF</color>
+    <color name="cyan">#00CED1</color>
+    
+    <!-- Earthy Greens -->
+    <color name="forest_green">#228B22</color>
+    <color name="sage_green">#87AE73</color>
+    <color name="olive_green">#556B2F</color>
+    <color name="moss_green">#8A9A5B</color>
+    <color name="emerald">#50C878</color>
+    <color name="jade">#00A86B</color>
+    <color name="mint">#98FF98</color>
+    
+    <!-- Purples & Violets -->
+    <color name="deep_purple">#4B0082</color>
+    <color name="royal_purple">#7851A9</color>
+    <color name="lavender">#E6E6FA</color>
+    <color name="plum">#8E4585</color>
+    <color name="violet">#8A2BE2</color>
+    <color name="indigo">#4B0082</color>
+    <color name="amethyst">#9966CC</color>
+    
+    <!-- Neutrals & Off-Whites -->
+    <color name="ivory">#FFFFF0</color>
+    <color name="cream">#FFFDD0</color>
+    <color name="eggshell">#F0EAD6</color>
+    <color name="linen">#FAF0E6</color>
+    <color name="bisque">#FFE4C4</color>
+    <color name="vanilla">#F3E5AB</color>
+    <color name="almond">#EFDECD</color>
+    
+    <!-- Dark Accents -->
+    <color name="midnight_blue">#191970</color>
+    <color name="dark_slate">#2F4F4F</color>
+    <color name="charcoal">#36454F</color>
+    <color name="jet_black">#0A0A0A</color>
+    <color name="ebony">#555D50</color>
+    <color name="onyx">#353839</color>
+    
+    <!-- Bright Accents -->
+    <color name="sunset_orange">#FF7F50</color>
+    <color name="tangerine">#FFA500</color>
+    <color name="salmon">#FA8072</color>
+    <color name="apricot">#FBCEB1</color>
+    <color name="papaya">#FFEFD5</color>
 </resources>

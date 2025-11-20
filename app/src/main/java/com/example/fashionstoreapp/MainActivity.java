@@ -30,6 +30,7 @@ import com.example.fashionstoreapp.models.User;
 import com.example.fashionstoreapp.utils.CartManager;
 import com.example.fashionstoreapp.utils.FirestoreManager;
 import com.example.fashionstoreapp.utils.SessionManager;
+import com.example.fashionstoreapp.utils.AnimationHelper;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
@@ -46,7 +47,7 @@ import java.util.Map;
 public class MainActivity extends AppCompatActivity
         implements ProductAdapter.OnProductClickListener, BannerAdapter.OnBannerClickListener {
 
-    private ImageView menuIcon, searchIcon, accountIcon, cartIcon, notificationIcon;
+    private ImageView searchIcon, accountIcon, cartIcon, notificationIcon;
     private TextView cartBadge, notificationBadge;
     private FloatingActionButton fabCall;
     private BottomNavigationView bottomNavigation;
@@ -129,7 +130,6 @@ public class MainActivity extends AppCompatActivity
 
     private void initViews() {
         try {
-            menuIcon = findViewById(R.id.menuIcon);
             searchIcon = findViewById(R.id.searchIcon);
             accountIcon = findViewById(R.id.accountIcon);
             cartIcon = findViewById(R.id.cartIcon);
@@ -567,34 +567,37 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void setupClickListeners() {
-        menuIcon.setOnClickListener(v -> {
-            Toast.makeText(this, "Menu clicked", Toast.LENGTH_SHORT).show();
-        });
-
         searchIcon.setOnClickListener(v -> {
-            Intent intent = new Intent(MainActivity.this, SearchActivity.class);
-            startActivity(intent);
+            AnimationHelper.animateButtonPress(v, () -> {
+                Intent intent = new Intent(MainActivity.this, SearchActivity.class);
+                startActivity(intent);
+            });
         });
 
         accountIcon.setOnClickListener(v -> {
-            // Check if user is logged in
-            if (sessionManager.isLoggedIn() || mAuth.getCurrentUser() != null) {
-                // Show user menu
-                showUserMenu();
-            } else {
-                // Open login activity
-                Intent intent = new Intent(MainActivity.this, LoginActivity.class);
-                startActivity(intent);
-            }
+            AnimationHelper.animateButtonPress(v, () -> {
+                // Check if user is logged in
+                if (sessionManager.isLoggedIn() || mAuth.getCurrentUser() != null) {
+                    // Show user menu
+                    showUserMenu();
+                } else {
+                    // Open login activity
+                    Intent intent = new Intent(MainActivity.this, LoginActivity.class);
+                    startActivity(intent);
+                }
+            });
         });
 
         cartIcon.setOnClickListener(v -> {
-            // Open cart activity
-            Intent intent = new Intent(MainActivity.this, CartActivity.class);
-            startActivity(intent);
+            AnimationHelper.animateButtonPress(v, () -> {
+                // Open cart activity
+                Intent intent = new Intent(MainActivity.this, CartActivity.class);
+                startActivity(intent);
+            });
         });
 
         notificationIcon.setOnClickListener(v -> {
+            AnimationHelper.animatePulse(v);
             // Open notifications activity or show notification list
             // TODO: Create NotificationsActivity or show notification dialog
             Toast.makeText(this, "Thông báo", Toast.LENGTH_SHORT).show();
@@ -604,42 +607,52 @@ public class MainActivity extends AppCompatActivity
         });
 
         fabCall.setOnClickListener(v -> {
+            AnimationHelper.animateBounceIn(v);
             Toast.makeText(this, "Call: 1900 1234", Toast.LENGTH_SHORT).show();
         });
 
         btnViewAllRetro.setOnClickListener(v -> {
+            AnimationHelper.animateScaleUpSmall(v);
             openCategoryProducts("retro-sports", "Retro Sports");
         });
 
         btnViewAllOutlet.setOnClickListener(v -> {
+            AnimationHelper.animateScaleUpSmall(v);
             openCategoryProducts("outlet", "Outlet");
         });
 
         btnViewAllShirts.setOnClickListener(v -> {
+            AnimationHelper.animateScaleUpSmall(v);
             openCategoryProducts("ao-thun", "Áo Thun");
         });
 
         btnViewAllPolo.setOnClickListener(v -> {
+            AnimationHelper.animateScaleUpSmall(v);
             openCategoryProducts("ao-polo", "Áo Polo");
         });
 
         btnViewAllSomi.setOnClickListener(v -> {
+            AnimationHelper.animateScaleUpSmall(v);
             openCategoryProducts("ao-so-mi", "Áo Sơ Mi");
         });
 
         btnViewAllHoodies.setOnClickListener(v -> {
+            AnimationHelper.animateScaleUpSmall(v);
             openCategoryProducts("ao-hoodie", "Áo Hoodie");
         });
 
         btnViewAllAoKhoac.setOnClickListener(v -> {
+            AnimationHelper.animateScaleUpSmall(v);
             openCategoryProducts("ao-khoac", "Áo Khoác");
         });
 
         btnViewAllQuanSot.setOnClickListener(v -> {
+            AnimationHelper.animateScaleUpSmall(v);
             openCategoryProducts("quan-sot", "Quần Sọt");
         });
 
         btnViewAllQuanTay.setOnClickListener(v -> {
+            AnimationHelper.animateScaleUpSmall(v);
             openCategoryProducts("quan-tay", "Quần Tây");
         });
 
@@ -735,42 +748,78 @@ public class MainActivity extends AppCompatActivity
         }
 
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Xin chào, " + userName);
-        builder.setMessage(userInfo);
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_user_menu, null);
+        builder.setView(dialogView);
 
-        builder.setPositiveButton("Thông tin tài khoản", (dialog, which) -> {
-            Intent intent = new Intent(MainActivity.this, ProfileActivity.class);
-            startActivity(intent);
+        TextView dialogTitle = dialogView.findViewById(R.id.dialogTitle);
+        TextView dialogMessage = dialogView.findViewById(R.id.dialogMessage);
+        com.google.android.material.button.MaterialButton btnAccountInfo = dialogView.findViewById(R.id.btnAccountInfo);
+        com.google.android.material.button.MaterialButton btnLogout = dialogView.findViewById(R.id.btnLogout);
+
+        dialogTitle.setText("Xin chào, " + userName);
+        dialogMessage.setText(userInfo);
+
+        AlertDialog dialog = builder.create();
+        dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+
+        btnAccountInfo.setOnClickListener(v -> {
+            AnimationHelper.animateButtonPress(v, () -> {
+                dialog.dismiss();
+                Intent intent = new Intent(MainActivity.this, ProfileActivity.class);
+                startActivity(intent);
+            });
         });
 
-        builder.setNegativeButton("Đăng xuất", (dialog, which) -> {
-            logout();
+        btnLogout.setOnClickListener(v -> {
+            AnimationHelper.animateButtonPress(v, () -> {
+                dialog.dismiss();
+                logout();
+            });
         });
 
-        builder.show();
+        dialog.show();
     }
 
     private void logout() {
-        new AlertDialog.Builder(this)
-                .setTitle("Đăng xuất")
-                .setMessage("Bạn có chắc chắn muốn đăng xuất?")
-                .setPositiveButton("Đăng xuất", (dialog, which) -> {
-                    // Sign out from Firebase
-                    mAuth.signOut();
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_confirm, null);
+        builder.setView(dialogView);
 
-                    // Clear session
-                    sessionManager.logout();
+        TextView dialogTitle = dialogView.findViewById(R.id.dialogTitle);
+        TextView dialogMessage = dialogView.findViewById(R.id.dialogMessage);
+        com.google.android.material.button.MaterialButton btnCancel = dialogView.findViewById(R.id.btnCancel);
+        com.google.android.material.button.MaterialButton btnConfirm = dialogView.findViewById(R.id.btnConfirm);
 
-                    // Clear cart
-                    cartManager.clearCart();
+        dialogTitle.setText("Đăng xuất");
+        dialogMessage.setText("Bạn có chắc chắn muốn đăng xuất?");
 
-                    Toast.makeText(this, "Đã đăng xuất", Toast.LENGTH_SHORT).show();
+        AlertDialog dialog = builder.create();
+        dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
 
-                    // Refresh UI
-                    updateCartBadge();
-                })
-                .setNegativeButton("Hủy", null)
-                .show();
+        btnCancel.setOnClickListener(v -> {
+            AnimationHelper.animateButtonPress(v, () -> dialog.dismiss());
+        });
+
+        btnConfirm.setOnClickListener(v -> {
+            AnimationHelper.animateButtonPress(v, () -> {
+                dialog.dismiss();
+                // Sign out from Firebase
+                mAuth.signOut();
+
+                // Clear session
+                sessionManager.logout();
+
+                // Clear cart
+                cartManager.clearCart();
+
+                Toast.makeText(this, "Đã đăng xuất", Toast.LENGTH_SHORT).show();
+
+                // Refresh UI
+                updateCartBadge();
+            });
+        });
+
+        dialog.show();
     }
 
     @Override

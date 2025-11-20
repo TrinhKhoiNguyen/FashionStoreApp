@@ -10,7 +10,6 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.RadioButton;
-import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -18,11 +17,13 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
+import androidx.core.content.ContextCompat;
 
 import com.bumptech.glide.Glide;
 import com.example.fashionstoreapp.models.User;
 import com.example.fashionstoreapp.utils.SessionManager;
 import com.example.fashionstoreapp.utils.FirestoreManager;
+import com.example.fashionstoreapp.utils.AnimationHelper;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
@@ -39,16 +40,17 @@ import java.util.UUID;
 public class ProfileActivity extends AppCompatActivity {
 
     private MaterialToolbar toolbar;
-    private ImageView profileAvatar, editAvatarIcon;
-    private TextView greetingText, phoneNumberText;
+    private ImageView profileAvatar;
+    private com.google.android.material.card.MaterialCardView editAvatarIcon;
+    private TextView greetingText, userNameText, phoneNumberText;
     private EditText lastNameInput, firstNameInput, birthdayInput, phoneInput;
-    private RadioGroup genderGroup;
     private RadioButton maleRadio, femaleRadio;
+    private com.google.android.material.card.MaterialCardView maleCard, femaleCard;
     private Button updateButton;
     private ProgressBar progressBar;
 
     // Menu items
-    private CardView menuProfile, menuSupport, menuAddress, menuVouchers, menuFavorites, menuPassword, menuOrderHistory;
+    private CardView menuProfile, menuSupport, menuAddress, menuVouchers, menuFavorites, menuPassword, menuOrderHistory, menuAdmin;
     private BottomNavigationView bottomNavigation;
 
     private SessionManager sessionManager;
@@ -111,6 +113,7 @@ public class ProfileActivity extends AppCompatActivity {
         profileAvatar = findViewById(R.id.profileAvatar);
         editAvatarIcon = findViewById(R.id.editAvatarIcon);
         greetingText = findViewById(R.id.greetingText);
+        userNameText = findViewById(R.id.userNameText);
         phoneNumberText = findViewById(R.id.phoneNumberText);
 
         lastNameInput = findViewById(R.id.lastNameInput);
@@ -118,9 +121,10 @@ public class ProfileActivity extends AppCompatActivity {
         birthdayInput = findViewById(R.id.birthdayInput);
         phoneInput = findViewById(R.id.phoneInput);
 
-        genderGroup = findViewById(R.id.genderGroup);
         maleRadio = findViewById(R.id.maleRadio);
         femaleRadio = findViewById(R.id.femaleRadio);
+        maleCard = findViewById(R.id.maleCard);
+        femaleCard = findViewById(R.id.femaleCard);
 
         updateButton = findViewById(R.id.updateButton);
         progressBar = findViewById(R.id.uploadProgressBar);
@@ -133,6 +137,7 @@ public class ProfileActivity extends AppCompatActivity {
         menuFavorites = findViewById(R.id.menuFavorites);
         menuPassword = findViewById(R.id.menuPassword);
         menuOrderHistory = findViewById(R.id.menuOrderHistory);
+        menuAdmin = findViewById(R.id.menuAdmin);
         bottomNavigation = findViewById(R.id.bottomNavigation);
 
         // Hide progress bar initially
@@ -160,7 +165,8 @@ public class ProfileActivity extends AppCompatActivity {
             // Display greeting
             String displayName = firebaseUser.getDisplayName();
             if (displayName != null) {
-                greetingText.setText("Hi, " + displayName);
+                greetingText.setText("Xin chào,");
+                userNameText.setText(displayName);
             }
 
             // Load profile photo
@@ -175,16 +181,16 @@ public class ProfileActivity extends AppCompatActivity {
 
             // Display phone or email
             if (firebaseUser.getPhoneNumber() != null) {
-                phoneNumberText.setText("Số điện thoại: " + firebaseUser.getPhoneNumber());
+                phoneNumberText.setText(firebaseUser.getPhoneNumber());
                 phoneInput.setText(firebaseUser.getPhoneNumber());
             } else if (firebaseUser.getEmail() != null) {
-                phoneNumberText.setText("Email: " + firebaseUser.getEmail());
+                phoneNumberText.setText(firebaseUser.getEmail());
             }
 
             // Load profile from Firestore
             firestoreManager.loadUserProfile(userId, new FirestoreManager.OnUserProfileLoadedListener() {
                 @Override
-                public void onProfileLoaded(String name, String birthday, String gender, String phone) {
+                public void onProfileLoaded(String name, String birthday, String gender, String phone, String role) {
                     if (name != null && !name.isEmpty()) {
                         String[] nameParts = name.split(" ", 2);
                         if (nameParts.length > 0) {
@@ -205,28 +211,45 @@ public class ProfileActivity extends AppCompatActivity {
                         } else if (gender.equals("Nữ")) {
                             femaleRadio.setChecked(true);
                         }
+                        updateGenderCardSelection();
                     }
 
                     if (phone != null && !phone.isEmpty()) {
                         phoneInput.setText(phone);
+                    }
+
+                    // Show/hide Admin button based on role
+                    if (menuAdmin != null) {
+                        if (role != null && role.toLowerCase().contains("admin")) {
+                            menuAdmin.setVisibility(View.VISIBLE);
+                        } else {
+                            menuAdmin.setVisibility(View.GONE);
+                        }
                     }
                 }
 
                 @Override
                 public void onError(String error) {
                     Toast.makeText(ProfileActivity.this, "Lỗi tải dữ liệu: " + error, Toast.LENGTH_SHORT).show();
+                    // Hide admin button on error
+                    if (menuAdmin != null) {
+                        menuAdmin.setVisibility(View.GONE);
+                    }
                 }
             });
         } else if (user != null) {
             // Fallback to session manager
             String displayName = user.getDisplayName();
-            greetingText.setText("Hi, " + displayName);
+            greetingText.setText("Xin chào,");
+            if (displayName != null) {
+                userNameText.setText(displayName);
+            }
 
             if (user.getPhone() != null) {
-                phoneNumberText.setText("Số điện thoại: " + user.getPhone());
+                phoneNumberText.setText(user.getPhone());
                 phoneInput.setText(user.getPhone());
             } else if (user.getEmail() != null) {
-                phoneNumberText.setText("Email: " + user.getEmail());
+                phoneNumberText.setText(user.getEmail());
             }
         }
     }
@@ -241,44 +264,92 @@ public class ProfileActivity extends AppCompatActivity {
 
         // Birthday picker
         birthdayInput.setOnClickListener(v -> showDatePicker());
+        
+        // Gender card clicks
+        if (maleCard != null) {
+            maleCard.setOnClickListener(v -> {
+                AnimationHelper.animateButtonPress(v, () -> {
+                    maleRadio.setChecked(true);
+                    updateGenderCardSelection();
+                });
+            });
+        }
+        
+        if (femaleCard != null) {
+            femaleCard.setOnClickListener(v -> {
+                AnimationHelper.animateButtonPress(v, () -> {
+                    femaleRadio.setChecked(true);
+                    updateGenderCardSelection();
+                });
+            });
+        }
+        
+        // Radio button changes
+        maleRadio.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (isChecked) updateGenderCardSelection();
+        });
+        
+        femaleRadio.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (isChecked) updateGenderCardSelection();
+        });
 
         // Update button
-        updateButton.setOnClickListener(v -> updateProfile());
+        updateButton.setOnClickListener(v -> {
+            AnimationHelper.animateButtonPress(v, () -> updateProfile());
+        });
 
         // Menu items
         menuProfile.setOnClickListener(v -> {
+            AnimationHelper.animateScaleUpSmall(v);
             Toast.makeText(this, "Bạn đang ở trang Thông tin tài khoản", Toast.LENGTH_SHORT).show();
         });
 
         menuSupport.setOnClickListener(v -> {
+            AnimationHelper.animateScaleUpSmall(v);
             Toast.makeText(this, "Yêu cầu hỗ trợ", Toast.LENGTH_SHORT).show();
             // TODO: Navigate to support activity
         });
 
         menuAddress.setOnClickListener(v -> {
+            AnimationHelper.animateScaleUpSmall(v);
             Toast.makeText(this, "Sổ địa chỉ", Toast.LENGTH_SHORT).show();
             // TODO: Navigate to address activity
         });
 
         menuVouchers.setOnClickListener(v -> {
+            AnimationHelper.animateScaleUpSmall(v);
             Toast.makeText(this, "Vouchers", Toast.LENGTH_SHORT).show();
             // TODO: Navigate to vouchers activity
         });
 
         menuFavorites.setOnClickListener(v -> {
-            Intent intent = new Intent(ProfileActivity.this, FavoritesActivity.class);
-            startActivity(intent);
+            AnimationHelper.animateButtonPress(v, () -> {
+                Intent intent = new Intent(ProfileActivity.this, FavoritesActivity.class);
+                startActivity(intent);
+            });
         });
 
         menuPassword.setOnClickListener(v -> {
+            AnimationHelper.animateScaleUpSmall(v);
             Toast.makeText(this, "Đổi mật khẩu", Toast.LENGTH_SHORT).show();
             // TODO: Navigate to change password activity
         });
 
         menuOrderHistory.setOnClickListener(v -> {
-            Intent intent = new Intent(ProfileActivity.this, OrderHistoryActivity.class);
-            startActivity(intent);
+            AnimationHelper.animateButtonPress(v, () -> {
+                Intent intent = new Intent(ProfileActivity.this, OrderHistoryActivity.class);
+                startActivity(intent);
+            });
         });
+
+        if (menuAdmin != null) {
+            menuAdmin.setOnClickListener(v -> {
+                AnimationHelper.animateButtonPress(v, () -> {
+                    Intent intent = new Intent(ProfileActivity.this, com.example.fashionstoreapp.admin.AdminActivity.class);
+                    startActivity(intent);
+                });
+            });
+        }
     }
 
     private void showDatePicker() {
@@ -299,6 +370,29 @@ public class ProfileActivity extends AppCompatActivity {
     private void updateBirthdayField() {
         SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
         birthdayInput.setText(dateFormat.format(calendar.getTime()));
+    }
+    
+    private void updateGenderCardSelection() {
+        if (maleCard == null || femaleCard == null) return;
+        
+        if (maleRadio.isChecked()) {
+            maleCard.setCardBackgroundColor(ContextCompat.getColor(this, R.color.accent_rose_light));
+            femaleCard.setCardBackgroundColor(ContextCompat.getColor(this, R.color.background_soft));
+            maleCard.setStrokeWidth(2);
+            maleCard.setStrokeColor(ContextCompat.getColor(this, R.color.primary_maroon));
+            femaleCard.setStrokeWidth(0);
+        } else if (femaleRadio.isChecked()) {
+            femaleCard.setCardBackgroundColor(ContextCompat.getColor(this, R.color.accent_rose_light));
+            maleCard.setCardBackgroundColor(ContextCompat.getColor(this, R.color.background_soft));
+            femaleCard.setStrokeWidth(2);
+            femaleCard.setStrokeColor(ContextCompat.getColor(this, R.color.primary_maroon));
+            maleCard.setStrokeWidth(0);
+        } else {
+            maleCard.setCardBackgroundColor(ContextCompat.getColor(this, R.color.background_soft));
+            femaleCard.setCardBackgroundColor(ContextCompat.getColor(this, R.color.background_soft));
+            maleCard.setStrokeWidth(0);
+            femaleCard.setStrokeWidth(0);
+        }
     }
 
     private void updateProfile() {
@@ -321,11 +415,10 @@ public class ProfileActivity extends AppCompatActivity {
         }
 
         // Get gender
-        int selectedGenderId = genderGroup.getCheckedRadioButtonId();
         final String gender;
-        if (selectedGenderId == R.id.maleRadio) {
+        if (maleRadio.isChecked()) {
             gender = "Nam";
-        } else if (selectedGenderId == R.id.femaleRadio) {
+        } else if (femaleRadio.isChecked()) {
             gender = "Nữ";
         } else {
             gender = "";

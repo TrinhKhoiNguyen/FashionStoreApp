@@ -57,7 +57,7 @@
                     android:id="@+id/newBadge"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:background="@color/primary_charcoal"
+                    android:background="@color/primary_maroon"
                     android:paddingStart="8dp"
                     android:paddingTop="4dp"
                     android:paddingEnd="8dp"
@@ -148,9 +148,9 @@
                     android:background="@drawable/circle_background"
                     android:padding="8dp"
                     android:src="@drawable/baseline_shopping_cart_24"
-                    android:tint="@color/accent_burgundy"
+                    android:tint="@color/primary_maroon"
                     android:contentDescription="Add to cart"
-                    android:backgroundTint="@color/accent_light" />
+                    android:backgroundTint="@color/accent_rose_light" />
             </LinearLayout>
 
             <!-- Original Price -->

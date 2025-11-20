@@ -19,6 +19,7 @@ import com.example.fashionstoreapp.models.Order;
 import com.example.fashionstoreapp.utils.CartManager;
 import com.example.fashionstoreapp.utils.FirestoreManager;
 import com.example.fashionstoreapp.utils.SessionManager;
+import com.example.fashionstoreapp.utils.AnimationHelper;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.textfield.TextInputEditText;
 
@@ -133,13 +134,14 @@ public class CheckoutActivity extends AppCompatActivity {
         if (userId != null) {
             firestoreManager.loadUserProfile(userId, new FirestoreManager.OnUserProfileLoadedListener() {
                 @Override
-                public void onProfileLoaded(String name, String birthday, String gender, String phone) {
+                public void onProfileLoaded(String name, String birthday, String gender, String phone, String role) {
                     if (name != null) {
                         etRecipientName.setText(name);
                     }
                     if (phone != null) {
                         etRecipientPhone.setText(phone);
                     }
+                    // Role is not needed in checkout, so we ignore it
                 }
 
                 @Override
@@ -151,9 +153,17 @@ public class CheckoutActivity extends AppCompatActivity {
     }
 
     private void setupClickListeners() {
-        btnPlaceOrder.setOnClickListener(v -> validateAndPlaceOrder());
-        btnApplyVoucher.setOnClickListener(v -> applyVoucher());
-        btnRemoveVoucher.setOnClickListener(v -> removeVoucher());
+        btnPlaceOrder.setOnClickListener(v -> {
+            AnimationHelper.animateButtonPress(v, () -> validateAndPlaceOrder());
+        });
+        btnApplyVoucher.setOnClickListener(v -> {
+            AnimationHelper.animateScaleUpSmall(v);
+            applyVoucher();
+        });
+        btnRemoveVoucher.setOnClickListener(v -> {
+            AnimationHelper.animateScaleUpSmall(v);
+            removeVoucher();
+        });
     }
 
     private void applyVoucher() {
@@ -289,7 +299,9 @@ public class CheckoutActivity extends AppCompatActivity {
         builder.setPositiveButton("Đặt hàng", (dialog, which) -> {
             placeOrder(recipientName, recipientPhone, shippingAddress, note, paymentMethod);
         });
-        builder.setNegativeButton("Hủy", null);
+        builder.setNegativeButton("Hủy", (dialog, which) -> {
+            // Animation handled by dialog
+        });
         builder.show();
     }
 

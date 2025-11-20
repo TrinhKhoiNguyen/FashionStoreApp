@@ -4,14 +4,14 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/background_cream">
+    android:background="@drawable/background_gradient">
 
     <!-- AppBar với Header -->
     <com.google.android.material.appbar.AppBarLayout
         android:id="@+id/appBarLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/primary_charcoal"
+        android:background="@drawable/toolbar_maroon_gradient"
         android:elevation="0dp"
         android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar">
 
@@ -24,7 +24,7 @@
             android:flipInterval="3000"
             android:inAnimation="@anim/slide_in_right"
             android:outAnimation="@anim/slide_out_left"
-            android:background="@color/accent_rose"
+            android:background="@color/accent_terracotta"
             android:paddingTop="10dp"
             android:paddingBottom="10dp">
 
@@ -82,7 +82,7 @@
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            android:background="@color/primary_charcoal"
+            android:background="@drawable/toolbar_maroon_gradient"
             android:elevation="0dp"
             app:contentInsetStart="0dp"
             app:contentInsetEnd="0dp">
@@ -93,24 +93,13 @@
                 android:paddingStart="16dp"
                 android:paddingEnd="16dp">
 
-                <!-- Menu Icon -->
-                <ImageView
-                    android:id="@+id/menuIcon"
-                    android:layout_width="28dp"
-                    android:layout_height="28dp"
-                    android:layout_alignParentStart="true"
-                    android:layout_centerVertical="true"
-                    android:src="@drawable/baseline_menu_24"
-                    android:tint="@color/text_on_dark"
-                    android:padding="4dp"
-                    android:background="?attr/selectableItemBackgroundBorderless" />
-
                 <!-- Logo -->
                 <ImageView
                     android:id="@+id/logoImage"
                     android:layout_width="140dp"
                     android:layout_height="36dp"
-                    android:layout_centerInParent="true"
+                    android:layout_centerHorizontal="true"
+                    android:layout_centerVertical="true"
                     android:contentDescription="Fashion Store Logo"
                     android:scaleType="fitCenter" />
 
@@ -368,7 +357,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Xem tất cả »"
-                        android:textColor="@color/accent_burgundy"
+                        android:textColor="@color/primary_maroon"
                         android:textSize="14sp"
                         android:textStyle="bold"
                         android:padding="8dp"
@@ -457,7 +446,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Xem tất cả »"
-                        android:textColor="@color/accent_burgundy"
+                        android:textColor="@color/primary_maroon"
                         android:textSize="14sp"
                         android:textStyle="bold"
                         android:padding="8dp"
@@ -504,7 +493,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Xem tất cả »"
-                        android:textColor="@color/accent_burgundy"
+                        android:textColor="@color/primary_maroon"
                         android:textSize="14sp"
                         android:textStyle="bold"
                         android:padding="8dp"
@@ -551,7 +540,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Xem tất cả »"
-                        android:textColor="@color/accent_burgundy"
+                        android:textColor="@color/primary_maroon"
                         android:textSize="14sp"
                         android:textStyle="bold"
                         android:padding="8dp"
@@ -598,7 +587,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Xem tất cả »"
-                        android:textColor="@color/accent_burgundy"
+                        android:textColor="@color/primary_maroon"
                         android:textSize="14sp"
                         android:textStyle="bold"
                         android:padding="8dp"
@@ -645,7 +634,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Xem tất cả »"
-                        android:textColor="@color/accent_burgundy"
+                        android:textColor="@color/primary_maroon"
                         android:textSize="14sp"
                         android:textStyle="bold"
                         android:padding="8dp"
@@ -692,7 +681,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Xem tất cả »"
-                        android:textColor="@color/accent_burgundy"
+                        android:textColor="@color/primary_maroon"
                         android:textSize="14sp"
                         android:textStyle="bold"
                         android:padding="8dp"
@@ -740,7 +729,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Xem tất cả »"
-                        android:textColor="@color/accent_burgundy"
+                        android:textColor="@color/primary_maroon"
                         android:textSize="14sp"
                         android:textStyle="bold"
                         android:padding="8dp"
@@ -765,7 +754,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
-        android:background="@color/background_card"
+        android:background="@color/white"
         android:elevation="12dp"
         android:paddingTop="8dp"
         android:paddingBottom="8dp"

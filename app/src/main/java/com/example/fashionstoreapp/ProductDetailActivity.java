@@ -28,6 +28,7 @@ import com.bumptech.glide.Glide;
 import com.example.fashionstoreapp.adapters.ReviewAdapter;
 import com.example.fashionstoreapp.adapters.ReviewImageAdapter;
 import com.example.fashionstoreapp.models.CartItem;
+import com.example.fashionstoreapp.utils.AnimationHelper;
 import com.example.fashionstoreapp.models.Product;
 import com.example.fashionstoreapp.models.Review;
 import com.example.fashionstoreapp.utils.CartManager;
@@ -382,19 +383,23 @@ public class ProductDetailActivity extends AppCompatActivity {
         }
 
         btnAddToCart.setOnClickListener(v -> {
+            AnimationHelper.animateBounceIn(v);
             CartItem cartItem = new CartItem(product, 1, selectedSize, "");
             CartManager.getInstance().addItem(cartItem);
             Toast.makeText(this, "Đã thêm vào giỏ hàng (Size: " + selectedSize + ")", Toast.LENGTH_SHORT).show();
         });
 
         btnBuyNow.setOnClickListener(v -> {
-            CartItem cartItem = new CartItem(product, 1, selectedSize, "");
-            CartManager.getInstance().addItem(cartItem);
-            Toast.makeText(this, "Chức năng mua ngay đang phát triển", Toast.LENGTH_SHORT).show();
-            // TODO: Navigate to checkout
+            AnimationHelper.animateButtonPress(v, () -> {
+                CartItem cartItem = new CartItem(product, 1, selectedSize, "");
+                CartManager.getInstance().addItem(cartItem);
+                Toast.makeText(this, "Chức năng mua ngay đang phát triển", Toast.LENGTH_SHORT).show();
+                // TODO: Navigate to checkout
+            });
         });
 
         btnWriteReview.setOnClickListener(v -> {
+            AnimationHelper.animateScaleUpSmall(v);
             showWriteReviewDialog();
         });
     }
