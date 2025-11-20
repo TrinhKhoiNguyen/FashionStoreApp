@@ -3,7 +3,9 @@ package com.example.fashionstoreapp;
 import android.app.ProgressDialog;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.view.View;
 import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.TextView;
@@ -25,11 +27,14 @@ import java.util.List;
 public class CheckoutActivity extends AppCompatActivity {
 
     private MaterialToolbar toolbar;
-    private TextInputEditText etRecipientName, etRecipientPhone, etShippingAddress, etNote;
+    private TextInputEditText etRecipientName, etRecipientPhone, etShippingAddress, etNote, etVoucherCode;
     private RadioGroup paymentMethodGroup;
     private RadioButton rbCOD, rbBankTransfer, rbMomo;
     private TextView tvItemCount, tvSubtotal, tvShippingFee, tvTotal;
-    private Button btnPlaceOrder;
+    private TextView tvAppliedVoucherCode, tvVoucherDiscount, tvVoucherDiscountAmount;
+    private LinearLayout voucherInputLayout, appliedVoucherLayout, voucherDiscountLayout;
+    private Button btnPlaceOrder, btnApplyVoucher;
+    private View btnRemoveVoucher;
 
     private CartManager cartManager;
     private FirestoreManager firestoreManager;
@@ -37,6 +42,8 @@ public class CheckoutActivity extends AppCompatActivity {
 
     private List<CartItem> orderItems;
     private double totalAmount;
+    private double voucherDiscount = 0;
+    private String appliedVoucherCode = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,6 +66,7 @@ public class CheckoutActivity extends AppCompatActivity {
         etRecipientPhone = findViewById(R.id.etRecipientPhone);
         etShippingAddress = findViewById(R.id.etShippingAddress);
         etNote = findViewById(R.id.etNote);
+        etVoucherCode = findViewById(R.id.etVoucherCode);
         paymentMethodGroup = findViewById(R.id.paymentMethodGroup);
         rbCOD = findViewById(R.id.rbCOD);
         rbBankTransfer = findViewById(R.id.rbBankTransfer);
@@ -68,6 +76,14 @@ public class CheckoutActivity extends AppCompatActivity {
         tvShippingFee = findViewById(R.id.tvShippingFee);
         tvTotal = findViewById(R.id.tvTotal);
         btnPlaceOrder = findViewById(R.id.btnPlaceOrder);
+        btnApplyVoucher = findViewById(R.id.btnApplyVoucher);
+        voucherInputLayout = findViewById(R.id.voucherInputLayout);
+        appliedVoucherLayout = findViewById(R.id.appliedVoucherLayout);
+        voucherDiscountLayout = findViewById(R.id.voucherDiscountLayout);
+        tvAppliedVoucherCode = findViewById(R.id.tvAppliedVoucherCode);
+        tvVoucherDiscount = findViewById(R.id.tvVoucherDiscount);
+        tvVoucherDiscountAmount = findViewById(R.id.tvVoucherDiscountAmount);
+        btnRemoveVoucher = findViewById(R.id.btnRemoveVoucher);
     }
 
     private void setupToolbar() {
@@ -100,10 +116,16 @@ public class CheckoutActivity extends AppCompatActivity {
         // Display order info
         tvItemCount.setText(itemCount + " sản phẩm");
         tvSubtotal.setText(String.format("%,.0f₫", totalAmount));
-        tvTotal.setText(String.format("%,.0f₫", totalAmount));
+        updateTotal();
 
         // Load user info if available
         loadUserInfo();
+    }
+
+    private void updateTotal() {
+        double finalTotal = totalAmount - voucherDiscount;
+        if (finalTotal < 0) finalTotal = 0;
+        tvTotal.setText(String.format("%,.0f₫", finalTotal));
     }
 
     private void loadUserInfo() {
@@ -130,6 +152,75 @@ public class CheckoutActivity extends AppCompatActivity {
 
     private void setupClickListeners() {
         btnPlaceOrder.setOnClickListener(v -> validateAndPlaceOrder());
+        btnApplyVoucher.setOnClickListener(v -> applyVoucher());
+        btnRemoveVoucher.setOnClickListener(v -> removeVoucher());
+    }
+
+    private void applyVoucher() {
+        String voucherCode = etVoucherCode.getText().toString().trim().toUpperCase();
+        
+        if (TextUtils.isEmpty(voucherCode)) {
+            Toast.makeText(this, "Vui lòng nhập mã giảm giá", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Validate voucher code (you can implement real validation with Firestore)
+        // For now, using sample vouchers
+        double discount = validateVoucherCode(voucherCode);
+        
+        if (discount > 0) {
+            appliedVoucherCode = voucherCode;
+            voucherDiscount = discount;
+            
+            // Hide input, show applied voucher
+            voucherInputLayout.setVisibility(View.GONE);
+            appliedVoucherLayout.setVisibility(View.VISIBLE);
+            voucherDiscountLayout.setVisibility(View.VISIBLE);
+            
+            tvAppliedVoucherCode.setText(voucherCode);
+            tvVoucherDiscount.setText("Giảm " + String.format("%,.0f₫", discount));
+            tvVoucherDiscountAmount.setText("-" + String.format("%,.0f₫", discount));
+            
+            updateTotal();
+            Toast.makeText(this, "Áp dụng mã giảm giá thành công!", Toast.LENGTH_SHORT).show();
+        } else {
+            Toast.makeText(this, "Mã giảm giá không hợp lệ hoặc đã hết hạn", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private double validateVoucherCode(String code) {
+        // Sample voucher codes - replace with Firestore validation
+        switch (code) {
+            case "VOUCHER15K":
+                return 15000;
+            case "VOUCHER30K":
+                return 30000;
+            case "VOUCHER50K":
+                return 50000;
+            case "FREESHIP":
+                // Free shipping is handled separately
+                return 0;
+            case "SALE50":
+                // 50% discount, max 100k
+                double discount = totalAmount * 0.5;
+                return Math.min(discount, 100000);
+            default:
+                return 0;
+        }
+    }
+
+    private void removeVoucher() {
+        appliedVoucherCode = null;
+        voucherDiscount = 0;
+        
+        // Show input, hide applied voucher
+        voucherInputLayout.setVisibility(View.VISIBLE);
+        appliedVoucherLayout.setVisibility(View.GONE);
+        voucherDiscountLayout.setVisibility(View.GONE);
+        
+        etVoucherCode.setText("");
+        updateTotal();
+        Toast.makeText(this, "Đã xóa mã giảm giá", Toast.LENGTH_SHORT).show();
     }
 
     private void validateAndPlaceOrder() {
@@ -181,10 +272,18 @@ public class CheckoutActivity extends AppCompatActivity {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Xác nhận đặt hàng");
 
+        double finalTotal = totalAmount - voucherDiscount;
+        if (finalTotal < 0) finalTotal = 0;
+        
         String message = "Người nhận: " + recipientName + "\n" +
                 "SĐT: " + recipientPhone + "\n" +
-                "Địa chỉ: " + shippingAddress + "\n" +
-                "Tổng tiền: " + String.format("%,.0f₫", totalAmount);
+                "Địa chỉ: " + shippingAddress;
+        
+        if (appliedVoucherCode != null) {
+            message += "\nMã giảm giá: " + appliedVoucherCode + " (-" + String.format("%,.0f₫", voucherDiscount) + ")";
+        }
+        
+        message += "\nTổng tiền: " + String.format("%,.0f₫", finalTotal);
 
         builder.setMessage(message);
         builder.setPositiveButton("Đặt hàng", (dialog, which) -> {
@@ -203,9 +302,23 @@ public class CheckoutActivity extends AppCompatActivity {
 
         String userId = sessionManager.getUserId();
 
+        // Calculate final total with voucher
+        double finalTotal = totalAmount - voucherDiscount;
+        if (finalTotal < 0) finalTotal = 0;
+        
+        // Add voucher info to note if applied
+        String finalNote = note;
+        if (appliedVoucherCode != null) {
+            if (finalNote.isEmpty()) {
+                finalNote = "Mã giảm giá: " + appliedVoucherCode;
+            } else {
+                finalNote += "\nMã giảm giá: " + appliedVoucherCode;
+            }
+        }
+        
         // Create order
-        Order order = new Order(userId, orderItems, totalAmount, paymentMethod,
-                recipientName, recipientPhone, shippingAddress, note);
+        Order order = new Order(userId, orderItems, finalTotal, paymentMethod,
+                recipientName, recipientPhone, shippingAddress, finalNote);
 
         // Save order to Firestore
         firestoreManager.saveOrder(order, new FirestoreManager.OnOrderSavedListener() {

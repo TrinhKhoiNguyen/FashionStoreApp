@@ -123,6 +123,11 @@ public class Product implements Serializable {
         this.isNew = isNew;
     }
 
+    // Additional setter for Firestore mapping
+    public void setIsNew(boolean isNew) {
+        this.isNew = isNew;
+    }
+
     public boolean isHasVoucher() {
         return hasVoucher;
     }
@@ -144,6 +149,11 @@ public class Product implements Serializable {
     }
 
     public void setFavorite(boolean favorite) {
+        isFavorite = favorite;
+    }
+
+    // Additional setter for Firestore mapping
+    public void setIsFavorite(boolean favorite) {
         isFavorite = favorite;
     }
 

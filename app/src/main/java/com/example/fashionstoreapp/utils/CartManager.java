@@ -42,6 +42,8 @@ public class CartManager {
 
     // Add item to cart
     public void addItem(CartItem item) {
+        if (item == null || item.getProduct() == null) return;
+        
         // Check if product already exists in cart
         CartItem existingItem = findItemByProductId(item.getProduct().getId());
 
@@ -149,8 +151,9 @@ public class CartManager {
 
     // Find item by product ID
     private CartItem findItemByProductId(String productId) {
+        if (productId == null) return null;
         for (CartItem item : cartItems) {
-            if (item.getProduct().getId().equals(productId)) {
+            if (item.getProduct() != null && productId.equals(item.getProduct().getId())) {
                 return item;
             }
         }
@@ -159,8 +162,9 @@ public class CartManager {
 
     // Find item by cart item ID
     private CartItem findItemById(String itemId) {
+        if (itemId == null) return null;
         for (CartItem item : cartItems) {
-            if (item.getId().equals(itemId)) {
+            if (item.getId() != null && item.getId().equals(itemId)) {
                 return item;
             }
         }

@@ -77,14 +77,8 @@ public class LoginActivity extends AppCompatActivity {
             return;
         }
 
-        // Initialize Facebook SDK
-        FacebookSdk.sdkInitialize(getApplicationContext());
-
         // Configure Google Sign In
         configureGoogleSignIn();
-
-        // Configure Facebook Sign In
-        configureFacebookSignIn();
 
         // Setup Activity Result Launcher for Google Sign In
         setupGoogleSignInLauncher();
@@ -207,6 +201,12 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void signInWithFacebook() {
+        // Lazy initialize Facebook SDK only when needed
+        if (callbackManager == null) {
+            FacebookSdk.sdkInitialize(getApplicationContext());
+            configureFacebookSignIn();
+        }
+        
         showLoading();
         LoginManager.getInstance().logInWithReadPermissions(this, Arrays.asList("email", "public_profile"));
     }

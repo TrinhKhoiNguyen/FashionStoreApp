@@ -71,6 +71,18 @@ public class CartActivity extends AppCompatActivity implements CartAdapter.OnCar
         List<CartItem> cartItems = cartManager.getCartItems();
         cartAdapter = new CartAdapter(this, cartItems, this);
         cartRecyclerView.setAdapter(cartAdapter);
+        
+        // Setup checkout button once
+        checkoutButton.setOnClickListener(v -> {
+            List<CartItem> selectedItems = cartAdapter.getSelectedItems();
+            if (selectedItems.size() > 0) {
+                // Navigate to checkout activity
+                Intent intent = new Intent(this, CheckoutActivity.class);
+                startActivity(intent);
+            } else {
+                Toast.makeText(this, "Vui lòng chọn sản phẩm để thanh toán", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private void setupCartChangeListener() {
@@ -137,22 +149,18 @@ public class CartActivity extends AppCompatActivity implements CartAdapter.OnCar
         totalItemsText.setText(itemCount + " sản phẩm");
 
         checkoutButton.setEnabled(itemCount > 0);
-        checkoutButton.setOnClickListener(v -> {
-            if (itemCount > 0) {
-                // Navigate to checkout activity
-                Intent intent = new Intent(this, CheckoutActivity.class);
-                startActivity(intent);
-            } else {
-                Toast.makeText(this, "Vui lòng chọn sản phẩm để thanh toán", Toast.LENGTH_SHORT).show();
-            }
-        });
     }
 
     // CartAdapter.OnCartItemListener implementation
     @Override
     public void onQuantityChanged(CartItem item) {
+        // Update UI immediately for responsiveness
         updateTotal();
-        cartManager.updateItem(item);
+        
+        // Save to Firestore in background
+        new Thread(() -> {
+            cartManager.updateItem(item);
+        }).start();
     }
 
     @Override

@@ -132,6 +132,34 @@
                         android:padding="4dp"
                         android:background="?attr/selectableItemBackgroundBorderless" />
 
+                    <FrameLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="12dp">
+
+                        <ImageView
+                            android:id="@+id/notificationIcon"
+                            android:layout_width="28dp"
+                            android:layout_height="28dp"
+                            android:src="@drawable/baseline_notifications_24"
+                            android:tint="@color/text_on_dark"
+                            android:padding="4dp"
+                            android:background="?attr/selectableItemBackgroundBorderless" />
+
+                        <TextView
+                            android:id="@+id/notificationBadge"
+                            android:layout_width="18dp"
+                            android:layout_height="18dp"
+                            android:layout_gravity="end|top"
+                            android:background="@drawable/badge_background"
+                            android:gravity="center"
+                            android:text="3"
+                            android:textColor="@color/text_on_dark"
+                            android:textSize="10sp"
+                            android:textStyle="bold"
+                            android:visibility="gone" />
+                    </FrameLayout>
+
                     <ImageView
                         android:id="@+id/accountIcon"
                         android:layout_width="28dp"
@@ -188,7 +216,7 @@
             <!-- Banner Slider với ViewPager2 - Refined -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
-                android:layout_height="320dp"
+                android:layout_height="200dp"
                 android:layout_margin="16dp"
                 app:cardCornerRadius="20dp"
                 app:cardElevation="2dp"

@@ -69,7 +69,8 @@ public class CategoryAdapter extends RecyclerView.Adapter<CategoryAdapter.Catego
         }
 
         public void bind(Category category) {
-            categoryName.setText(category.getName());
+            String displayName = formatCategoryName(category.getName());
+            categoryName.setText(displayName);
 
             // Hide product count for now
             categoryCount.setVisibility(View.GONE);
@@ -77,6 +78,32 @@ public class CategoryAdapter extends RecyclerView.Adapter<CategoryAdapter.Catego
             // TODO: Load category image from URL or use category icon
             // For now, using default icon
             categoryImage.setImageResource(R.drawable.baseline_category_24);
+        }
+
+        private String formatCategoryName(String name) {
+            if (name == null) return "";
+            
+            // Format common category IDs to proper names
+            switch (name.toLowerCase()) {
+                case "ao-hoodie":
+                    return "Áo Hoodie";
+                case "ao-thun":
+                    return "Áo Thun";
+                case "ao-polo":
+                    return "Áo Polo";
+                case "ao-so-mi":
+                    return "Áo Sơ Mi";
+                case "ao-khoac":
+                    return "Áo Khoác";
+                case "quan-sot":
+                    return "Quần Sọt";
+                case "quan-tay":
+                    return "Quần Tây";
+                case "retro-sports":
+                    return "Retro Sports";
+                default:
+                    return name;
+            }
         }
     }
 }

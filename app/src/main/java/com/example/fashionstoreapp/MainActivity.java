@@ -46,8 +46,8 @@ import java.util.Map;
 public class MainActivity extends AppCompatActivity
         implements ProductAdapter.OnProductClickListener, BannerAdapter.OnBannerClickListener {
 
-    private ImageView menuIcon, searchIcon, accountIcon, cartIcon;
-    private TextView cartBadge;
+    private ImageView menuIcon, searchIcon, accountIcon, cartIcon, notificationIcon;
+    private TextView cartBadge, notificationBadge;
     private FloatingActionButton fabCall;
     private BottomNavigationView bottomNavigation;
 
@@ -122,6 +122,9 @@ public class MainActivity extends AppCompatActivity
 
         // Update cart badge
         updateCartBadge();
+        
+        // Update notification badge
+        updateNotificationBadge();
     }
 
     private void initViews() {
@@ -131,6 +134,8 @@ public class MainActivity extends AppCompatActivity
             accountIcon = findViewById(R.id.accountIcon);
             cartIcon = findViewById(R.id.cartIcon);
             cartBadge = findViewById(R.id.cartBadge);
+            notificationIcon = findViewById(R.id.notificationIcon);
+            notificationBadge = findViewById(R.id.notificationBadge);
             fabCall = findViewById(R.id.fabCall);
             bottomNavigation = findViewById(R.id.bottomNavigation);
         } catch (Exception e) {
@@ -589,6 +594,15 @@ public class MainActivity extends AppCompatActivity
             startActivity(intent);
         });
 
+        notificationIcon.setOnClickListener(v -> {
+            // Open notifications activity or show notification list
+            // TODO: Create NotificationsActivity or show notification dialog
+            Toast.makeText(this, "Thông báo", Toast.LENGTH_SHORT).show();
+            // For now, just show a toast. You can create NotificationsActivity later
+            // Intent intent = new Intent(MainActivity.this, NotificationsActivity.class);
+            // startActivity(intent);
+        });
+
         fabCall.setOnClickListener(v -> {
             Toast.makeText(this, "Call: 1900 1234", Toast.LENGTH_SHORT).show();
         });
@@ -640,6 +654,23 @@ public class MainActivity extends AppCompatActivity
             cartBadge.setText(String.valueOf(itemCount));
         } else {
             cartBadge.setVisibility(View.GONE);
+        }
+    }
+
+    private void updateNotificationBadge() {
+        // TODO: Load notification count from Firestore
+        // For now, using sample count
+        int notificationCount = 3; // Sample: 3 unread notifications
+        
+        if (notificationCount > 0) {
+            notificationBadge.setVisibility(View.VISIBLE);
+            if (notificationCount > 99) {
+                notificationBadge.setText("99+");
+            } else {
+                notificationBadge.setText(String.valueOf(notificationCount));
+            }
+        } else {
+            notificationBadge.setVisibility(View.GONE);
         }
     }
 
@@ -746,6 +777,7 @@ public class MainActivity extends AppCompatActivity
     protected void onResume() {
         super.onResume();
         updateCartBadge();
+        updateNotificationBadge();
         startBannerAutoScroll();
     }
 
