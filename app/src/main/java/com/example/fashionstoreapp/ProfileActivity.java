@@ -39,27 +39,12 @@ import java.util.UUID;
 public class ProfileActivity extends AppCompatActivity {
 
     private MaterialToolbar toolbar;
-    private ImageView profileAvatar, editAvatarIcon;
-    private TextView greetingText, phoneNumberText;
-    private EditText lastNameInput, firstNameInput, birthdayInput, phoneInput;
-    private RadioGroup genderGroup;
-    private RadioButton maleRadio, femaleRadio;
-    private Button updateButton;
-    private ProgressBar progressBar;
-
-    // Menu items
-    private CardView menuProfile, menuSupport, menuAddress, menuVouchers, menuFavorites, menuPassword, menuOrderHistory;
+    private ImageView profileAvatar;
     private BottomNavigationView bottomNavigation;
 
     private SessionManager sessionManager;
     private FirestoreManager firestoreManager;
     private FirebaseAuth mAuth;
-    private Calendar calendar;
-
-    // Image picker
-    private ActivityResultLauncher<Intent> imagePickerLauncher;
-    private Uri selectedImageUri;
-    private boolean isImageChanged = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -69,76 +54,73 @@ public class ProfileActivity extends AppCompatActivity {
         sessionManager = new SessionManager(this);
         firestoreManager = FirestoreManager.getInstance();
         mAuth = FirebaseAuth.getInstance();
-        calendar = Calendar.getInstance();
-
-        // Setup image picker
-        setupImagePicker();
 
         initViews();
         setupToolbar();
         loadUserData();
-        setupClickListeners();
         setupBottomNavigation();
-    }
-
-    private void setupImagePicker() {
-        imagePickerLauncher = registerForActivityResult(
-                new ActivityResultContracts.StartActivityForResult(),
-                result -> {
-                    if (result.getResultCode() == RESULT_OK && result.getData() != null) {
-                        selectedImageUri = result.getData().getData();
-                        if (selectedImageUri != null) {
-                            isImageChanged = true;
-                            // Display selected image immediately
-                            Glide.with(this)
-                                    .load(selectedImageUri)
-                                    .circleCrop()
-                                    .placeholder(R.drawable.ic_launcher_foreground)
-                                    .into(profileAvatar);
-                        }
-                    }
-                });
-    }
-
-    private void openImagePicker() {
-        Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
-        intent.setType("image/*");
-        imagePickerLauncher.launch(intent);
     }
 
     private void initViews() {
         toolbar = findViewById(R.id.profileToolbar);
         profileAvatar = findViewById(R.id.profileAvatar);
-        editAvatarIcon = findViewById(R.id.editAvatarIcon);
-        greetingText = findViewById(R.id.greetingText);
-        phoneNumberText = findViewById(R.id.phoneNumberText);
+        TextView fullNameText = findViewById(R.id.fullNameText);
+        TextView emailText = findViewById(R.id.emailText);
 
-        lastNameInput = findViewById(R.id.lastNameInput);
-        firstNameInput = findViewById(R.id.firstNameInput);
-        birthdayInput = findViewById(R.id.birthdayInput);
-        phoneInput = findViewById(R.id.phoneInput);
-
-        genderGroup = findViewById(R.id.genderGroup);
-        maleRadio = findViewById(R.id.maleRadio);
-        femaleRadio = findViewById(R.id.femaleRadio);
-
-        updateButton = findViewById(R.id.updateButton);
-        progressBar = findViewById(R.id.uploadProgressBar);
-
-        // Menu items
-        menuProfile = findViewById(R.id.menuProfile);
-        menuSupport = findViewById(R.id.menuSupport);
-        menuAddress = findViewById(R.id.menuAddress);
-        menuVouchers = findViewById(R.id.menuVouchers);
-        menuFavorites = findViewById(R.id.menuFavorites);
-        menuPassword = findViewById(R.id.menuPassword);
-        menuOrderHistory = findViewById(R.id.menuOrderHistory);
+        // New section cards
+        CardView personalInfoCard = findViewById(R.id.personalInfoCard);
+        CardView ordersCard = findViewById(R.id.ordersCard);
+        CardView addressPaymentCard = findViewById(R.id.addressPaymentCard);
+        CardView offersCard = findViewById(R.id.offersCard);
+        CardView settingsCard = findViewById(R.id.settingsCard);
+        CardView supportCard = findViewById(R.id.supportCard);
+        CardView logoutCard = findViewById(R.id.logoutCard);
         bottomNavigation = findViewById(R.id.bottomNavigation);
 
-        // Hide progress bar initially
-        if (progressBar != null) {
-            progressBar.setVisibility(View.GONE);
-        }
+        // Set up click listeners for new cards
+        personalInfoCard.setOnClickListener(v -> {
+            startActivity(new Intent(ProfileActivity.this, PersonalInfoActivity.class));
+        });
+
+        ordersCard.setOnClickListener(v -> {
+            startActivity(new Intent(ProfileActivity.this, OrdersActivity.class));
+        });
+
+        addressPaymentCard.setOnClickListener(v -> {
+            startActivity(new Intent(ProfileActivity.this, AddressPaymentActivity.class));
+        });
+
+        offersCard.setOnClickListener(v -> {
+            startActivity(new Intent(ProfileActivity.this, OffersActivity.class));
+        });
+
+        settingsCard.setOnClickListener(v -> {
+            startActivity(new Intent(ProfileActivity.this, SettingsActivity.class));
+        });
+
+        supportCard.setOnClickListener(v -> {
+            startActivity(new Intent(ProfileActivity.this, SupportActivity.class));
+        });
+
+        logoutCard.setOnClickListener(v -> {
+            handleLogout();
+        });
+    }
+
+    private void handleLogout() {
+        // Sign out from Firebase
+        mAuth.signOut();
+
+        // Clear session
+        sessionManager.logout();
+
+        // Navigate to login
+        Intent intent = new Intent(ProfileActivity.this, LoginActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+        finish();
+
+        Toast.makeText(this, "Đã đăng xuất thành công", Toast.LENGTH_SHORT).show();
     }
 
     private void setupToolbar() {
@@ -154,13 +136,24 @@ public class ProfileActivity extends AppCompatActivity {
         User user = sessionManager.getUser();
         FirebaseUser firebaseUser = mAuth.getCurrentUser();
 
+        TextView fullNameText = findViewById(R.id.fullNameText);
+        TextView emailText = findViewById(R.id.emailText);
+
         if (firebaseUser != null) {
             String userId = firebaseUser.getUid();
 
-            // Display greeting
+            // Display name
             String displayName = firebaseUser.getDisplayName();
-            if (displayName != null) {
-                greetingText.setText("Hi, " + displayName);
+            if (displayName != null && !displayName.isEmpty()) {
+                fullNameText.setText(displayName);
+            } else {
+                fullNameText.setText("Người dùng");
+            }
+
+            // Display email
+            String email = firebaseUser.getEmail();
+            if (email != null && !email.isEmpty()) {
+                emailText.setText(email);
             }
 
             // Load profile photo
@@ -172,282 +165,7 @@ public class ProfileActivity extends AppCompatActivity {
                         .placeholder(R.drawable.baseline_person_24)
                         .into(profileAvatar);
             }
-
-            // Display phone or email
-            if (firebaseUser.getPhoneNumber() != null) {
-                phoneNumberText.setText("Số điện thoại: " + firebaseUser.getPhoneNumber());
-                phoneInput.setText(firebaseUser.getPhoneNumber());
-            } else if (firebaseUser.getEmail() != null) {
-                phoneNumberText.setText("Email: " + firebaseUser.getEmail());
-            }
-
-            // Load profile from Firestore
-            firestoreManager.loadUserProfile(userId, new FirestoreManager.OnUserProfileLoadedListener() {
-                @Override
-                public void onProfileLoaded(String name, String birthday, String gender, String phone) {
-                    if (name != null && !name.isEmpty()) {
-                        String[] nameParts = name.split(" ", 2);
-                        if (nameParts.length > 0) {
-                            lastNameInput.setText(nameParts[0]);
-                        }
-                        if (nameParts.length > 1) {
-                            firstNameInput.setText(nameParts[1]);
-                        }
-                    }
-
-                    if (birthday != null && !birthday.isEmpty()) {
-                        birthdayInput.setText(birthday);
-                    }
-
-                    if (gender != null && !gender.isEmpty()) {
-                        if (gender.equals("Nam")) {
-                            maleRadio.setChecked(true);
-                        } else if (gender.equals("Nữ")) {
-                            femaleRadio.setChecked(true);
-                        }
-                    }
-
-                    if (phone != null && !phone.isEmpty()) {
-                        phoneInput.setText(phone);
-                    }
-                }
-
-                @Override
-                public void onError(String error) {
-                    Toast.makeText(ProfileActivity.this, "Lỗi tải dữ liệu: " + error, Toast.LENGTH_SHORT).show();
-                }
-            });
-        } else if (user != null) {
-            // Fallback to session manager
-            String displayName = user.getDisplayName();
-            greetingText.setText("Hi, " + displayName);
-
-            if (user.getPhone() != null) {
-                phoneNumberText.setText("Số điện thoại: " + user.getPhone());
-                phoneInput.setText(user.getPhone());
-            } else if (user.getEmail() != null) {
-                phoneNumberText.setText("Email: " + user.getEmail());
-            }
         }
-    }
-
-    private void setupClickListeners() {
-        // Avatar click to change
-        profileAvatar.setOnClickListener(v -> openImagePicker());
-
-        if (editAvatarIcon != null) {
-            editAvatarIcon.setOnClickListener(v -> openImagePicker());
-        }
-
-        // Birthday picker
-        birthdayInput.setOnClickListener(v -> showDatePicker());
-
-        // Update button
-        updateButton.setOnClickListener(v -> updateProfile());
-
-        // Menu items
-        menuProfile.setOnClickListener(v -> {
-            Toast.makeText(this, "Bạn đang ở trang Thông tin tài khoản", Toast.LENGTH_SHORT).show();
-        });
-
-        menuSupport.setOnClickListener(v -> {
-            Toast.makeText(this, "Yêu cầu hỗ trợ", Toast.LENGTH_SHORT).show();
-            // TODO: Navigate to support activity
-        });
-
-        menuAddress.setOnClickListener(v -> {
-            Toast.makeText(this, "Sổ địa chỉ", Toast.LENGTH_SHORT).show();
-            // TODO: Navigate to address activity
-        });
-
-        menuVouchers.setOnClickListener(v -> {
-            Toast.makeText(this, "Vouchers", Toast.LENGTH_SHORT).show();
-            // TODO: Navigate to vouchers activity
-        });
-
-        menuFavorites.setOnClickListener(v -> {
-            Intent intent = new Intent(ProfileActivity.this, FavoritesActivity.class);
-            startActivity(intent);
-        });
-
-        menuPassword.setOnClickListener(v -> {
-            Toast.makeText(this, "Đổi mật khẩu", Toast.LENGTH_SHORT).show();
-            // TODO: Navigate to change password activity
-        });
-
-        menuOrderHistory.setOnClickListener(v -> {
-            Intent intent = new Intent(ProfileActivity.this, OrderHistoryActivity.class);
-            startActivity(intent);
-        });
-    }
-
-    private void showDatePicker() {
-        DatePickerDialog datePickerDialog = new DatePickerDialog(
-                this,
-                (view, year, month, dayOfMonth) -> {
-                    calendar.set(Calendar.YEAR, year);
-                    calendar.set(Calendar.MONTH, month);
-                    calendar.set(Calendar.DAY_OF_MONTH, dayOfMonth);
-                    updateBirthdayField();
-                },
-                calendar.get(Calendar.YEAR),
-                calendar.get(Calendar.MONTH),
-                calendar.get(Calendar.DAY_OF_MONTH));
-        datePickerDialog.show();
-    }
-
-    private void updateBirthdayField() {
-        SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
-        birthdayInput.setText(dateFormat.format(calendar.getTime()));
-    }
-
-    private void updateProfile() {
-        String lastName = lastNameInput.getText().toString().trim();
-        String firstName = firstNameInput.getText().toString().trim();
-        final String birthday = birthdayInput.getText().toString().trim();
-        final String phone = phoneInput.getText().toString().trim();
-
-        // Validation
-        if (lastName.isEmpty()) {
-            lastNameInput.setError("Vui lòng nhập họ");
-            lastNameInput.requestFocus();
-            return;
-        }
-
-        if (firstName.isEmpty()) {
-            firstNameInput.setError("Vui lòng nhập tên");
-            firstNameInput.requestFocus();
-            return;
-        }
-
-        // Get gender
-        int selectedGenderId = genderGroup.getCheckedRadioButtonId();
-        final String gender;
-        if (selectedGenderId == R.id.maleRadio) {
-            gender = "Nam";
-        } else if (selectedGenderId == R.id.femaleRadio) {
-            gender = "Nữ";
-        } else {
-            gender = "";
-        }
-
-        FirebaseUser firebaseUser = mAuth.getCurrentUser();
-        if (firebaseUser != null) {
-            String userId = firebaseUser.getUid();
-            final String fullName = lastName + " " + firstName;
-
-            progressBar.setVisibility(View.VISIBLE);
-            updateButton.setEnabled(false);
-
-            // If image changed, upload it first
-            if (isImageChanged && selectedImageUri != null) {
-                uploadProfileImage(selectedImageUri, fullName, birthday, gender, phone);
-            } else {
-                // No image change, just update Firestore
-                saveUserProfile(null, fullName, birthday, gender, phone);
-            }
-        } else {
-            Toast.makeText(this, "Lỗi: Không tìm thấy thông tin người dùng", Toast.LENGTH_SHORT).show();
-        }
-    }
-
-    private void uploadProfileImage(Uri imageUri, String fullName, String birthday, String gender, String phone) {
-        String userId = mAuth.getCurrentUser().getUid();
-        StorageReference storageRef = FirebaseStorage.getInstance().getReference();
-        StorageReference avatarRef = storageRef.child("profiles/" + userId + "/avatar.jpg");
-
-        avatarRef.putFile(imageUri)
-                .addOnSuccessListener(taskSnapshot -> {
-                    avatarRef.getDownloadUrl().addOnSuccessListener(uri -> {
-                        String photoUrl = uri.toString();
-                        // Update Firebase Auth profile first, then Firestore
-                        updateFirebaseAuthProfile(photoUrl, fullName, birthday, gender, phone);
-                    }).addOnFailureListener(e -> {
-                        progressBar.setVisibility(View.GONE);
-                        updateButton.setEnabled(true);
-                        Toast.makeText(ProfileActivity.this, "Lỗi lấy URL ảnh: " + e.getMessage(), Toast.LENGTH_SHORT)
-                                .show();
-                    });
-                })
-                .addOnFailureListener(e -> {
-                    progressBar.setVisibility(View.GONE);
-                    updateButton.setEnabled(true);
-                    Toast.makeText(ProfileActivity.this, "Lỗi tải ảnh lên: " + e.getMessage(), Toast.LENGTH_SHORT)
-                            .show();
-                });
-    }
-
-    private void updateFirebaseAuthProfile(String photoUrl, String fullName, String birthday, String gender,
-            String phone) {
-        FirebaseUser user = mAuth.getCurrentUser();
-        if (user == null) {
-            progressBar.setVisibility(View.GONE);
-            updateButton.setEnabled(true);
-            Toast.makeText(this, "Người dùng chưa đăng nhập", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        UserProfileChangeRequest profileUpdates = new UserProfileChangeRequest.Builder()
-                .setDisplayName(fullName)
-                .setPhotoUri(Uri.parse(photoUrl))
-                .build();
-
-        user.updateProfile(profileUpdates)
-                .addOnSuccessListener(aVoid -> {
-                    // Now update Firestore with photo URL
-                    saveUserProfile(photoUrl, fullName, birthday, gender, phone);
-                })
-                .addOnFailureListener(e -> {
-                    progressBar.setVisibility(View.GONE);
-                    updateButton.setEnabled(true);
-                    Toast.makeText(ProfileActivity.this, "Lỗi cập nhật profile Auth: " + e.getMessage(),
-                            Toast.LENGTH_SHORT).show();
-                });
-    }
-
-    private void saveUserProfile(String photoUrl, String fullName, String birthday, String gender, String phone) {
-        String userId = mAuth.getCurrentUser().getUid();
-
-        // Save to Firestore
-        firestoreManager.saveUserProfile(userId, fullName, birthday, gender, phone,
-                new FirestoreManager.OnUserProfileSavedListener() {
-                    @Override
-                    public void onProfileSaved() {
-                        // Update photoUrl if provided
-                        if (photoUrl != null) {
-                            firestoreManager.updateUserPhotoUrl(userId, photoUrl);
-                        }
-
-                        // Update session manager
-                        User user = sessionManager.getUser();
-                        if (user != null) {
-                            user.setName(fullName);
-                            user.setBirthday(birthday);
-                            user.setGender(gender);
-                            if (!phone.isEmpty()) {
-                                user.setPhone(phone);
-                            }
-                            if (photoUrl != null) {
-                                user.setPhotoUrl(photoUrl);
-                            }
-                            sessionManager.updateUser(user);
-                        }
-
-                        progressBar.setVisibility(View.GONE);
-                        updateButton.setEnabled(true);
-                        isImageChanged = false;
-
-                        Toast.makeText(ProfileActivity.this, "Cập nhật thông tin thành công!", Toast.LENGTH_SHORT)
-                                .show();
-                    }
-
-                    @Override
-                    public void onError(String error) {
-                        progressBar.setVisibility(View.GONE);
-                        updateButton.setEnabled(true);
-                        Toast.makeText(ProfileActivity.this, "Lỗi cập nhật: " + error, Toast.LENGTH_SHORT).show();
-                    }
-                });
     }
 
     private void setupBottomNavigation() {

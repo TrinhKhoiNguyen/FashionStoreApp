@@ -19,6 +19,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
         android:text="Đánh giá của bạn"
+        android:textStyle="bold"
         android:textColor="#333333"
         android:textSize="14sp" />
 
@@ -30,13 +31,14 @@
         android:layout_marginTop="8dp"
         android:numStars="5"
         android:rating="5"
-        android:stepSize="1" />
+        android:stepSize="0.5" />
 
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
         android:text="Nhận xét của bạn"
+        android:textStyle="bold"
         android:textColor="#333333"
         android:textSize="14sp" />
 
@@ -58,6 +60,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
         android:text="Thêm ảnh (Tùy chọn)"
+        android:textStyle="bold"
         android:textColor="#333333"
         android:textSize="14sp" />
 
@@ -99,7 +102,7 @@
             android:layout_weight="1"
             android:backgroundTint="#000000"
             android:text="Hủy"
-            android:textColor="#FFFFFF" />
+            android:textColor="#FFD700" />
 
         <Button
             android:id="@+id/btnSubmitReview"
@@ -108,7 +111,7 @@
             android:layout_weight="1"
             android:backgroundTint="#000000"
             android:text="Gửi đánh giá"
-            android:textColor="#FFFFFF" />
+            android:textColor="#FFD700" />
     </LinearLayout>
 
 </LinearLayout>

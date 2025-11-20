@@ -14,7 +14,7 @@
         android:elevation="4dp"
         app:navigationIcon="@android:drawable/ic_menu_revert"
         app:title="Sản phẩm yêu thích"
-        app:titleTextColor="#FFFFFF" />
+        app:titleTextColor="#FFD700" />
 
     <!-- Main Content -->
     <androidx.core.widget.NestedScrollView
@@ -81,7 +81,7 @@
                     android:paddingStart="32dp"
                     android:paddingEnd="32dp"
                     android:text="Khám phá ngay"
-                    android:textColor="#FFFFFF" />
+                    android:textColor="#FFD700" />
             </LinearLayout>
 
             <!-- Loading Progress -->

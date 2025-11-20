@@ -2,6 +2,8 @@ package com.example.fashionstoreapp;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.text.TextUtils;
 import android.util.Log;
 import android.util.Patterns;
@@ -23,6 +25,9 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.UserProfileChangeRequest;
 
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+
 public class RegisterActivity extends AppCompatActivity {
 
     private static final String TAG = "RegisterActivity";
@@ -36,6 +41,8 @@ public class RegisterActivity extends AppCompatActivity {
     private FirebaseAuth mAuth;
     private FirestoreManager firestoreManager;
     private SessionManager sessionManager;
+    private Handler timeoutHandler;
+    private Runnable timeoutRunnable;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,6 +52,7 @@ public class RegisterActivity extends AppCompatActivity {
         mAuth = FirebaseAuth.getInstance();
         firestoreManager = FirestoreManager.getInstance();
         sessionManager = new SessionManager(this);
+        timeoutHandler = new Handler(Looper.getMainLooper());
 
         initViews();
         setupClickListeners();
@@ -86,26 +94,55 @@ public class RegisterActivity extends AppCompatActivity {
 
         showLoading();
 
+        // Timeout handler - 15 giây
+        timeoutRunnable = () -> {
+            hideLoading();
+            Toast.makeText(RegisterActivity.this,
+                    "Đăng ký mất quá nhiều thời gian. Vui lòng kiểm tra kết nối mạng và thử lại.",
+                    Toast.LENGTH_LONG).show();
+        };
+        timeoutHandler.postDelayed(timeoutRunnable, 15000); // 15 seconds
+
+        // Hiển thị tiến trình
+        runOnUiThread(() -> {
+            if (progressBar != null) {
+                // Có thể thêm message "Đang tạo tài khoản..."
+            }
+        });
+
         // Create user with email and password
         mAuth.createUserWithEmailAndPassword(email, password)
                 .addOnCompleteListener(this, task -> {
+                    // Hủy timeout
+                    timeoutHandler.removeCallbacks(timeoutRunnable);
+
                     if (task.isSuccessful()) {
                         FirebaseUser user = mAuth.getCurrentUser();
                         if (user != null) {
-                            // Update display name
+                            // Thực hiện song song updateProfile và saveToFirestore để nhanh hơn
+                            String userId = user.getUid();
+                            String passwordHash = hashPassword(password);
+
+                            // Update display name (không chờ kết quả)
                             UserProfileChangeRequest profileUpdates = new UserProfileChangeRequest.Builder()
                                     .setDisplayName(fullName)
                                     .build();
+                            user.updateProfile(profileUpdates);
 
-                            user.updateProfile(profileUpdates)
-                                    .addOnCompleteListener(updateTask -> {
-                                        if (updateTask.isSuccessful()) {
-                                            // Save to Firestore then send verification email
-                                            saveUserToFirestore(user, fullName, email);
-                                        } else {
+                            // Lưu vào Firestore ngay (song song với updateProfile)
+                            firestoreManager.saveUserProfileWithEmail(userId, fullName, email, passwordHash, "", "", "",
+                                    new FirestoreManager.OnUserProfileSavedListener() {
+                                        @Override
+                                        public void onProfileSaved() {
                                             hideLoading();
-                                            Toast.makeText(this, "Cập nhật thông tin thất bại",
-                                                    Toast.LENGTH_SHORT).show();
+                                            showSuccessDialogWithoutVerification(email);
+                                        }
+
+                                        @Override
+                                        public void onError(String error) {
+                                            hideLoading();
+                                            Toast.makeText(RegisterActivity.this,
+                                                    "Lỗi lưu thông tin: " + error, Toast.LENGTH_SHORT).show();
                                         }
                                     });
                         }
@@ -117,8 +154,12 @@ public class RegisterActivity extends AppCompatActivity {
                             if (exceptionMessage != null) {
                                 if (exceptionMessage.contains("email address is already in use")) {
                                     errorMessage = "Email này đã được đăng ký";
-                                } else if (exceptionMessage.contains("network error")) {
-                                    errorMessage = "Lỗi kết nối mạng";
+                                } else if (exceptionMessage.contains("network") ||
+                                        exceptionMessage.contains("timeout") ||
+                                        exceptionMessage.contains("connection")) {
+                                    errorMessage = "Lỗi kết nối mạng. Vui lòng kiểm tra Internet và thử lại.";
+                                } else if (exceptionMessage.contains("weak password")) {
+                                    errorMessage = "Mật khẩu quá yếu. Vui lòng nhập ít nhất 6 ký tự.";
                                 } else {
                                     errorMessage = "Đăng ký thất bại: " + exceptionMessage;
                                 }
@@ -129,24 +170,25 @@ public class RegisterActivity extends AppCompatActivity {
                 });
     }
 
-    private void saveUserToFirestore(FirebaseUser firebaseUser, String fullName, String email) {
-        String userId = firebaseUser.getUid();
-
-        firestoreManager.saveUserProfile(userId, fullName, "", "", "",
-                new FirestoreManager.OnUserProfileSavedListener() {
-                    @Override
-                    public void onProfileSaved() {
-                        // Now send verification email
-                        sendVerificationEmail(firebaseUser, email);
-                    }
-
-                    @Override
-                    public void onError(String error) {
-                        hideLoading();
-                        Toast.makeText(RegisterActivity.this,
-                                "Lỗi lưu thông tin: " + error, Toast.LENGTH_SHORT).show();
-                    }
-                });
+    /**
+     * Hash password using SHA-256
+     */
+    private String hashPassword(String password) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(password.getBytes());
+            StringBuilder hexString = new StringBuilder();
+            for (byte b : hash) {
+                String hex = Integer.toHexString(0xff & b);
+                if (hex.length() == 1)
+                    hexString.append('0');
+                hexString.append(hex);
+            }
+            return hexString.toString();
+        } catch (NoSuchAlgorithmException e) {
+            Log.e(TAG, "Error hashing password", e);
+            return "";
+        }
     }
 
     private void sendVerificationEmail(FirebaseUser user, String email) {
@@ -173,6 +215,22 @@ public class RegisterActivity extends AppCompatActivity {
         builder.setPositiveButton("Đã hiểu", (dialog, which) -> {
             dialog.dismiss();
             mAuth.signOut();
+            startActivity(new Intent(this, LoginActivity.class));
+            finish();
+        });
+        builder.setCancelable(false);
+        builder.show();
+    }
+
+    private void showSuccessDialogWithoutVerification(String email) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("✅ Đăng ký thành công!");
+        builder.setMessage(
+                "Tài khoản của bạn đã được tạo thành công!\n\n" +
+                        "Email: " + email + "\n\n" +
+                        "Bạn có thể đăng nhập ngay bây giờ.");
+        builder.setPositiveButton("Đăng nhập ngay", (dialog, which) -> {
+            dialog.dismiss();
             startActivity(new Intent(this, LoginActivity.class));
             finish();
         });

@@ -27,12 +27,6 @@
                 android:src="@android:drawable/ic_menu_revert"
                 android:tint="#FFFFFF" />
 
-            <ImageView
-                android:layout_width="120dp"
-                android:layout_height="30dp"
-                android:layout_centerInParent="true"
-                android:contentDescription="160Store Logo"
-                android:scaleType="fitCenter" />
         </RelativeLayout>
     </androidx.appcompat.widget.Toolbar>
 
@@ -69,6 +63,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 android:text="Nhập email và mật khẩu của bạn."
+                android:textStyle="bold"
                 android:textColor="#666666"
                 android:textSize="14sp" />
 
@@ -111,7 +106,7 @@
                 android:layout_marginTop="24dp"
                 android:backgroundTint="#000000"
                 android:text="ĐĂNG NHẬP"
-                android:textColor="#FFFFFF"
+                android:textColor="#FFD700"
                 android:textSize="16sp"
                 android:textStyle="bold" />
 
@@ -123,6 +118,7 @@
                 android:layout_gravity="center"
                 android:layout_marginTop="16dp"
                 android:text="Quên mật khẩu?"
+                android:textStyle="bold"
                 android:textColor="#000000"
                 android:textSize="14sp" />
 
@@ -164,6 +160,7 @@
                 android:layout_marginTop="24dp"
                 android:backgroundTint="#FFFFFF"
                 android:text="Đăng nhập với Google"
+                android:textStyle="bold"
                 android:textColor="#000000"
                 app:strokeColor="#DDDDDD"
                 app:strokeWidth="1dp" />
@@ -175,6 +172,7 @@
                 android:layout_marginTop="12dp"
                 android:backgroundTint="#1877F2"
                 android:text="Đăng nhập với Facebook"
+                android:textStyle="bold"
                 android:textColor="#FFFFFF" />
 
             <!-- Spacer -->
@@ -193,6 +191,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Khách hàng mới? "
+                    android:textStyle="bold"
                     android:textColor="#666666"
                     android:textSize="14sp" />
 

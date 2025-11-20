@@ -126,6 +126,42 @@
             android:exported="false"
             android:screenOrientation="portrait"
             android:parentActivityName=".ProfileActivity" />
+        
+        <activity
+            android:name=".PersonalInfoActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:parentActivityName=".ProfileActivity" />
+        
+        <activity
+            android:name=".OrdersActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:parentActivityName=".ProfileActivity" />
+        
+        <activity
+            android:name=".AddressPaymentActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:parentActivityName=".ProfileActivity" />
+        
+        <activity
+            android:name=".OffersActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:parentActivityName=".ProfileActivity" />
+        
+        <activity
+            android:name=".SettingsActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:parentActivityName=".ProfileActivity" />
+        
+        <activity
+            android:name=".SupportActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:parentActivityName=".ProfileActivity" />
     </application>
 
 </manifest>

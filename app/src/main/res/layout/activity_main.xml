@@ -81,15 +81,6 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent">
 
-                <!-- Menu Icon -->
-                <ImageView
-                    android:id="@+id/menuIcon"
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:layout_alignParentStart="true"
-                    android:layout_centerVertical="true"
-                    android:src="@drawable/baseline_menu_24"
-                    android:tint="#FFFFFF" />
 
                 <!-- Logo -->
                 <ImageView
@@ -117,11 +108,11 @@
                         android:tint="#FFFFFF" />
 
                     <ImageView
-                        android:id="@+id/accountIcon"
+                        android:id="@+id/notificationIcon"
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:layout_marginEnd="16dp"
-                        android:src="@drawable/baseline_person_24"
+                        android:src="@drawable/baseline_notifications_24"
                         android:tint="#FFFFFF" />
 
                     <FrameLayout
@@ -635,7 +626,7 @@
         android:background="#000000"
         android:elevation="16dp"
         android:paddingTop="8dp"
-        android:paddingBottom="8dp"
+        android:paddingBottom="16dp"
         app:itemIconSize="28dp"
         app:itemIconTint="@color/bottom_nav_color"
         app:itemTextColor="@color/bottom_nav_color"
@@ -644,17 +635,5 @@
         app:itemPaddingBottom="4dp"
         app:labelVisibilityMode="labeled"
         app:menu="@menu/bottom_navigation_menu" />
-
-    <!-- Floating Call Button - Adjusted to be above bottom navigation -->
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fabCall"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="end|bottom"
-        android:layout_marginEnd="16dp"
-        android:layout_marginBottom="80dp"
-        android:src="@android:drawable/stat_sys_phone_call"
-        app:backgroundTint="#25D366"
-        app:tint="#FFFFFF" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

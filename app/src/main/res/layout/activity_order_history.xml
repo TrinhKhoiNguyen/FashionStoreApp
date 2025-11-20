@@ -15,7 +15,7 @@
             android:layout_height="?attr/actionBarSize"
             android:background="#000000"
             app:title="Lịch sử đơn hàng"
-            app:titleTextColor="#FFFFFF"
+            app:titleTextColor="#FFD700"
             app:navigationIcon="@drawable/baseline_arrow_back_24" />
     </com.google.android.material.appbar.AppBarLayout>
 

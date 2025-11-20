@@ -46,9 +46,8 @@ import java.util.Map;
 public class MainActivity extends AppCompatActivity
         implements ProductAdapter.OnProductClickListener, BannerAdapter.OnBannerClickListener {
 
-    private ImageView menuIcon, searchIcon, accountIcon, cartIcon;
+    private ImageView menuIcon, searchIcon, notificationIcon, cartIcon;
     private TextView cartBadge;
-    private FloatingActionButton fabCall;
     private BottomNavigationView bottomNavigation;
 
     // Banner ViewPager
@@ -116,12 +115,11 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void initViews() {
-        menuIcon = findViewById(R.id.menuIcon);
         searchIcon = findViewById(R.id.searchIcon);
-        accountIcon = findViewById(R.id.accountIcon);
+        notificationIcon = findViewById(R.id.notificationIcon);
         cartIcon = findViewById(R.id.cartIcon);
         cartBadge = findViewById(R.id.cartBadge);
-        fabCall = findViewById(R.id.fabCall);
+        // fabCall removed - no longer in layout
         bottomNavigation = findViewById(R.id.bottomNavigation);
 
         // Banner ViewPager
@@ -548,35 +546,22 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void setupClickListeners() {
-        menuIcon.setOnClickListener(v -> {
-            Toast.makeText(this, "Menu clicked", Toast.LENGTH_SHORT).show();
-        });
 
         searchIcon.setOnClickListener(v -> {
             Intent intent = new Intent(MainActivity.this, SearchActivity.class);
             startActivity(intent);
         });
 
-        accountIcon.setOnClickListener(v -> {
-            // Check if user is logged in
-            if (sessionManager.isLoggedIn() || mAuth.getCurrentUser() != null) {
-                // Show user menu
-                showUserMenu();
-            } else {
-                // Open login activity
-                Intent intent = new Intent(MainActivity.this, LoginActivity.class);
-                startActivity(intent);
-            }
+        notificationIcon.setOnClickListener(v -> {
+            // Show notifications
+            Toast.makeText(this, "Chưa có thông báo mới", Toast.LENGTH_SHORT).show();
+            // TODO: Open notifications activity
         });
 
         cartIcon.setOnClickListener(v -> {
             // Open cart activity
             Intent intent = new Intent(MainActivity.this, CartActivity.class);
             startActivity(intent);
-        });
-
-        fabCall.setOnClickListener(v -> {
-            Toast.makeText(this, "Call: 1900 1234", Toast.LENGTH_SHORT).show();
         });
 
         btnViewAllRetro.setOnClickListener(v -> {

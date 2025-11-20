@@ -32,7 +32,7 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
                 android:text="Chi Tiết Sản Phẩm"
-                android:textColor="#FFFFFF"
+                android:textColor="#FFD700"
                 android:textSize="18sp"
                 android:textStyle="bold" />
 
@@ -66,7 +66,7 @@
                 android:id="@+id/imageViewPager"
                 android:layout_width="match_parent"
                 android:layout_height="400dp"
-                android:background="#F5F5F5" />
+                android:backgroundTint="#000000" />
 
             <!-- Image Indicator -->
             <LinearLayout
@@ -127,6 +127,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginStart="4dp"
                         android:text="(0 đánh giá)"
+                        android:textStyle="bold"
                         android:textColor="#666666"
                         android:textSize="14sp" />
                 </LinearLayout>
@@ -142,6 +143,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Loại: "
+                        android:textStyle="bold"
                         android:textColor="#666666"
                         android:textSize="14sp" />
 
@@ -166,6 +168,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="MSP: "
+                        android:textStyle="bold"
                         android:textColor="#666666"
                         android:textSize="14sp" />
 
@@ -356,6 +359,7 @@
                         android:layout_height="wrap_content"
                         android:background="@android:color/transparent"
                         android:text="Viết đánh giá"
+                        android:textStyle="bold"
                         android:textColor="#0066CC"
                         android:textSize="14sp" />
                 </LinearLayout>
@@ -401,7 +405,7 @@
             android:layout_weight="1"
             android:backgroundTint="#000000"
             android:text="THÊM VÀO GIỎ"
-            android:textColor="#FFFFFF"
+            android:textColor="#FFD700"
             android:textSize="14sp"
             android:textStyle="bold" />
 
@@ -410,9 +414,9 @@
             android:layout_width="0dp"
             android:layout_height="50dp"
             android:layout_weight="1"
-            android:backgroundTint="#FFD700"
+            android:backgroundTint="#000000"
             android:text="MUA NGAY"
-            android:textColor="#FFFFFF"
+            android:textColor="#FFD700"
             android:textSize="14sp"
             android:textStyle="bold" />
     </LinearLayout>

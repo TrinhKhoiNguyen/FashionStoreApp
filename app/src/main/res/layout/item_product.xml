@@ -109,6 +109,7 @@
                 android:ellipsize="end"
                 android:maxLines="2"
                 android:text="Áo Khoác Bomber Nam ICONDENIM Freshman..."
+                android:textStyle="bold"
                 android:textColor="#1a1a1a"
                 android:textSize="14sp" />
 

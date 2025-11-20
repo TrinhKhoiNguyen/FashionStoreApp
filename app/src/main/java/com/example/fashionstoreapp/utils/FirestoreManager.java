@@ -468,9 +468,7 @@ public class FirestoreManager {
         profileData.put("name", name);
         profileData.put("birthday", birthday);
         profileData.put("gender", gender);
-        if (phone != null && !phone.isEmpty()) {
-            profileData.put("phone", phone);
-        }
+        profileData.put("phone", phone != null ? phone : ""); // Luôn lưu phone, cho phép rỗng
         profileData.put("updatedAt", System.currentTimeMillis());
 
         db.collection(COLLECTION_USERS)
@@ -482,6 +480,35 @@ public class FirestoreManager {
                 })
                 .addOnFailureListener(e -> {
                     Log.e(TAG, "Error saving user profile", e);
+                    listener.onError(e.getMessage());
+                });
+    }
+
+    /**
+     * Save user profile with email to Firestore (for registration)
+     */
+    public void saveUserProfileWithEmail(String userId, String name, String email, String passwordHash, String birthday,
+            String gender, String phone,
+            OnUserProfileSavedListener listener) {
+        java.util.Map<String, Object> profileData = new java.util.HashMap<>();
+        profileData.put("name", name);
+        profileData.put("email", email);
+        profileData.put("passwordHash", passwordHash); // Lưu password đã hash SHA-256
+        profileData.put("birthday", birthday);
+        profileData.put("gender", gender);
+        profileData.put("phone", phone != null ? phone : "");
+        profileData.put("createdAt", System.currentTimeMillis());
+        profileData.put("updatedAt", System.currentTimeMillis());
+
+        db.collection(COLLECTION_USERS)
+                .document(userId)
+                .set(profileData)
+                .addOnSuccessListener(aVoid -> {
+                    Log.d(TAG, "User profile with email saved successfully");
+                    listener.onProfileSaved();
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error saving user profile with email", e);
                     listener.onError(e.getMessage());
                 });
     }

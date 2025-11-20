@@ -12,6 +12,8 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.fashionstoreapp.R;
 import com.example.fashionstoreapp.models.Category;
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions;
 
 import java.util.List;
 
@@ -74,9 +76,18 @@ public class CategoryAdapter extends RecyclerView.Adapter<CategoryAdapter.Catego
             // Hide product count for now
             categoryCount.setVisibility(View.GONE);
 
-            // TODO: Load category image from URL or use category icon
-            // For now, using default icon
-            categoryImage.setImageResource(R.drawable.baseline_category_24);
+            // Load category image from Firebase URL
+            if (category.getImageUrl() != null && !category.getImageUrl().isEmpty()) {
+                Glide.with(context)
+                        .load(category.getImageUrl())
+                        .placeholder(R.drawable.baseline_category_24)
+                        .error(R.drawable.baseline_category_24)
+                        .transition(DrawableTransitionOptions.withCrossFade())
+                        .into(categoryImage);
+            } else {
+                // Use default icon if no image URL
+                categoryImage.setImageResource(R.drawable.baseline_category_24);
+            }
         }
     }
 }
