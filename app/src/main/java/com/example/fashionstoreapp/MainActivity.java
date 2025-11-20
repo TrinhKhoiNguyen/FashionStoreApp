@@ -5,16 +5,21 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.widget.NestedScrollView;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -22,6 +27,7 @@ import androidx.viewpager2.widget.ViewPager2;
 
 import com.example.fashionstoreapp.adapters.BannerAdapter;
 import com.example.fashionstoreapp.adapters.ProductAdapter;
+import com.example.fashionstoreapp.adapters.SearchSuggestionAdapter;
 import com.example.fashionstoreapp.models.Banner;
 import com.example.fashionstoreapp.models.CartItem;
 import com.example.fashionstoreapp.models.Category;
@@ -30,6 +36,7 @@ import com.example.fashionstoreapp.models.User;
 import com.example.fashionstoreapp.utils.CartManager;
 import com.example.fashionstoreapp.utils.FirestoreManager;
 import com.example.fashionstoreapp.utils.SessionManager;
+import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
@@ -44,11 +51,26 @@ import java.util.List;
 import java.util.Map;
 
 public class MainActivity extends AppCompatActivity
-        implements ProductAdapter.OnProductClickListener, BannerAdapter.OnBannerClickListener {
+        implements ProductAdapter.OnProductClickListener, BannerAdapter.OnBannerClickListener,
+        SearchSuggestionAdapter.OnSuggestionClickListener {
 
     private ImageView menuIcon, searchIcon, notificationIcon, cartIcon;
     private TextView cartBadge;
     private BottomNavigationView bottomNavigation;
+
+    // Search Panel
+    private MaterialCardView searchPanel;
+    private EditText searchInput;
+    private ImageView closeSearchIcon;
+    private RecyclerView searchSuggestionsRecyclerView;
+    private LinearLayout searchResultsHeader, noResultsLayout;
+    private TextView viewAllSearchResults;
+    private ProgressBar searchLoadingProgress;
+    private NestedScrollView mainScrollView;
+    private SearchSuggestionAdapter searchSuggestionAdapter;
+    private List<Product> allProducts = new ArrayList<>();
+    private Handler searchHandler = new Handler(Looper.getMainLooper());
+    private Runnable searchRunnable;
 
     // Banner ViewPager
     private ViewPager2 bannerViewPager;
@@ -107,6 +129,9 @@ public class MainActivity extends AppCompatActivity
         loadProductsFromFirestore();
         loadCategoriesFromFirestore();
 
+        // Setup search functionality
+        setupSearchPanel();
+
         // Setup click listeners
         setupClickListeners();
 
@@ -121,6 +146,17 @@ public class MainActivity extends AppCompatActivity
         cartBadge = findViewById(R.id.cartBadge);
         // fabCall removed - no longer in layout
         bottomNavigation = findViewById(R.id.bottomNavigation);
+
+        // Search Panel
+        searchPanel = findViewById(R.id.searchPanel);
+        searchInput = findViewById(R.id.searchInput);
+        closeSearchIcon = findViewById(R.id.closeSearchIcon);
+        searchSuggestionsRecyclerView = findViewById(R.id.searchSuggestionsRecyclerView);
+        searchResultsHeader = findViewById(R.id.searchResultsHeader);
+        noResultsLayout = findViewById(R.id.noResultsLayout);
+        viewAllSearchResults = findViewById(R.id.viewAllSearchResults);
+        searchLoadingProgress = findViewById(R.id.searchLoadingProgress);
+        mainScrollView = findViewById(R.id.mainScrollView);
 
         // Banner ViewPager
         bannerViewPager = findViewById(R.id.bannerViewPager);
@@ -339,6 +375,20 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void loadProductsFromFirestore() {
+        // Load all products for search
+        firestoreManager.loadProducts(new FirestoreManager.OnProductsLoadedListener() {
+            @Override
+            public void onProductsLoaded(List<Product> products) {
+                allProducts.clear();
+                allProducts.addAll(products);
+            }
+
+            @Override
+            public void onError(String error) {
+                // Keep existing products if error
+            }
+        });
+
         // Load voucher products
         firestoreManager.loadVoucherProducts(10, new FirestoreManager.OnProductsLoadedListener() {
             @Override
@@ -548,8 +598,8 @@ public class MainActivity extends AppCompatActivity
     private void setupClickListeners() {
 
         searchIcon.setOnClickListener(v -> {
-            Intent intent = new Intent(MainActivity.this, SearchActivity.class);
-            startActivity(intent);
+            // Show search panel instead of opening new activity
+            showSearchPanel();
         });
 
         notificationIcon.setOnClickListener(v -> {
@@ -822,6 +872,130 @@ public class MainActivity extends AppCompatActivity
         intent.putExtra("categoryId", categoryId);
         intent.putExtra("categoryName", categoryName);
         startActivity(intent);
+    }
+
+    // Search Panel Methods
+    private void setupSearchPanel() {
+        // Setup search suggestions adapter
+        searchSuggestionAdapter = new SearchSuggestionAdapter(this, new ArrayList<>(), this);
+        searchSuggestionsRecyclerView.setLayoutManager(new LinearLayoutManager(this));
+        searchSuggestionsRecyclerView.setAdapter(searchSuggestionAdapter);
+
+        // Close search panel
+        closeSearchIcon.setOnClickListener(v -> hideSearchPanel());
+
+        // Search input text watcher
+        searchInput.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                // Cancel previous search
+                if (searchRunnable != null) {
+                    searchHandler.removeCallbacks(searchRunnable);
+                }
+
+                // Schedule new search with delay
+                searchRunnable = () -> performSearch(s.toString());
+                searchHandler.postDelayed(searchRunnable, 300); // 300ms delay
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+            }
+        });
+
+        // View all search results
+        viewAllSearchResults.setOnClickListener(v -> {
+            String query = searchInput.getText().toString();
+            if (!query.isEmpty()) {
+                Intent intent = new Intent(MainActivity.this, SearchActivity.class);
+                intent.putExtra("query", query);
+                startActivity(intent);
+                hideSearchPanel();
+            }
+        });
+    }
+
+    private void showSearchPanel() {
+        searchPanel.setVisibility(View.VISIBLE);
+        mainScrollView.setVisibility(View.GONE);
+        searchInput.requestFocus();
+
+        // Show keyboard
+        searchInput.postDelayed(() -> {
+            android.view.inputmethod.InputMethodManager imm = (android.view.inputmethod.InputMethodManager) getSystemService(
+                    INPUT_METHOD_SERVICE);
+            if (imm != null) {
+                imm.showSoftInput(searchInput, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT);
+            }
+        }, 100);
+    }
+
+    private void hideSearchPanel() {
+        searchPanel.setVisibility(View.GONE);
+        mainScrollView.setVisibility(View.VISIBLE);
+        searchInput.setText("");
+
+        // Hide keyboard
+        android.view.inputmethod.InputMethodManager imm = (android.view.inputmethod.InputMethodManager) getSystemService(
+                INPUT_METHOD_SERVICE);
+        if (imm != null) {
+            imm.hideSoftInputFromWindow(searchInput.getWindowToken(), 0);
+        }
+    }
+
+    private void performSearch(String query) {
+        if (query.isEmpty()) {
+            searchSuggestionsRecyclerView.setVisibility(View.GONE);
+            searchResultsHeader.setVisibility(View.GONE);
+            noResultsLayout.setVisibility(View.GONE);
+            return;
+        }
+
+        // Show loading
+        searchLoadingProgress.setVisibility(View.VISIBLE);
+        searchSuggestionsRecyclerView.setVisibility(View.GONE);
+        noResultsLayout.setVisibility(View.GONE);
+
+        // Search in all products
+        List<Product> results = new ArrayList<>();
+        String lowerQuery = query.toLowerCase();
+
+        for (Product product : allProducts) {
+            if (product.getName().toLowerCase().contains(lowerQuery) ||
+                    (product.getDescription() != null && product.getDescription().toLowerCase().contains(lowerQuery))) {
+                results.add(product);
+            }
+        }
+
+        // Update UI with results
+        searchLoadingProgress.setVisibility(View.GONE);
+
+        if (results.isEmpty()) {
+            noResultsLayout.setVisibility(View.VISIBLE);
+            searchResultsHeader.setVisibility(View.GONE);
+            searchSuggestionsRecyclerView.setVisibility(View.GONE);
+        } else {
+            // Show limited results (first 10)
+            int maxResults = Math.min(results.size(), 10);
+            List<Product> limitedResults = results.subList(0, maxResults);
+
+            searchSuggestionAdapter.updateSuggestions(limitedResults);
+            searchSuggestionsRecyclerView.setVisibility(View.VISIBLE);
+            searchResultsHeader.setVisibility(View.VISIBLE);
+            noResultsLayout.setVisibility(View.GONE);
+
+            // Update "View All" text
+            viewAllSearchResults.setText("Xem tất cả " + results.size() + " sản phẩm");
+        }
+    }
+
+    @Override
+    public void onSuggestionClick(Product product) {
+        hideSearchPanel();
     }
 
     @Override

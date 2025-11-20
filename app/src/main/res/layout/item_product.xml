@@ -2,7 +2,7 @@
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="180dp"
-    android:layout_height="340dp"
+    android:layout_height="380dp"
     android:layout_margin="8dp"
     app:cardCornerRadius="8dp"
     app:cardElevation="2dp">
@@ -90,8 +90,9 @@
                 android:layout_margin="8dp"
                 android:background="@drawable/circle_background"
                 android:padding="6dp"
-                android:src="@android:drawable/btn_star_big_off"
-                android:tint="#000000" />
+                android:src="@drawable/baseline_favorite_border_24"
+                android:tint="#666666" />
+
         </FrameLayout>
 
         <!-- Product Info -->
@@ -109,49 +110,113 @@
                 android:ellipsize="end"
                 android:maxLines="2"
                 android:text="Áo Khoác Bomber Nam ICONDENIM Freshman..."
-                android:textStyle="bold"
                 android:textColor="#1a1a1a"
-                android:textSize="14sp" />
+                android:textSize="14sp"
+                android:textStyle="bold" />
 
-            <!-- Price Container -->
+            <!-- Rating Container -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <!-- Star Icon -->
+                <ImageView
+                    android:id="@+id/ratingIcon"
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:src="@android:drawable/btn_star_big_on"
+                    android:tint="#FFD700" />
+
+                <!-- Rating Score -->
+                <TextView
+                    android:id="@+id/ratingScore"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:text="4.5"
+                    android:textColor="#1a1a1a"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+
+                <!-- Review Count -->
+                <TextView
+                    android:id="@+id/reviewCount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="2dp"
+                    android:text="(999)"
+                    android:textColor="#666666"
+                    android:textSize="11sp" />
+
+                <!-- Stock Status Badge -->
+                <TextView
+                    android:id="@+id/stockStatus"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:background="#E8F5E9"
+                    android:paddingStart="6dp"
+                    android:paddingTop="2dp"
+                    android:paddingEnd="6dp"
+                    android:paddingBottom="2dp"
+                    android:text="Còn hàng"
+                    android:textColor="#4CAF50"
+                    android:textSize="10sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <!-- Price Container - Horizontal Layout -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
+                android:gravity="center_vertical"
                 android:orientation="horizontal">
 
                 <!-- Current Price -->
                 <TextView
                     android:id="@+id/currentPrice"
-                    android:layout_width="0dp"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
                     android:text="649,000₫"
                     android:textColor="#FF0000"
                     android:textSize="16sp"
                     android:textStyle="bold" />
 
-                <!-- Add to Cart Icon -->
-                <ImageView
-                    android:id="@+id/addToCartIcon"
-                    android:layout_width="28dp"
-                    android:layout_height="28dp"
-                    android:background="@drawable/circle_background"
-                    android:padding="6dp"
-                    android:src="@drawable/baseline_shopping_cart_24"
-                    android:tint="#000000" />
+                <!-- Original Price (with strikethrough) - Next to current price -->
+                <TextView
+                    android:id="@+id/originalPrice"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:text="900,000₫"
+                    android:textColor="#999999"
+                    android:textSize="13sp"
+                    android:visibility="gone" />
             </LinearLayout>
 
-            <!-- Original Price -->
-            <TextView
-                android:id="@+id/originalPrice"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:text="900,000₫"
-                android:textColor="#999999"
-                android:textSize="12sp"
-                android:visibility="gone" />
+            <!-- Add to Cart Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/addToCartButton"
+                style="@style/Widget.Material3.Button.Icon"
+                android:layout_width="match_parent"
+                android:layout_height="36dp"
+                android:layout_marginTop="8dp"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:text="Thêm vào giỏ hàng"
+                android:textColor="#FFFFFF"
+                android:textSize="10sp"
+                app:backgroundTint="#1a1a1a"
+                app:cornerRadius="6dp"
+                app:icon="@drawable/baseline_shopping_cart_24"
+                app:iconGravity="textStart"
+                app:iconSize="18dp"
+                app:iconTint="#FFFFFF" />
         </LinearLayout>
     </LinearLayout>
+
 </com.google.android.material.card.MaterialCardView>

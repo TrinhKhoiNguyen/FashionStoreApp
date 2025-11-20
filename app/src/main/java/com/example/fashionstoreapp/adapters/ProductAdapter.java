@@ -12,6 +12,8 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.material.button.MaterialButton;
+
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.example.fashionstoreapp.ProductDetailActivity;
@@ -73,21 +75,27 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
     }
 
     class ProductViewHolder extends RecyclerView.ViewHolder {
-        ImageView productImage, favoriteIcon, addToCartIcon;
+        ImageView productImage, favoriteIcon, ratingIcon;
+        MaterialButton addToCartButton;
         TextView productName, currentPrice, originalPrice;
         TextView discountBadge, newBadge, voucherBadge;
+        TextView ratingScore, reviewCount, stockStatus;
 
         public ProductViewHolder(@NonNull View itemView) {
             super(itemView);
             productImage = itemView.findViewById(R.id.productImage);
             favoriteIcon = itemView.findViewById(R.id.favoriteIcon);
-            addToCartIcon = itemView.findViewById(R.id.addToCartIcon);
+            addToCartButton = itemView.findViewById(R.id.addToCartButton);
             productName = itemView.findViewById(R.id.productName);
             currentPrice = itemView.findViewById(R.id.currentPrice);
             originalPrice = itemView.findViewById(R.id.originalPrice);
             discountBadge = itemView.findViewById(R.id.discountBadge);
             newBadge = itemView.findViewById(R.id.newBadge);
             voucherBadge = itemView.findViewById(R.id.voucherBadge);
+            ratingIcon = itemView.findViewById(R.id.ratingIcon);
+            ratingScore = itemView.findViewById(R.id.ratingScore);
+            reviewCount = itemView.findViewById(R.id.reviewCount);
+            stockStatus = itemView.findViewById(R.id.stockStatus);
         }
 
         public void bind(Product product) {
@@ -126,12 +134,48 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
                 voucherBadge.setVisibility(View.GONE);
             }
 
-            // Set favorite icon
+            // Set favorite icon - heart icon
             if (product.isFavorite()) {
-                favoriteIcon.setImageResource(android.R.drawable.btn_star_big_on);
+                favoriteIcon.setImageResource(R.drawable.baseline_favorite_24);
+                favoriteIcon.setColorFilter(0xFFFF0000); // Red color
             } else {
-                favoriteIcon.setImageResource(android.R.drawable.btn_star_big_off);
+                favoriteIcon.setImageResource(R.drawable.baseline_favorite_border_24);
+                favoriteIcon.setColorFilter(0xFF666666); // Gray color
             }
+
+            // Set rating and reviews
+            if (product.getRating() > 0) {
+                ratingIcon.setVisibility(View.VISIBLE);
+                ratingScore.setVisibility(View.VISIBLE);
+                reviewCount.setVisibility(View.VISIBLE);
+
+                ratingScore.setText(String.format("%.1f", product.getRating()));
+                reviewCount.setText(String.format("(%d)", product.getReviewCount()));
+            } else {
+                ratingIcon.setVisibility(View.GONE);
+                ratingScore.setVisibility(View.GONE);
+                reviewCount.setVisibility(View.GONE);
+            }
+
+            // Set stock status
+            int stock = product.getStockQuantity();
+            if (stock > 20) {
+                stockStatus.setText("Còn hàng");
+                stockStatus.setTextColor(context.getResources().getColor(android.R.color.holo_green_dark));
+                stockStatus.setBackgroundColor(context.getResources().getColor(android.R.color.white));
+                stockStatus.setBackgroundResource(android.R.color.transparent);
+                // Add background programmatically
+                stockStatus.setBackgroundColor(0xFFE8F5E9);
+            } else if (stock > 0) {
+                stockStatus.setText("Sắp hết");
+                stockStatus.setTextColor(context.getResources().getColor(android.R.color.holo_orange_dark));
+                stockStatus.setBackgroundColor(0xFFFFF3E0);
+            } else {
+                stockStatus.setText("Hết hàng");
+                stockStatus.setTextColor(context.getResources().getColor(android.R.color.holo_red_dark));
+                stockStatus.setBackgroundColor(0xFFFFEBEE);
+            }
+            stockStatus.setVisibility(View.VISIBLE);
 
             // Load product image
             if (product.getImageUrl() != null && !product.getImageUrl().isEmpty()) {
@@ -176,7 +220,7 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
                 }
             });
 
-            addToCartIcon.setOnClickListener(v -> {
+            addToCartButton.setOnClickListener(v -> {
                 if (listener != null) {
                     listener.onAddToCartClick(product);
                 }

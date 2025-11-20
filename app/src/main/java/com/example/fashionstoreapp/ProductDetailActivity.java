@@ -43,7 +43,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
-public class ProductDetailActivity extends AppCompatActivity {
+import com.example.fashionstoreapp.adapters.ProductAdapter;
+
+public class ProductDetailActivity extends AppCompatActivity implements ProductAdapter.OnProductClickListener {
 
     private ViewPager2 imageViewPager;
     private LinearLayout imageIndicator;
@@ -57,6 +59,12 @@ public class ProductDetailActivity extends AppCompatActivity {
     private TextView tvNoReviews;
     private Button btnAddToCart, btnBuyNow, btnWriteReview;
     private ImageView btnBack, btnFavorite;
+
+    // Related Products
+    private RecyclerView relatedProductsRecyclerView;
+    private ProgressBar relatedProductsLoading;
+    private TextView tvNoRelatedProducts;
+    private ProductAdapter relatedProductsAdapter;
 
     private Product product;
     private String selectedSize = "M"; // Default size
@@ -122,6 +130,11 @@ public class ProductDetailActivity extends AppCompatActivity {
         btnWriteReview = findViewById(R.id.btnWriteReview);
         btnBack = findViewById(R.id.btnBack);
         btnFavorite = findViewById(R.id.btnFavorite);
+
+        // Related Products
+        relatedProductsRecyclerView = findViewById(R.id.relatedProductsRecyclerView);
+        relatedProductsLoading = findViewById(R.id.relatedProductsLoading);
+        tvNoRelatedProducts = findViewById(R.id.tvNoRelatedProducts);
     }
 
     private void setupImageGallery() {
@@ -294,6 +307,9 @@ public class ProductDetailActivity extends AppCompatActivity {
         reviewsRecyclerView.setAdapter(reviewAdapter);
 
         loadReviews();
+
+        // Load Related Products
+        loadRelatedProducts();
     }
 
     private void loadReviews() {
@@ -691,6 +707,128 @@ public class ProductDetailActivity extends AppCompatActivity {
                 super(itemView);
                 this.imageView = itemView;
             }
+        }
+    }
+
+    // Load Related Products
+    private void loadRelatedProducts() {
+        if (product == null || product.getCategory() == null) {
+            tvNoRelatedProducts.setVisibility(View.VISIBLE);
+            return;
+        }
+
+        relatedProductsLoading.setVisibility(View.VISIBLE);
+        tvNoRelatedProducts.setVisibility(View.GONE);
+
+        // Load products from same category
+        firestoreManager.loadProductsByCategory(product.getCategory(), new FirestoreManager.OnProductsLoadedListener() {
+            @Override
+            public void onProductsLoaded(List<Product> products) {
+                relatedProductsLoading.setVisibility(View.GONE);
+
+                // Filter out current product and limit to 6 items
+                List<Product> relatedProducts = new ArrayList<>();
+                for (Product p : products) {
+                    if (!p.getId().equals(product.getId())) {
+                        relatedProducts.add(p);
+                        if (relatedProducts.size() >= 6)
+                            break;
+                    }
+                }
+
+                if (relatedProducts.isEmpty()) {
+                    tvNoRelatedProducts.setVisibility(View.VISIBLE);
+                    relatedProductsRecyclerView.setVisibility(View.GONE);
+                } else {
+                    tvNoRelatedProducts.setVisibility(View.GONE);
+                    relatedProductsRecyclerView.setVisibility(View.VISIBLE);
+
+                    // Setup RecyclerView with GridLayoutManager
+                    androidx.recyclerview.widget.GridLayoutManager layoutManager = new androidx.recyclerview.widget.GridLayoutManager(
+                            ProductDetailActivity.this, 2);
+                    relatedProductsRecyclerView.setLayoutManager(layoutManager);
+
+                    relatedProductsAdapter = new ProductAdapter(ProductDetailActivity.this,
+                            relatedProducts, ProductDetailActivity.this);
+                    relatedProductsRecyclerView.setAdapter(relatedProductsAdapter);
+                }
+            }
+
+            @Override
+            public void onError(String error) {
+                relatedProductsLoading.setVisibility(View.GONE);
+                tvNoRelatedProducts.setVisibility(View.VISIBLE);
+                relatedProductsRecyclerView.setVisibility(View.GONE);
+            }
+        });
+    }
+
+    // ProductAdapter.OnProductClickListener implementation
+    @Override
+    public void onProductClick(Product product) {
+        // Reload this activity with new product
+        Intent intent = new Intent(ProductDetailActivity.this, ProductDetailActivity.class);
+        intent.putExtra("product", product);
+        startActivity(intent);
+        finish(); // Close current activity to avoid stack buildup
+    }
+
+    @Override
+    public void onAddToCartClick(Product product) {
+        // Add to cart functionality
+        CartManager cartManager = CartManager.getInstance();
+        CartItem cartItem = new CartItem(product, 1, selectedSize, "Default");
+        cartManager.addItem(cartItem);
+        Toast.makeText(this, "Đã thêm vào giỏ hàng", Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
+    public void onFavoriteClick(Product product) {
+        // Handle favorite toggle
+        product.setFavorite(!product.isFavorite());
+        updateFavoriteIcon();
+
+        // Save to Firestore
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (currentUser != null) {
+            String userId = currentUser.getUid();
+            String productId = product.getId();
+
+            if (product.isFavorite()) {
+                firestoreManager.saveFavorite(userId, productId, new FirestoreManager.OnFavoriteSavedListener() {
+                    @Override
+                    public void onFavoriteSaved() {
+                        Toast.makeText(ProductDetailActivity.this, "Đã thêm vào yêu thích", Toast.LENGTH_SHORT).show();
+                    }
+
+                    @Override
+                    public void onError(String error) {
+                        Toast.makeText(ProductDetailActivity.this, "Lỗi: " + error, Toast.LENGTH_SHORT).show();
+                    }
+                });
+            } else {
+                firestoreManager.removeFavorite(userId, productId, new FirestoreManager.OnFavoriteRemovedListener() {
+                    @Override
+                    public void onFavoriteRemoved() {
+                        Toast.makeText(ProductDetailActivity.this, "Đã xóa khỏi yêu thích", Toast.LENGTH_SHORT).show();
+                    }
+
+                    @Override
+                    public void onError(String error) {
+                        Toast.makeText(ProductDetailActivity.this, "Lỗi: " + error, Toast.LENGTH_SHORT).show();
+                    }
+                });
+            }
+        }
+    }
+
+    private void updateFavoriteIcon() {
+        if (product.isFavorite()) {
+            btnFavorite.setImageResource(R.drawable.baseline_favorite_24);
+            btnFavorite.setColorFilter(0xFFFF0000);
+        } else {
+            btnFavorite.setImageResource(R.drawable.baseline_favorite_border_24);
+            btnFavorite.setColorFilter(0xFFFFFFFF);
         }
     }
 }

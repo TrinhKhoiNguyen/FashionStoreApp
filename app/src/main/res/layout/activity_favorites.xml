@@ -21,6 +21,8 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_marginTop="?attr/actionBarSize"
+        android:paddingBottom="80dp"
+        android:clipToPadding="false"
         android:fillViewport="true">
 
         <FrameLayout
