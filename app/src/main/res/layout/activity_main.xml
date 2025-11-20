@@ -4,17 +4,18 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F5F5F5">
+    android:background="@color/background_cream">
 
     <!-- AppBar với Header -->
     <com.google.android.material.appbar.AppBarLayout
         android:id="@+id/appBarLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="#000000"
+        android:background="@color/primary_charcoal"
+        android:elevation="0dp"
         android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar">
 
-        <!-- Voucher Banner với Animation -->
+        <!-- Voucher Banner với Animation - Refined -->
         <ViewFlipper
             android:id="@+id/voucherViewFlipper"
             android:layout_width="match_parent"
@@ -23,81 +24,94 @@
             android:flipInterval="3000"
             android:inAnimation="@anim/slide_in_right"
             android:outAnimation="@anim/slide_out_left"
-            android:background="#FFD700">
+            android:background="@color/accent_rose"
+            android:paddingTop="10dp"
+            android:paddingBottom="10dp">
 
             <!-- Voucher 1 -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:gravity="center"
-                android:padding="8dp"
+                android:padding="10dp"
                 android:text="🎁 VOUCHER 15K ĐƠN TỪ 299K"
-                android:textColor="#000000"
-                android:textSize="12sp"
-                android:textStyle="bold" />
+                android:textColor="@color/text_primary"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.05" />
 
             <!-- Voucher 2 -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:gravity="center"
-                android:padding="8dp"
+                android:padding="10dp"
                 android:text="🔥 GIẢM 30% CHO ĐƠN TỪ 500K"
-                android:textColor="#000000"
-                android:textSize="12sp"
-                android:textStyle="bold" />
+                android:textColor="@color/text_primary"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.05" />
 
             <!-- Voucher 3 -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:gravity="center"
-                android:padding="8dp"
+                android:padding="10dp"
                 android:text="⚡ FREESHIP ĐƠN TỪ 199K"
-                android:textColor="#000000"
-                android:textSize="12sp"
-                android:textStyle="bold" />
+                android:textColor="@color/text_primary"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.05" />
 
             <!-- Voucher 4 -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:gravity="center"
-                android:padding="8dp"
+                android:padding="10dp"
                 android:text="💝 MUA 2 TẶNG 1 - ÁP DỤNG TOÀN BỘ"
-                android:textColor="#000000"
-                android:textSize="12sp"
-                android:textStyle="bold" />
+                android:textColor="@color/text_primary"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.05" />
         </ViewFlipper>
 
-        <!-- Toolbar -->
+        <!-- Toolbar - Elegant -->
         <androidx.appcompat.widget.Toolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            android:background="#000000">
+            android:background="@color/primary_charcoal"
+            android:elevation="0dp"
+            app:contentInsetStart="0dp"
+            app:contentInsetEnd="0dp">
 
             <RelativeLayout
                 android:layout_width="match_parent"
-                android:layout_height="match_parent">
+                android:layout_height="match_parent"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp">
 
                 <!-- Menu Icon -->
                 <ImageView
                     android:id="@+id/menuIcon"
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
                     android:layout_alignParentStart="true"
                     android:layout_centerVertical="true"
                     android:src="@drawable/baseline_menu_24"
-                    android:tint="#FFFFFF" />
+                    android:tint="@color/text_on_dark"
+                    android:padding="4dp"
+                    android:background="?attr/selectableItemBackgroundBorderless" />
 
                 <!-- Logo -->
                 <ImageView
                     android:id="@+id/logoImage"
-                    android:layout_width="120dp"
-                    android:layout_height="30dp"
+                    android:layout_width="140dp"
+                    android:layout_height="36dp"
                     android:layout_centerInParent="true"
-                    android:contentDescription="160Store Logo"
+                    android:contentDescription="Fashion Store Logo"
                     android:scaleType="fitCenter" />
 
                 <!-- Icons phải -->
@@ -105,47 +119,53 @@
                     android:layout_width="wrap_content"
                     android:layout_height="match_parent"
                     android:layout_alignParentEnd="true"
-                    android:gravity="center"
+                    android:gravity="center_vertical"
                     android:orientation="horizontal">
 
                     <ImageView
                         android:id="@+id/searchIcon"
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:layout_marginEnd="16dp"
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
+                        android:layout_marginEnd="12dp"
                         android:src="@drawable/baseline_search_24"
-                        android:tint="#FFFFFF" />
+                        android:tint="@color/text_on_dark"
+                        android:padding="4dp"
+                        android:background="?attr/selectableItemBackgroundBorderless" />
 
                     <ImageView
                         android:id="@+id/accountIcon"
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:layout_marginEnd="16dp"
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
+                        android:layout_marginEnd="12dp"
                         android:src="@drawable/baseline_person_24"
-                        android:tint="#FFFFFF" />
+                        android:tint="@color/text_on_dark"
+                        android:padding="4dp"
+                        android:background="?attr/selectableItemBackgroundBorderless" />
 
                     <FrameLayout
                         android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginEnd="8dp">
+                        android:layout_height="wrap_content">
 
                         <ImageView
                             android:id="@+id/cartIcon"
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
+                            android:layout_width="28dp"
+                            android:layout_height="28dp"
                             android:src="@drawable/baseline_shopping_cart_24"
-                            android:tint="#FFFFFF" />
+                            android:tint="@color/text_on_dark"
+                            android:padding="4dp"
+                            android:background="?attr/selectableItemBackgroundBorderless" />
 
                         <TextView
                             android:id="@+id/cartBadge"
-                            android:layout_width="16dp"
-                            android:layout_height="16dp"
+                            android:layout_width="18dp"
+                            android:layout_height="18dp"
                             android:layout_gravity="end|top"
                             android:background="@drawable/badge_background"
                             android:gravity="center"
                             android:text="2"
-                            android:textColor="#FFFFFF"
+                            android:textColor="@color/text_on_dark"
                             android:textSize="10sp"
+                            android:textStyle="bold"
                             android:visibility="gone" />
                     </FrameLayout>
                 </LinearLayout>
@@ -157,6 +177,7 @@
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:fillViewport="true"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
         <LinearLayout
@@ -164,479 +185,563 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-            <!-- Banner Slider với ViewPager2 -->
-            <RelativeLayout
+            <!-- Banner Slider với ViewPager2 - Refined -->
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
-                android:layout_height="300dp"
-                android:background="#FFFFFF">
+                android:layout_height="320dp"
+                android:layout_margin="16dp"
+                app:cardCornerRadius="20dp"
+                app:cardElevation="2dp"
+                app:strokeWidth="0dp">
 
-                <androidx.viewpager2.widget.ViewPager2
-                    android:id="@+id/bannerViewPager"
+                <RelativeLayout
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent" />
+                    android:layout_height="match_parent">
 
-                <!-- Indicator Dots -->
-                <LinearLayout
-                    android:id="@+id/bannerIndicator"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_alignParentBottom="true"
-                    android:layout_centerHorizontal="true"
-                    android:layout_marginBottom="16dp"
-                    android:gravity="center"
-                    android:orientation="horizontal" />
-            </RelativeLayout>
+                    <androidx.viewpager2.widget.ViewPager2
+                        android:id="@+id/bannerViewPager"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent" />
 
-            <!-- Ưu đãi dành cho bạn -->
+                    <!-- Indicator Dots - Elegant -->
+                    <LinearLayout
+                        android:id="@+id/bannerIndicator"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentBottom="true"
+                        android:layout_centerHorizontal="true"
+                        android:layout_marginBottom="20dp"
+                        android:gravity="center"
+                        android:orientation="horizontal"
+                        android:background="@drawable/circle_background"
+                        android:padding="8dp" />
+                </RelativeLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Ưu đãi dành cho bạn - Refined -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:orientation="vertical"
-                android:padding="16dp">
+                android:layout_marginTop="8dp"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:orientation="vertical">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="ƯU ĐÃI DÀNH CHO BẠN"
-                    android:textColor="#000000"
-                    android:textSize="18sp"
-                    android:textStyle="bold" />
+                    android:textColor="@color/text_primary"
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.02" />
 
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/voucherRecyclerView"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:orientation="horizontal" />
+                    android:layout_marginTop="12dp"
+                    android:orientation="horizontal"
+                    android:clipToPadding="false"
+                    android:paddingEnd="8dp" />
             </LinearLayout>
 
-            <!-- Retro Sports Collection -->
+            <!-- Retro Sports Collection - Fashionable -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="16dp"
+                android:layout_marginTop="24dp"
+                app:cardCornerRadius="20dp"
+                app:cardElevation="4dp"
+                app:strokeWidth="0dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@color/accent_burgundy"
+                    android:orientation="vertical"
+                    android:padding="20dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="FALL COLLECTION 2025"
+                        android:textColor="@color/text_on_dark"
+                        android:textSize="12sp"
+                        android:letterSpacing="0.1" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="RETRO SPORTS"
+                        android:textColor="@color/text_on_dark"
+                        android:textSize="28sp"
+                        android:textStyle="bold"
+                        android:letterSpacing="0.05" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:text="The Playbook - New Rules"
+                        android:textColor="@color/text_on_dark"
+                        android:textSize="15sp"
+                        android:alpha="0.9" />
+
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/retroSportsRecyclerView"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="20dp"
+                        android:orientation="horizontal"
+                        android:clipToPadding="false" />
+
+                    <Button
+                        android:id="@+id/btnViewAllRetro"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="20dp"
+                        style="@style/PrimaryButton"
+                        android:text="Xem tất cả »"
+                        android:textColor="@color/text_on_dark"
+                        android:backgroundTint="@color/primary_charcoal" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Hàng Mới - Refined -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:background="#FFD700"
-                android:orientation="vertical"
-                android:padding="16dp">
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:orientation="vertical">
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="FALL COLLECTION 2025"
-                    android:textColor="#FFFFFF"
-                    android:textSize="12sp" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="RETRO SPORTS"
-                    android:textColor="#FFFFFF"
-                    android:textSize="24sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="The Playbook - New Rules"
-                    android:textColor="#FFFFFF"
-                    android:textSize="14sp" />
-
-                <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/retroSportsRecyclerView"
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="16dp"
-                    android:orientation="horizontal" />
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
 
-                <Button
-                    android:id="@+id/btnViewAllRetro"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="16dp"
-                    android:backgroundTint="#000000"
-                    android:text="Xem tất cả »"
-                    android:textStyle="bold"
-                    android:padding="4dp"
-                    android:layout_margin="8dp"
-                    android:animation="@anim/pulse_gold_black"
-                    android:textColor="#FFFFFF" />
-            </LinearLayout>
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="HÀNG MỚI"
+                        android:textColor="@color/text_primary"
+                        android:textSize="20sp"
+                        android:textStyle="bold"
+                        android:letterSpacing="0.02" />
 
-            <!-- Hàng Mới -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:orientation="vertical"
-                android:padding="16dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="HÀNG MỚI"
-                    android:textColor="#000000"
-                    android:textSize="20sp"
-                    android:textStyle="bold" />
+                    <TextView
+                        android:id="@+id/btnViewAllNew"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Xem tất cả »"
+                        android:textColor="@color/accent_burgundy"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        android:padding="8dp"
+                        android:background="?attr/selectableItemBackground" />
+                </LinearLayout>
 
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/newArrivalsRecyclerView"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp" />
+                    android:layout_marginTop="12dp"
+                    android:clipToPadding="false"
+                    android:paddingEnd="8dp" />
             </LinearLayout>
 
-            <!-- Outlet Section -->
-            <LinearLayout
+            <!-- Outlet Section - Elegant -->
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:background="#E0E0E0"
-                android:orientation="vertical"
-                android:padding="16dp">
+                android:layout_margin="16dp"
+                android:layout_marginTop="24dp"
+                app:cardCornerRadius="20dp"
+                app:cardElevation="2dp"
+                app:strokeWidth="0dp">
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="OUTLET"
-                    android:textColor="#000000"
-                    android:textSize="20sp"
-                    android:textStyle="bold" />
-
-                <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/outletRecyclerView"
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp" />
+                    android:background="@color/background_soft"
+                    android:orientation="vertical"
+                    android:padding="20dp">
 
-                <Button
-                    android:id="@+id/btnViewAllOutlet"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="16dp"
-                    android:backgroundTint="#000000"
-                    android:text="Xem tất cả »"
-                    android:textStyle="bold"
-                    android:padding="4dp"
-                    android:layout_margin="8dp"
-                    android:animation="@anim/pulse_gold_black"
-                    android:textColor="#FFFFFF" />
-            </LinearLayout>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="OUTLET"
+                        android:textColor="@color/text_primary"
+                        android:textSize="20sp"
+                        android:textStyle="bold"
+                        android:letterSpacing="0.02" />
+
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/outletRecyclerView"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:clipToPadding="false" />
+
+                    <Button
+                        android:id="@+id/btnViewAllOutlet"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        style="@style/SecondaryButton"
+                        android:text="Xem tất cả »" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
 
             <!-- Áo Thun -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:orientation="vertical"
-                android:padding="16dp">
+                android:layout_marginTop="8dp"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:orientation="vertical">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal">
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
 
                     <TextView
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:text="ÁO THUN"
-                        android:textColor="#000000"
+                        android:textColor="@color/text_primary"
                         android:textSize="18sp"
-                        android:textStyle="bold" />
+                        android:textStyle="bold"
+                        android:letterSpacing="0.02" />
 
-                    <Button
+                    <TextView
                         android:id="@+id/btnViewAllShirts"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:background="@android:color/transparent"
                         android:text="Xem tất cả »"
+                        android:textColor="@color/accent_burgundy"
+                        android:textSize="14sp"
                         android:textStyle="bold"
-                        android:padding="4dp"
-                        android:layout_margin="8dp"
-                        android:animation="@anim/pulse_gold_black"
-                        android:textColor="#000000" />
-
+                        android:padding="8dp"
+                        android:background="?attr/selectableItemBackground" />
                 </LinearLayout>
 
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/shirtsRecyclerView"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:orientation="horizontal" />
+                    android:layout_marginTop="12dp"
+                    android:orientation="horizontal"
+                    android:clipToPadding="false"
+                    android:paddingEnd="8dp" />
             </LinearLayout>
 
             <!-- Áo Polo -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:orientation="vertical"
-                android:padding="16dp">
+                android:layout_marginTop="24dp"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:orientation="vertical">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal">
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
 
                     <TextView
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:text="ÁO POLO"
-                        android:textColor="#000000"
+                        android:textColor="@color/text_primary"
                         android:textSize="18sp"
-                        android:textStyle="bold" />
+                        android:textStyle="bold"
+                        android:letterSpacing="0.02" />
 
-                    <Button
+                    <TextView
                         android:id="@+id/btnViewAllPolo"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:background="@android:color/transparent"
                         android:text="Xem tất cả »"
+                        android:textColor="@color/accent_burgundy"
+                        android:textSize="14sp"
                         android:textStyle="bold"
-                        android:padding="4dp"
-                        android:layout_margin="8dp"
-                        android:animation="@anim/pulse_gold_black"
-                        android:textColor="#000000" />
+                        android:padding="8dp"
+                        android:background="?attr/selectableItemBackground" />
                 </LinearLayout>
 
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/poloRecyclerView"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:orientation="horizontal" />
+                    android:layout_marginTop="12dp"
+                    android:orientation="horizontal"
+                    android:clipToPadding="false"
+                    android:paddingEnd="8dp" />
             </LinearLayout>
 
             <!-- Áo Sơ Mi Section -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:orientation="vertical"
-                android:padding="16dp">
+                android:layout_marginTop="24dp"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:orientation="vertical">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal">
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
 
                     <TextView
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:text="ÁO SƠ MI"
-                        android:textColor="#000000"
+                        android:textColor="@color/text_primary"
                         android:textSize="18sp"
-                        android:textStyle="bold" />
+                        android:textStyle="bold"
+                        android:letterSpacing="0.02" />
 
-                    <Button
+                    <TextView
                         android:id="@+id/btnViewAllSomi"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:background="@android:color/transparent"
                         android:text="Xem tất cả »"
+                        android:textColor="@color/accent_burgundy"
+                        android:textSize="14sp"
                         android:textStyle="bold"
-                        android:padding="4dp"
-                        android:layout_margin="8dp"
-                        android:animation="@anim/pulse_gold_black"
-                        android:textColor="#000000" />
+                        android:padding="8dp"
+                        android:background="?attr/selectableItemBackground" />
                 </LinearLayout>
 
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/somiRecyclerView"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:orientation="horizontal" />
+                    android:layout_marginTop="12dp"
+                    android:orientation="horizontal"
+                    android:clipToPadding="false"
+                    android:paddingEnd="8dp" />
             </LinearLayout>
 
+            <!-- Áo Hoodies -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:orientation="vertical"
-                android:padding="16dp">
+                android:layout_marginTop="24dp"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:orientation="vertical">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal">
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
 
                     <TextView
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:text="ÁO HOODIES"
-                        android:textColor="#000000"
+                        android:textColor="@color/text_primary"
                         android:textSize="18sp"
-                        android:textStyle="bold" />
+                        android:textStyle="bold"
+                        android:letterSpacing="0.02" />
 
-                    <Button
+                    <TextView
                         android:id="@+id/btnViewAllHoodies"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:background="@android:color/transparent"
                         android:text="Xem tất cả »"
+                        android:textColor="@color/accent_burgundy"
+                        android:textSize="14sp"
                         android:textStyle="bold"
-                        android:padding="4dp"
-                        android:layout_margin="8dp"
-                        android:animation="@anim/pulse_gold_black"
-                        android:textColor="#000000" />
+                        android:padding="8dp"
+                        android:background="?attr/selectableItemBackground" />
                 </LinearLayout>
 
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/hoodiesRecyclerView"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:orientation="horizontal" />
+                    android:layout_marginTop="12dp"
+                    android:orientation="horizontal"
+                    android:clipToPadding="false"
+                    android:paddingEnd="8dp" />
             </LinearLayout>
 
             <!-- Áo Khoác Section -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:background="#FFFFFF"
-                android:orientation="vertical"
-                android:padding="16dp">
+                android:layout_marginTop="24dp"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:orientation="vertical">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal">
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
 
                     <TextView
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:text="ÁO KHOÁC"
-                        android:textColor="#000000"
+                        android:textColor="@color/text_primary"
                         android:textSize="18sp"
-                        android:textStyle="bold" />
+                        android:textStyle="bold"
+                        android:letterSpacing="0.02" />
 
-                    <Button
+                    <TextView
                         android:id="@+id/btnViewAllAoKhoac"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:background="@android:color/transparent"
                         android:text="Xem tất cả »"
+                        android:textColor="@color/accent_burgundy"
+                        android:textSize="14sp"
                         android:textStyle="bold"
-                        android:padding="4dp"
-                        android:layout_margin="8dp"
-                        android:textColor="#000000" />
+                        android:padding="8dp"
+                        android:background="?attr/selectableItemBackground" />
                 </LinearLayout>
 
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/aoKhoacRecyclerView"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:orientation="horizontal" />
+                    android:layout_marginTop="12dp"
+                    android:orientation="horizontal"
+                    android:clipToPadding="false"
+                    android:paddingEnd="8dp" />
             </LinearLayout>
 
             <!-- Quần Sọt Section -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:background="#FFFFFF"
-                android:orientation="vertical"
-                android:padding="16dp">
+                android:layout_marginTop="24dp"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:orientation="vertical">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal">
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
 
                     <TextView
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:text="QUẦN SỌT"
-                        android:textColor="#000000"
+                        android:textColor="@color/text_primary"
                         android:textSize="18sp"
-                        android:textStyle="bold" />
+                        android:textStyle="bold"
+                        android:letterSpacing="0.02" />
 
-                    <Button
+                    <TextView
                         android:id="@+id/btnViewAllQuanSot"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:background="@android:color/transparent"
                         android:text="Xem tất cả »"
+                        android:textColor="@color/accent_burgundy"
+                        android:textSize="14sp"
                         android:textStyle="bold"
-                        android:padding="4dp"
-                        android:layout_margin="8dp"
-                        android:textColor="#000000" />
+                        android:padding="8dp"
+                        android:background="?attr/selectableItemBackground" />
                 </LinearLayout>
 
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/quanSotRecyclerView"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:orientation="horizontal" />
+                    android:layout_marginTop="12dp"
+                    android:orientation="horizontal"
+                    android:clipToPadding="false"
+                    android:paddingEnd="8dp" />
             </LinearLayout>
 
             <!-- Quần Tây Section -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:background="#FFFFFF"
-                android:orientation="vertical"
-                android:padding="16dp">
+                android:layout_marginTop="24dp"
+                android:layout_marginBottom="24dp"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:orientation="vertical">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal">
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
 
                     <TextView
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:text="QUẦN TÂY"
-                        android:textColor="#000000"
+                        android:textColor="@color/text_primary"
                         android:textSize="18sp"
-                        android:textStyle="bold" />
+                        android:textStyle="bold"
+                        android:letterSpacing="0.02" />
 
-                    <Button
+                    <TextView
                         android:id="@+id/btnViewAllQuanTay"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:background="@android:color/transparent"
                         android:text="Xem tất cả »"
+                        android:textColor="@color/accent_burgundy"
+                        android:textSize="14sp"
                         android:textStyle="bold"
-                        android:padding="4dp"
-                        android:layout_margin="8dp"
-                        android:textColor="#000000" />
+                        android:padding="8dp"
+                        android:background="?attr/selectableItemBackground" />
                 </LinearLayout>
 
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/quanTayRecyclerView"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:orientation="horizontal" />
+                    android:layout_marginTop="12dp"
+                    android:orientation="horizontal"
+                    android:clipToPadding="false"
+                    android:paddingEnd="8dp" />
             </LinearLayout>
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 
-    <!-- Bottom Navigation View -->
+    <!-- Bottom Navigation View - Elegant -->
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottomNavigation"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
-        android:background="#000000"
-        android:elevation="16dp"
+        android:background="@color/background_card"
+        android:elevation="12dp"
         android:paddingTop="8dp"
         android:paddingBottom="8dp"
-        app:itemIconSize="28dp"
+        app:itemIconSize="26dp"
         app:itemIconTint="@color/bottom_nav_color"
         app:itemTextColor="@color/bottom_nav_color"
         app:itemActiveIndicatorStyle="@null"
@@ -645,16 +750,17 @@
         app:labelVisibilityMode="labeled"
         app:menu="@menu/bottom_navigation_menu" />
 
-    <!-- Floating Call Button - Adjusted to be above bottom navigation -->
+    <!-- Floating Call Button - Refined -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fabCall"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="end|bottom"
-        android:layout_marginEnd="16dp"
-        android:layout_marginBottom="80dp"
+        android:layout_marginEnd="20dp"
+        android:layout_marginBottom="88dp"
         android:src="@android:drawable/stat_sys_phone_call"
-        app:backgroundTint="#25D366"
-        app:tint="#FFFFFF" />
+        app:backgroundTint="@color/success_green"
+        app:tint="@color/text_on_dark"
+        app:elevation="6dp" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

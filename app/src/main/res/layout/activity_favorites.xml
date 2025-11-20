@@ -50,7 +50,7 @@
                 <ImageView
                     android:layout_width="120dp"
                     android:layout_height="120dp"
-                    android:src="@android:drawable/btn_star_big_off"
+                    android:src="@drawable/baseline_favorite_border_24"
                     android:tint="#CCCCCC"
                     android:alpha="0.5" />
 

@@ -3,48 +3,49 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FFFFFF">
+    android:background="@color/background_cream">
 
     <!-- AppBar -->
     <com.google.android.material.appbar.AppBarLayout
         android:id="@+id/appBarLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="#000000"
+        android:background="@color/primary_charcoal"
         android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar">
 
         <androidx.appcompat.widget.Toolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            android:background="#000000">
+            android:background="@color/primary_charcoal">
 
-            <ImageView
-                android:id="@+id/btnBack"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:src="@android:drawable/ic_menu_revert"
-                android:tint="#FFFFFF"
-                android:contentDescription="Back" />
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp">
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:text="Chi Tiết Sản Phẩm"
-                android:textColor="#FFFFFF"
-                android:textSize="18sp"
-                android:textStyle="bold" />
+                <ImageView
+                    android:id="@+id/btnBack"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:layout_alignParentStart="true"
+                    android:layout_centerVertical="true"
+                    android:src="@drawable/baseline_arrow_back_24"
+                    android:tint="@color/text_on_dark"
+                    android:padding="4dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Back" />
 
-            <ImageView
-                android:id="@+id/btnFavorite"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:layout_gravity="end"
-                android:layout_marginEnd="16dp"
-                android:src="@android:drawable/btn_star_big_off"
-                android:tint="#FFFFFF"
-                android:contentDescription="Favorite" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerInParent="true"
+                    android:text="Chi Tiết Sản Phẩm"
+                    android:textColor="@color/text_on_dark"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+            </RelativeLayout>
         </androidx.appcompat.widget.Toolbar>
     </com.google.android.material.appbar.AppBarLayout>
 
@@ -62,11 +63,39 @@
             android:paddingBottom="80dp">
 
             <!-- Product Image Gallery -->
-            <androidx.viewpager2.widget.ViewPager2
-                android:id="@+id/imageViewPager"
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
-                android:layout_height="400dp"
-                android:background="#F5F5F5" />
+                android:layout_height="420dp"
+                android:layout_margin="16dp"
+                app:cardCornerRadius="20dp"
+                app:cardElevation="2dp"
+                app:strokeWidth="0dp">
+
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent">
+
+                    <androidx.viewpager2.widget.ViewPager2
+                        android:id="@+id/imageViewPager"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent" />
+
+                    <!-- Floating Favorite Button on Image -->
+                    <com.google.android.material.floatingactionbutton.FloatingActionButton
+                        android:id="@+id/fabFavorite"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentEnd="true"
+                        android:layout_alignParentTop="true"
+                        android:layout_margin="16dp"
+                        app:srcCompat="@drawable/baseline_favorite_border_24"
+                        app:backgroundTint="@color/background_card"
+                        app:tint="@color/accent_burgundy"
+                        app:elevation="6dp"
+                        app:borderWidth="0dp"
+                        android:contentDescription="Yêu thích" />
+                </RelativeLayout>
+            </com.google.android.material.card.MaterialCardView>
 
             <!-- Image Indicator -->
             <LinearLayout
@@ -82,7 +111,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="16dp">
+                android:padding="20dp">
 
                 <!-- Product Name -->
                 <TextView
@@ -90,9 +119,10 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="Áo Polo Nam ICONDENIM DualLine"
-                    android:textColor="#000000"
-                    android:textSize="20sp"
-                    android:textStyle="bold" />
+                    android:textColor="@color/text_primary"
+                    android:textSize="22sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.02" />
 
                 <!-- Rating and Reviews -->
                 <LinearLayout
@@ -118,7 +148,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginStart="8dp"
                         android:text="4.5"
-                        android:textColor="#000000"
+                        android:textColor="@color/text_primary"
                         android:textSize="14sp" />
 
                     <TextView
@@ -127,7 +157,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginStart="4dp"
                         android:text="(0 đánh giá)"
-                        android:textColor="#666666"
+                        android:textColor="@color/text_secondary"
                         android:textSize="14sp" />
                 </LinearLayout>
 
@@ -142,7 +172,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Loại: "
-                        android:textColor="#666666"
+                        android:textColor="@color/text_secondary"
                         android:textSize="14sp" />
 
                     <TextView
@@ -150,7 +180,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Áo Polo"
-                        android:textColor="#000000"
+                        android:textColor="@color/text_primary"
                         android:textSize="14sp"
                         android:textStyle="bold" />
                 </LinearLayout>
@@ -166,7 +196,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="MSP: "
-                        android:textColor="#666666"
+                        android:textColor="@color/text_secondary"
                         android:textSize="14sp" />
 
                     <TextView
@@ -174,7 +204,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="PLID0240-01"
-                        android:textColor="#000000"
+                        android:textColor="@color/text_primary"
                         android:textSize="14sp" />
                 </LinearLayout>
 
@@ -191,9 +221,9 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="349,000₫"
-                        android:textColor="#FF0000"
-                        android:textSize="24sp"
-                        android:textStyle="bold" />
+                        android:textColor="@color/price_primary"
+                    android:textSize="28sp"
+                    android:textStyle="bold" />
 
                     <TextView
                         android:id="@+id/tvOriginalPrice"
@@ -201,7 +231,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginStart="12dp"
                         android:text="499,000₫"
-                        android:textColor="#999999"
+                        android:textColor="@color/text_hint"
                         android:textSize="16sp"
                         android:textStyle="italic" />
 
@@ -210,10 +240,10 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="8dp"
-                        android:background="#FF0000"
+                        android:background="@color/discount_badge"
                         android:padding="4dp"
                         android:text="-30%"
-                        android:textColor="#FFFFFF"
+                        android:textColor="@color/text_on_dark"
                         android:textSize="12sp"
                         android:textStyle="bold"
                         android:visibility="gone" />
@@ -225,7 +255,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
-                    android:background="#FFF9E5"
+                    android:background="@color/accent_light"
                     android:orientation="vertical"
                     android:padding="12dp"
                     android:visibility="gone">
@@ -234,7 +264,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="🎁 KHUYẾN MÃI - ƯU ĐÃI"
-                        android:textColor="#FF6600"
+                        android:textColor="@color/accent_burgundy"
                         android:textSize="14sp"
                         android:textStyle="bold" />
 
@@ -253,20 +283,20 @@
             <View
                 android:layout_width="match_parent"
                 android:layout_height="8dp"
-                android:background="#F5F5F5" />
+                android:background="@color/background_soft" />
 
             <!-- Size Selection -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="16dp">
+                android:padding="20dp">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Kích thước"
-                    android:textColor="#000000"
+                    android:textColor="@color/text_primary"
                     android:textSize="16sp"
                     android:textStyle="bold" />
 
@@ -286,7 +316,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
                     android:text="📏 Hướng dẫn chọn size"
-                    android:textColor="#0066CC"
+                    android:textColor="@color/accent_burgundy"
                     android:textSize="14sp" />
             </LinearLayout>
 
@@ -294,20 +324,20 @@
             <View
                 android:layout_width="match_parent"
                 android:layout_height="8dp"
-                android:background="#F5F5F5" />
+                android:background="@color/background_soft" />
 
             <!-- Product Description -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="16dp">
+                android:padding="20dp">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Mô tả sản phẩm"
-                    android:textColor="#000000"
+                    android:textColor="@color/text_primary"
                     android:textSize="16sp"
                     android:textStyle="bold" />
 
@@ -326,14 +356,14 @@
             <View
                 android:layout_width="match_parent"
                 android:layout_height="8dp"
-                android:background="#F5F5F5" />
+                android:background="@color/background_soft" />
 
             <!-- Reviews Section -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="16dp">
+                android:padding="20dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -346,7 +376,7 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:text="Đánh giá sản phẩm"
-                        android:textColor="#000000"
+                        android:textColor="@color/text_primary"
                         android:textSize="16sp"
                         android:textStyle="bold" />
 
@@ -356,7 +386,7 @@
                         android:layout_height="wrap_content"
                         android:background="@android:color/transparent"
                         android:text="Viết đánh giá"
-                        android:textColor="#0066CC"
+                        android:textColor="@color/accent_burgundy"
                         android:textSize="14sp" />
                 </LinearLayout>
 
@@ -376,45 +406,47 @@
                     android:gravity="center"
                     android:padding="32dp"
                     android:text="Sản phẩm chưa có đánh giá"
-                    android:textColor="#999999"
+                    android:textColor="@color/text_hint"
                     android:textSize="14sp"
                     android:visibility="gone" />
             </LinearLayout>
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 
-    <!-- Bottom Action Bar -->
+    <!-- Bottom Action Bar - Elegant -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
-        android:background="#FFFFFF"
-        android:elevation="8dp"
+        android:background="@drawable/card_top_rounded"
+        android:elevation="12dp"
         android:orientation="horizontal"
-        android:padding="12dp">
+        android:padding="16dp">
 
         <Button
             android:id="@+id/btnAddToCart"
             android:layout_width="0dp"
-            android:layout_height="50dp"
+            android:layout_height="56dp"
             android:layout_marginEnd="8dp"
             android:layout_weight="1"
-            android:backgroundTint="#000000"
+            android:backgroundTint="@color/primary_charcoal"
             android:text="THÊM VÀO GIỎ"
-            android:textColor="#FFFFFF"
-            android:textSize="14sp"
-            android:textStyle="bold" />
+            android:textColor="@color/text_on_dark"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.05" />
 
         <Button
             android:id="@+id/btnBuyNow"
             android:layout_width="0dp"
-            android:layout_height="50dp"
+            android:layout_height="56dp"
             android:layout_weight="1"
-            android:backgroundTint="#FFD700"
+            android:backgroundTint="@color/accent_burgundy"
             android:text="MUA NGAY"
-            android:textColor="#FFFFFF"
-            android:textSize="14sp"
-            android:textStyle="bold" />
+            android:textColor="@color/text_on_dark"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.05" />
     </LinearLayout>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

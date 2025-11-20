@@ -33,6 +33,7 @@ import com.example.fashionstoreapp.models.Review;
 import com.example.fashionstoreapp.utils.CartManager;
 import com.example.fashionstoreapp.utils.FirestoreManager;
 import com.example.fashionstoreapp.utils.SessionManager;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.storage.FirebaseStorage;
@@ -56,7 +57,8 @@ public class ProductDetailActivity extends AppCompatActivity {
     private RecyclerView reviewsRecyclerView;
     private TextView tvNoReviews;
     private Button btnAddToCart, btnBuyNow, btnWriteReview;
-    private ImageView btnBack, btnFavorite;
+    private ImageView btnBack;
+    private FloatingActionButton fabFavorite;
 
     private Product product;
     private String selectedSize = "M"; // Default size
@@ -121,7 +123,7 @@ public class ProductDetailActivity extends AppCompatActivity {
         btnBuyNow = findViewById(R.id.btnBuyNow);
         btnWriteReview = findViewById(R.id.btnWriteReview);
         btnBack = findViewById(R.id.btnBack);
-        btnFavorite = findViewById(R.id.btnFavorite);
+        fabFavorite = findViewById(R.id.fabFavorite);
     }
 
     private void setupImageGallery() {
@@ -327,7 +329,8 @@ public class ProductDetailActivity extends AppCompatActivity {
     private void setupClickListeners() {
         btnBack.setOnClickListener(v -> finish());
 
-        btnFavorite.setOnClickListener(v -> {
+        // Common favorite click handler
+        View.OnClickListener favoriteClickListener = v -> {
             FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
             if (currentUser == null) {
                 Toast.makeText(this, "Vui lòng đăng nhập để thêm vào yêu thích", Toast.LENGTH_SHORT).show();
@@ -372,7 +375,11 @@ public class ProductDetailActivity extends AppCompatActivity {
                     }
                 });
             }
-        });
+        };
+
+        if (fabFavorite != null) {
+            fabFavorite.setOnClickListener(favoriteClickListener);
+        }
 
         btnAddToCart.setOnClickListener(v -> {
             CartItem cartItem = new CartItem(product, 1, selectedSize, "");
@@ -632,10 +639,11 @@ public class ProductDetailActivity extends AppCompatActivity {
     }
 
     private void updateFavoriteButton() {
-        if (product.isFavorite()) {
-            btnFavorite.setImageResource(R.drawable.baseline_favorite_24);
-        } else {
-            btnFavorite.setImageResource(R.drawable.baseline_favorite_border_24);
+        if (fabFavorite != null) {
+            int favoriteIcon = product.isFavorite() 
+                ? R.drawable.baseline_favorite_24 
+                : R.drawable.baseline_favorite_border_24;
+            fabFavorite.setImageResource(favoriteIcon);
         }
     }
 

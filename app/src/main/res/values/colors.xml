@@ -1,16 +1,53 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="primary_black">#000000</color>
+    <!-- Fashion Palette - Elegant & Artistic -->
+    
+    <!-- Primary Colors - Deep Charcoal for sophistication -->
+    <color name="primary_charcoal">#1A1A1A</color>
+    <color name="primary_dark">#0F0F0F</color>
+    <color name="primary_light">#2D2D2D</color>
+    
+    <!-- Accent Colors - Elegant Burgundy/Rose Gold -->
+    <color name="accent_burgundy">#8B4A6B</color>
+    <color name="accent_rose">#C9A88B</color>
+    <color name="accent_gold">#D4AF37</color>
+    <color name="accent_light">#E8D5C4</color>
+    
+    <!-- Neutral Colors -->
     <color name="primary_white">#FFFFFF</color>
-    <color name="accent_yellow">#FFD700</color>
-    <color name="accent_red">#FF0000</color>
-    <color name="text_primary">#000000</color>
-    <color name="text_secondary">#666666</color>
-    <color name="text_hint">#999999</color>
-    <color name="background_gray">#F5F5F5</color>
-    <color name="divider">#DDDDDD</color>
-    <color name="discount_red">#FF0000</color>
-    <color name="price_red">#FF0000</color>
-    <color name="brown_retro">#D2691E</color>
-    <color name="green_call">#25D366</color>
+    <color name="background_cream">#FAF8F5</color>
+    <color name="background_soft">#F5F3F0</color>
+    <color name="background_card">#FFFFFF</color>
+    
+    <!-- Text Colors - Rich & Readable -->
+    <color name="text_primary">#1A1A1A</color>
+    <color name="text_secondary">#5A5A5A</color>
+    <color name="text_hint">#9A9A9A</color>
+    <color name="text_light">#BABABA</color>
+    <color name="text_on_dark">#FFFFFF</color>
+    
+    <!-- Status Colors -->
+    <color name="success_green">#4A7C59</color>
+    <color name="error_red">#C85A5A</color>
+    <color name="warning_amber">#D4AF37</color>
+    <color name="info_blue">#6B8BA4</color>
+    
+    <!-- Price & Discount -->
+    <color name="price_primary">#8B4A6B</color>
+    <color name="price_discount">#C85A5A</color>
+    <color name="discount_badge">#C85A5A</color>
+    
+    <!-- UI Elements -->
+    <color name="divider">#E5E5E5</color>
+    <color name="border_light">#E0E0E0</color>
+    <color name="shadow_light">#20000000</color>
+    <color name="overlay_dark">#80000000</color>
+    
+    <!-- Legacy support -->
+    <color name="primary_black">#1A1A1A</color>
+    <color name="accent_yellow">#D4AF37</color>
+    <color name="accent_red">#C85A5A</color>
+    <color name="background_gray">#FAF8F5</color>
+    <color name="brown_retro">#C9A88B</color>
+    <color name="green_call">#4A7C59</color>
 </resources>

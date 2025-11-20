@@ -128,9 +128,11 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
 
             // Set favorite icon
             if (product.isFavorite()) {
-                favoriteIcon.setImageResource(android.R.drawable.btn_star_big_on);
+                favoriteIcon.setImageResource(R.drawable.baseline_favorite_24);
+                favoriteIcon.setColorFilter(context.getResources().getColor(R.color.accent_burgundy, null));
             } else {
-                favoriteIcon.setImageResource(android.R.drawable.btn_star_big_off);
+                favoriteIcon.setImageResource(R.drawable.baseline_favorite_border_24);
+                favoriteIcon.setColorFilter(context.getResources().getColor(R.color.text_primary, null));
             }
 
             // Load product image

@@ -69,9 +69,10 @@ public class MainActivity extends AppCompatActivity
     private ProductAdapter shirtsAdapter, poloAdapter, somiAdapter, hoodiesAdapter;
     private ProductAdapter aoKhoacAdapter, quanSotAdapter, quanTayAdapter;
 
-    private Button btnViewAllRetro, btnViewAllOutlet, btnViewAllShirts, btnViewAllPolo;
-    private Button btnViewAllSomi, btnViewAllHoodies;
-    private Button btnViewAllAoKhoac, btnViewAllQuanSot, btnViewAllQuanTay;
+    private Button btnViewAllRetro, btnViewAllOutlet;
+    private TextView btnViewAllShirts, btnViewAllPolo;
+    private TextView btnViewAllSomi, btnViewAllHoodies;
+    private TextView btnViewAllAoKhoac, btnViewAllQuanSot, btnViewAllQuanTay;
 
     private CartManager cartManager;
     private SessionManager sessionManager;
@@ -84,16 +85,24 @@ public class MainActivity extends AppCompatActivity
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        try {
+            setContentView(R.layout.activity_main);
 
-        // Initialize managers
-        cartManager = CartManager.getInstance();
-        sessionManager = new SessionManager(this);
-        mAuth = FirebaseAuth.getInstance();
-        firestoreManager = FirestoreManager.getInstance();
+            // Initialize managers
+            cartManager = CartManager.getInstance();
+            sessionManager = new SessionManager(this);
+            mAuth = FirebaseAuth.getInstance();
+            firestoreManager = FirestoreManager.getInstance();
 
-        // Initialize views
-        initViews();
+            // Initialize views
+            initViews();
+        } catch (Exception e) {
+            android.util.Log.e("MainActivity", "Error in onCreate", e);
+            Toast.makeText(this, "Lỗi khởi tạo: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            e.printStackTrace();
+            finish();
+            return;
+        }
 
         // Setup Banner Slider
         setupBannerSlider();
@@ -116,13 +125,18 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void initViews() {
-        menuIcon = findViewById(R.id.menuIcon);
-        searchIcon = findViewById(R.id.searchIcon);
-        accountIcon = findViewById(R.id.accountIcon);
-        cartIcon = findViewById(R.id.cartIcon);
-        cartBadge = findViewById(R.id.cartBadge);
-        fabCall = findViewById(R.id.fabCall);
-        bottomNavigation = findViewById(R.id.bottomNavigation);
+        try {
+            menuIcon = findViewById(R.id.menuIcon);
+            searchIcon = findViewById(R.id.searchIcon);
+            accountIcon = findViewById(R.id.accountIcon);
+            cartIcon = findViewById(R.id.cartIcon);
+            cartBadge = findViewById(R.id.cartBadge);
+            fabCall = findViewById(R.id.fabCall);
+            bottomNavigation = findViewById(R.id.bottomNavigation);
+        } catch (Exception e) {
+            android.util.Log.e("MainActivity", "Error initializing views", e);
+            throw e;
+        }
 
         // Banner ViewPager
         bannerViewPager = findViewById(R.id.bannerViewPager);

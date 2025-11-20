@@ -276,7 +276,7 @@
                             <ImageView
                                 android:layout_width="32dp"
                                 android:layout_height="32dp"
-                                android:src="@android:drawable/btn_star_big_on"
+                                android:src="@drawable/baseline_favorite_24"
                                 android:tint="#000000" />
 
                             <TextView

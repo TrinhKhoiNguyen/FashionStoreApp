@@ -8,10 +8,14 @@ import com.example.fashionstoreapp.models.Review;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.QuerySnapshot;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
+@SuppressWarnings({"unchecked", "rawtypes"})
 public class FirestoreManager {
     private static final String TAG = "FirestoreManager";
     private static FirestoreManager instance;
@@ -171,7 +175,7 @@ public class FirestoreManager {
      * Save favorite product to Firestore
      */
     public void saveFavorite(String userId, String productId, OnFavoriteSavedListener listener) {
-        java.util.Map<String, Object> favoriteData = new java.util.HashMap<>();
+        Map<String, Object> favoriteData = new java.util.HashMap<>();
         favoriteData.put("userId", userId);
         favoriteData.put("productId", productId);
         favoriteData.put("addedAt", System.currentTimeMillis());
@@ -464,7 +468,7 @@ public class FirestoreManager {
      */
     public void saveUserProfile(String userId, String name, String birthday, String gender, String phone,
             OnUserProfileSavedListener listener) {
-        java.util.Map<String, Object> profileData = new java.util.HashMap<>();
+        Map<String, Object> profileData = new java.util.HashMap<>();
         profileData.put("name", name);
         profileData.put("birthday", birthday);
         profileData.put("gender", gender);
@@ -490,7 +494,7 @@ public class FirestoreManager {
      * Update user photo URL in Firestore
      */
     public void updateUserPhotoUrl(String userId, String photoUrl) {
-        java.util.Map<String, Object> updates = new java.util.HashMap<>();
+        Map<String, Object> updates = new java.util.HashMap<>();
         updates.put("photoUrl", photoUrl);
         updates.put("updatedAt", System.currentTimeMillis());
 
@@ -535,9 +539,9 @@ public class FirestoreManager {
     public void saveCartItems(String userId, List<com.example.fashionstoreapp.models.CartItem> cartItems,
             OnCartSavedListener listener) {
         // Convert cart items to map format
-        List<java.util.Map<String, Object>> cartData = new ArrayList<>();
+        List<Map<String, Object>> cartData = new ArrayList<>();
         for (com.example.fashionstoreapp.models.CartItem item : cartItems) {
-            java.util.Map<String, Object> itemData = new java.util.HashMap<>();
+            Map<String, Object> itemData = new java.util.HashMap<>();
             itemData.put("productId", item.getProduct().getId());
             itemData.put("productName", item.getProduct().getName());
             itemData.put("productImage", item.getProduct().getImageUrl());
@@ -549,7 +553,7 @@ public class FirestoreManager {
             cartData.add(itemData);
         }
 
-        java.util.Map<String, Object> data = new java.util.HashMap<>();
+        Map<String, Object> data = new java.util.HashMap<>();
         data.put("items", cartData);
         data.put("updatedAt", System.currentTimeMillis());
 
@@ -575,12 +579,13 @@ public class FirestoreManager {
                 .get()
                 .addOnSuccessListener(documentSnapshot -> {
                     if (documentSnapshot.exists()) {
-                        List<java.util.Map<String, Object>> cartData = (List<java.util.Map<String, Object>>) documentSnapshot
+                        @SuppressWarnings("unchecked")
+                        List<Map<String, Object>> cartData = (List<Map<String, Object>>) documentSnapshot
                                 .get("items");
 
                         if (cartData != null) {
                             List<String> productIds = new ArrayList<>();
-                            for (java.util.Map<String, Object> itemData : cartData) {
+                            for (Map<String, Object> itemData : cartData) {
                                 String productId = (String) itemData.get("productId");
                                 if (productId != null) {
                                     productIds.add(productId);
@@ -593,7 +598,7 @@ public class FirestoreManager {
                                 public void onProductsLoaded(List<Product> products) {
                                     // Create cart items with full product data
                                     List<com.example.fashionstoreapp.models.CartItem> cartItems = new ArrayList<>();
-                                    for (java.util.Map<String, Object> itemData : cartData) {
+                                    for (Map<String, Object> itemData : cartData) {
                                         String productId = (String) itemData.get("productId");
                                         Product product = findProductById(products, productId);
 
@@ -785,7 +790,7 @@ public class FirestoreManager {
      * Save order to Firestore
      */
     public void saveOrder(com.example.fashionstoreapp.models.Order order, OnOrderSavedListener listener) {
-        java.util.Map<String, Object> orderData = new java.util.HashMap<>();
+        Map<String, Object> orderData = new java.util.HashMap<>();
         orderData.put("orderId", order.getOrderId());
         orderData.put("userId", order.getUserId());
         orderData.put("totalAmount", order.getTotalAmount());
@@ -799,9 +804,9 @@ public class FirestoreManager {
         orderData.put("updatedAt", order.getUpdatedAt());
 
         // Convert order items to map format
-        List<java.util.Map<String, Object>> itemsData = new ArrayList<>();
+        List<Map<String, Object>> itemsData = new ArrayList<>();
         for (com.example.fashionstoreapp.models.CartItem item : order.getItems()) {
-            java.util.Map<String, Object> itemData = new java.util.HashMap<>();
+            Map<String, Object> itemData = new java.util.HashMap<>();
             itemData.put("productId", item.getProduct().getId());
             itemData.put("productName", item.getProduct().getName());
             itemData.put("productImage", item.getProduct().getImageUrl());
@@ -835,9 +840,9 @@ public class FirestoreManager {
                 .whereEqualTo("userId", userId)
                 .orderBy("createdAt", Query.Direction.DESCENDING)
                 .get()
-                .addOnSuccessListener(queryDocumentSnapshots -> {
+                .addOnSuccessListener((QuerySnapshot queryDocumentSnapshots) -> {
                     List<com.example.fashionstoreapp.models.Order> orders = new ArrayList<>();
-                    for (DocumentSnapshot document : queryDocumentSnapshots.getDocuments()) {
+                    for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
                         com.example.fashionstoreapp.models.Order order = new com.example.fashionstoreapp.models.Order();
                         order.setOrderId(document.getString("orderId"));
                         order.setUserId(document.getString("userId"));
@@ -852,11 +857,12 @@ public class FirestoreManager {
                         order.setUpdatedAt(document.getLong("updatedAt"));
 
                         // Load order items
-                        List<java.util.Map<String, Object>> itemsData = (List<java.util.Map<String, Object>>) document
+                        @SuppressWarnings("unchecked")
+                        List<Map<String, Object>> itemsData = (List<Map<String, Object>>) document
                                 .get("items");
                         if (itemsData != null) {
                             List<com.example.fashionstoreapp.models.CartItem> items = new ArrayList<>();
-                            for (java.util.Map<String, Object> itemData : itemsData) {
+                            for (Map<String, Object> itemData : itemsData) {
                                 // Create a simplified product for the cart item
                                 Product product = new Product();
                                 product.setId((String) itemData.get("productId"));
