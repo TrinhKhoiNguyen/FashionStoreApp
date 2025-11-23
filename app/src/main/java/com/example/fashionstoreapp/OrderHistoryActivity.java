@@ -11,7 +11,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.fashionstoreapp.adapters.OrderAdapter;
-import com.example.fashionstoreapp.models.Order;
+import com.example.fashionstoreapp.model.Order;
 import com.example.fashionstoreapp.utils.FirestoreManager;
 import com.example.fashionstoreapp.utils.SessionManager;
 import com.google.android.material.appbar.MaterialToolbar;
@@ -19,7 +19,7 @@ import com.google.android.material.appbar.MaterialToolbar;
 import java.util.ArrayList;
 import java.util.List;
 
-public class OrderHistoryActivity extends AppCompatActivity implements OrderAdapter.OnOrderClickListener {
+public class OrderHistoryActivity extends AppCompatActivity {
 
     private MaterialToolbar toolbar;
     private RecyclerView ordersRecyclerView;
@@ -71,7 +71,7 @@ public class OrderHistoryActivity extends AppCompatActivity implements OrderAdap
         LinearLayoutManager layoutManager = new LinearLayoutManager(this);
         ordersRecyclerView.setLayoutManager(layoutManager);
 
-        orderAdapter = new OrderAdapter(this, orders, this);
+        orderAdapter = new OrderAdapter(this, orders, null);
         ordersRecyclerView.setAdapter(orderAdapter);
     }
 
@@ -123,12 +123,6 @@ public class OrderHistoryActivity extends AppCompatActivity implements OrderAdap
         loadingLayout.setVisibility(View.GONE);
         ordersRecyclerView.setVisibility(View.GONE);
         emptyOrdersLayout.setVisibility(View.VISIBLE);
-    }
-
-    @Override
-    public void onOrderClick(Order order) {
-        // TODO: Open order detail activity
-        Toast.makeText(this, "Chi tiết đơn hàng: " + order.getOrderId(), Toast.LENGTH_SHORT).show();
     }
 
     @Override

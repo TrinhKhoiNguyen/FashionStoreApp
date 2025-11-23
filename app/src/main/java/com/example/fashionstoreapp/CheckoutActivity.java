@@ -11,7 +11,10 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.fashionstoreapp.adapters.CheckoutItemAdapter;
 import com.example.fashionstoreapp.models.CartItem;
 import com.example.fashionstoreapp.models.Order;
 import com.example.fashionstoreapp.utils.CartManager;
@@ -28,8 +31,11 @@ public class CheckoutActivity extends AppCompatActivity {
     private TextInputEditText etRecipientName, etRecipientPhone, etShippingAddress, etNote;
     private RadioGroup paymentMethodGroup;
     private RadioButton rbCOD, rbBankTransfer, rbMomo;
-    private TextView tvItemCount, tvSubtotal, tvShippingFee, tvTotal;
+    private RecyclerView rvCheckoutItems;
+    private TextView tvSubtotal, tvShippingFee, tvTotal;
     private Button btnPlaceOrder;
+
+    private CheckoutItemAdapter checkoutItemAdapter;
 
     private CartManager cartManager;
     private FirestoreManager firestoreManager;
@@ -63,7 +69,7 @@ public class CheckoutActivity extends AppCompatActivity {
         rbCOD = findViewById(R.id.rbCOD);
         rbBankTransfer = findViewById(R.id.rbBankTransfer);
         rbMomo = findViewById(R.id.rbMomo);
-        tvItemCount = findViewById(R.id.tvItemCount);
+        rvCheckoutItems = findViewById(R.id.rvCheckoutItems);
         tvSubtotal = findViewById(R.id.tvSubtotal);
         tvShippingFee = findViewById(R.id.tvShippingFee);
         tvTotal = findViewById(R.id.tvTotal);
@@ -89,16 +95,18 @@ public class CheckoutActivity extends AppCompatActivity {
             return;
         }
 
+        // Setup RecyclerView for product list with images
+        rvCheckoutItems.setLayoutManager(new LinearLayoutManager(this));
+        checkoutItemAdapter = new CheckoutItemAdapter(this, orderItems);
+        rvCheckoutItems.setAdapter(checkoutItemAdapter);
+
         // Calculate total
         totalAmount = 0;
-        int itemCount = 0;
         for (CartItem item : orderItems) {
             totalAmount += item.getTotalPrice();
-            itemCount += item.getQuantity();
         }
 
         // Display order info
-        tvItemCount.setText(itemCount + " sản phẩm");
         tvSubtotal.setText(String.format("%,.0f₫", totalAmount));
         tvTotal.setText(String.format("%,.0f₫", totalAmount));
 

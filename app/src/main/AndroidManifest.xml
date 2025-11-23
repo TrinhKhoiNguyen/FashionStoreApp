@@ -140,6 +140,12 @@
             android:parentActivityName=".ProfileActivity" />
         
         <activity
+            android:name=".OrderDetailActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:parentActivityName=".OrdersActivity" />
+        
+        <activity
             android:name=".AddressPaymentActivity"
             android:exported="false"
             android:screenOrientation="portrait"

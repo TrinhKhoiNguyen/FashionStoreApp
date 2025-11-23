@@ -48,10 +48,22 @@ public class OrdersActivity extends AppCompatActivity {
 
         new TabLayoutMediator(tabLayout, viewPager,
                 (tab, position) -> {
-                    if (position == 0) {
-                        tab.setText("Đơn hàng");
-                    } else {
-                        tab.setText("Lịch sử");
+                    switch (position) {
+                        case 0:
+                            tab.setText("Tất cả");
+                            break;
+                        case 1:
+                            tab.setText("Đang xử lý");
+                            break;
+                        case 2:
+                            tab.setText("Đang giao");
+                            break;
+                        case 3:
+                            tab.setText("Hoàn thành");
+                            break;
+                        case 4:
+                            tab.setText("Đã hủy");
+                            break;
                     }
                 }).attach();
     }
@@ -64,12 +76,13 @@ public class OrdersActivity extends AppCompatActivity {
         @NonNull
         @Override
         public Fragment createFragment(int position) {
-            return OrdersFragment.newInstance(position == 1);
+            String[] statuses = { "all", "Đang xử lý", "Đang giao", "Hoàn thành", "Đã hủy" };
+            return OrdersFragment.newInstance(statuses[position]);
         }
 
         @Override
         public int getItemCount() {
-            return 2;
+            return 5;
         }
     }
 }

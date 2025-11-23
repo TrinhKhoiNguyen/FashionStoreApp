@@ -25,6 +25,7 @@ import com.example.fashionstoreapp.utils.SessionManager;
 import com.example.fashionstoreapp.utils.FirestoreManager;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.android.material.button.MaterialButton;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.UserProfileChangeRequest;
@@ -74,7 +75,7 @@ public class ProfileActivity extends AppCompatActivity {
         CardView offersCard = findViewById(R.id.offersCard);
         CardView settingsCard = findViewById(R.id.settingsCard);
         CardView supportCard = findViewById(R.id.supportCard);
-        CardView logoutCard = findViewById(R.id.logoutCard);
+        MaterialButton logoutButton = findViewById(R.id.logoutButton);
         bottomNavigation = findViewById(R.id.bottomNavigation);
 
         // Set up click listeners for new cards
@@ -102,7 +103,7 @@ public class ProfileActivity extends AppCompatActivity {
             startActivity(new Intent(ProfileActivity.this, SupportActivity.class));
         });
 
-        logoutCard.setOnClickListener(v -> {
+        logoutButton.setOnClickListener(v -> {
             handleLogout();
         });
     }

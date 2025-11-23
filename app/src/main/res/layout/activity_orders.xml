@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FFFFFF"
+    android:background="#F5F5F5"
     tools:context=".OrdersActivity">
 
     <com.google.android.material.appbar.AppBarLayout
@@ -16,20 +16,22 @@
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            android:background="@color/primary_black"
+            android:background="#000000"
             app:navigationIcon="@drawable/ic_back"
+            app:navigationIconTint="#FFD700"
             app:title="Đơn hàng của tôi"
-            android:textStyle="bold"
-            app:titleTextColor="@color/accent_yellow" />
+            app:titleTextColor="#FFFFFF" />
 
         <com.google.android.material.tabs.TabLayout
             android:id="@+id/tabLayout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="?attr/colorPrimary"
-            app:tabTextColor="@android:color/white"
-            app:tabSelectedTextColor="@color/accent_yellow"
-            app:tabIndicatorColor="@color/accent_yellow" />
+            android:background="#FFFFFF"
+            app:tabMode="scrollable"
+            app:tabSelectedTextColor="#000000"
+            app:tabTextColor="#666666"
+            app:tabIndicatorColor="#FFD700"
+            app:tabIndicatorHeight="3dp" />
 
     </com.google.android.material.appbar.AppBarLayout>
 

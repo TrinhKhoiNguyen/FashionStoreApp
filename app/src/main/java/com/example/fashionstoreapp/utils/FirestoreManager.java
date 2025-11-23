@@ -863,36 +863,35 @@ public class FirestoreManager {
                 .orderBy("createdAt", Query.Direction.DESCENDING)
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
-                    List<com.example.fashionstoreapp.models.Order> orders = new ArrayList<>();
+                    List<com.example.fashionstoreapp.model.Order> orders = new ArrayList<>();
                     for (DocumentSnapshot document : queryDocumentSnapshots.getDocuments()) {
-                        com.example.fashionstoreapp.models.Order order = new com.example.fashionstoreapp.models.Order();
+                        com.example.fashionstoreapp.model.Order order = new com.example.fashionstoreapp.model.Order();
                         order.setOrderId(document.getString("orderId"));
                         order.setUserId(document.getString("userId"));
-                        order.setTotalAmount(document.getDouble("totalAmount"));
+                        order.setTotal(
+                                document.getDouble("totalAmount") != null ? document.getDouble("totalAmount") : 0.0);
                         order.setStatus(document.getString("status"));
                         order.setPaymentMethod(document.getString("paymentMethod"));
-                        order.setRecipientName(document.getString("recipientName"));
-                        order.setRecipientPhone(document.getString("recipientPhone"));
                         order.setShippingAddress(document.getString("shippingAddress"));
-                        order.setNote(document.getString("note"));
-                        order.setCreatedAt(document.getLong("createdAt"));
-                        order.setUpdatedAt(document.getLong("updatedAt"));
+                        order.setPhoneNumber(document.getString("recipientPhone"));
+
+                        // Set timestamp directly as Long
+                        Long createdAtLong = document.getLong("createdAt");
+                        if (createdAtLong != null) {
+                            order.setCreatedAt(createdAtLong);
+                        }
 
                         // Load order items
                         List<java.util.Map<String, Object>> itemsData = (List<java.util.Map<String, Object>>) document
                                 .get("items");
                         if (itemsData != null) {
-                            List<com.example.fashionstoreapp.models.CartItem> items = new ArrayList<>();
+                            List<com.example.fashionstoreapp.model.Order.OrderItem> items = new ArrayList<>();
                             for (java.util.Map<String, Object> itemData : itemsData) {
-                                // Create a simplified product for the cart item
-                                Product product = new Product();
-                                product.setId((String) itemData.get("productId"));
-                                product.setName((String) itemData.get("productName"));
-                                product.setImageUrl((String) itemData.get("productImage"));
-                                product.setCurrentPrice(((Number) itemData.get("productPrice")).doubleValue());
-
-                                com.example.fashionstoreapp.models.CartItem item = new com.example.fashionstoreapp.models.CartItem();
-                                item.setProduct(product);
+                                com.example.fashionstoreapp.model.Order.OrderItem item = new com.example.fashionstoreapp.model.Order.OrderItem();
+                                item.setProductId((String) itemData.get("productId"));
+                                item.setProductName((String) itemData.get("productName"));
+                                item.setImageUrl((String) itemData.get("productImage"));
+                                item.setPrice(((Number) itemData.get("productPrice")).doubleValue());
                                 item.setQuantity(((Number) itemData.get("quantity")).intValue());
                                 item.setSize((String) itemData.get("size"));
                                 item.setColor((String) itemData.get("color"));
@@ -919,7 +918,7 @@ public class FirestoreManager {
     }
 
     public interface OnOrdersLoadedListener {
-        void onOrdersLoaded(List<com.example.fashionstoreapp.models.Order> orders);
+        void onOrdersLoaded(List<com.example.fashionstoreapp.model.Order> orders);
 
         void onError(String error);
     }

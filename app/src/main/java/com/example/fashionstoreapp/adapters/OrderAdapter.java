@@ -12,7 +12,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.fashionstoreapp.R;
-import com.example.fashionstoreapp.models.Order;
+import com.example.fashionstoreapp.model.Order;
 
 import java.util.List;
 
@@ -57,7 +57,6 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.OrderViewHol
 
     class OrderViewHolder extends RecyclerView.ViewHolder {
         private TextView tvOrderId, tvOrderStatus, tvOrderDate, tvOrderItemsSummary, tvOrderTotal;
-        private Button btnViewOrderDetail;
 
         public OrderViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -66,14 +65,6 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.OrderViewHol
             tvOrderDate = itemView.findViewById(R.id.tvOrderDate);
             tvOrderItemsSummary = itemView.findViewById(R.id.tvOrderItemsSummary);
             tvOrderTotal = itemView.findViewById(R.id.tvOrderTotal);
-            btnViewOrderDetail = itemView.findViewById(R.id.btnViewOrderDetail);
-
-            btnViewOrderDetail.setOnClickListener(v -> {
-                int position = getAdapterPosition();
-                if (position != RecyclerView.NO_POSITION && listener != null) {
-                    listener.onOrderClick(orders.get(position));
-                }
-            });
 
             itemView.setOnClickListener(v -> {
                 int position = getAdapterPosition();
