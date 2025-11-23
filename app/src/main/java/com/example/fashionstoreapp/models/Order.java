@@ -11,7 +11,10 @@ public class Order implements Serializable {
     private String userId;
     private List<CartItem> items;
     private double totalAmount;
-    private String status; // pending, processing, shipping, completed, cancelled
+    private double subtotal;
+    private double shippingFee;
+    private double voucherDiscount;
+    private String status; // pending, processing, shipping, delivered, cancelled
     private String paymentMethod; // cod, bank_transfer, momo
     private String recipientName;
     private String recipientPhone;
@@ -25,12 +28,16 @@ public class Order implements Serializable {
     }
 
     public Order(String userId, List<CartItem> items, double totalAmount,
+            double subtotal, double shippingFee, double voucherDiscount,
             String paymentMethod, String recipientName, String recipientPhone,
             String shippingAddress, String note) {
         this.orderId = "ORD" + System.currentTimeMillis();
         this.userId = userId;
         this.items = items;
         this.totalAmount = totalAmount;
+        this.subtotal = subtotal;
+        this.shippingFee = shippingFee;
+        this.voucherDiscount = voucherDiscount;
         this.status = "pending";
         this.paymentMethod = paymentMethod;
         this.recipientName = recipientName;
@@ -72,6 +79,30 @@ public class Order implements Serializable {
 
     public void setTotalAmount(double totalAmount) {
         this.totalAmount = totalAmount;
+    }
+
+    public double getSubtotal() {
+        return subtotal;
+    }
+
+    public void setSubtotal(double subtotal) {
+        this.subtotal = subtotal;
+    }
+
+    public double getShippingFee() {
+        return shippingFee;
+    }
+
+    public void setShippingFee(double shippingFee) {
+        this.shippingFee = shippingFee;
+    }
+
+    public double getVoucherDiscount() {
+        return voucherDiscount;
+    }
+
+    public void setVoucherDiscount(double voucherDiscount) {
+        this.voucherDiscount = voucherDiscount;
     }
 
     public String getStatus() {
@@ -154,11 +185,11 @@ public class Order implements Serializable {
             case "pending":
                 return "Chờ xác nhận";
             case "processing":
-                return "Đang xử lý";
+                return "Đang chuẩn bị";
             case "shipping":
-                return "Đang giao hàng";
-            case "completed":
-                return "Đã hoàn thành";
+                return "Đang giao";
+            case "delivered":
+                return "Đã giao";
             case "cancelled":
                 return "Đã hủy";
             default:
@@ -169,17 +200,17 @@ public class Order implements Serializable {
     public int getStatusColor() {
         switch (status) {
             case "pending":
-                return 0xFFFFA000; // Orange
+                return 0xFFFFA726; // Orange - Chờ xác nhận
             case "processing":
-                return 0xFF2196F3; // Blue
+                return 0xFF42A5F5; // Light Blue - Đang chuẩn bị
             case "shipping":
-                return 0xFF9C27B0; // Purple
-            case "completed":
-                return 0xFF4CAF50; // Green
+                return 0xFF2196F3; // Blue - Đang giao
+            case "delivered":
+                return 0xFF4CAF50; // Green - Đã giao
             case "cancelled":
-                return 0xFFF44336; // Red
+                return 0xFFF44336; // Red - Đã hủy
             default:
-                return 0xFF757575; // Gray
+                return 0xFF9E9E9E; // Gray
         }
     }
 

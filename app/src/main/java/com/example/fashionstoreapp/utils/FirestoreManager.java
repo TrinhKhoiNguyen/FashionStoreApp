@@ -816,6 +816,9 @@ public class FirestoreManager {
         orderData.put("orderId", order.getOrderId());
         orderData.put("userId", order.getUserId());
         orderData.put("totalAmount", order.getTotalAmount());
+        orderData.put("subtotal", order.getSubtotal());
+        orderData.put("shippingFee", order.getShippingFee());
+        orderData.put("voucherDiscount", order.getVoucherDiscount());
         orderData.put("status", order.getStatus());
         orderData.put("paymentMethod", order.getPaymentMethod());
         orderData.put("recipientName", order.getRecipientName());
@@ -868,11 +871,88 @@ public class FirestoreManager {
                         com.example.fashionstoreapp.model.Order order = new com.example.fashionstoreapp.model.Order();
                         order.setOrderId(document.getString("orderId"));
                         order.setUserId(document.getString("userId"));
-                        order.setTotal(
-                                document.getDouble("totalAmount") != null ? document.getDouble("totalAmount") : 0.0);
+
+                        // Fix: Read totalAmount (try multiple field names for compatibility)
+                        Double totalAmount = document.getDouble("totalAmount");
+                        if (totalAmount == null) {
+                            totalAmount = document.getDouble("total");
+                        }
+                        if (totalAmount == null) {
+                            // Try parsing from String if stored incorrectly
+                            String totalStr = document.getString("totalAmount");
+                            if (totalStr != null) {
+                                try {
+                                    totalAmount = Double.parseDouble(totalStr.replaceAll("[^0-9.]", ""));
+                                } catch (Exception e) {
+                                    Log.e(TAG, "Failed to parse totalAmount string: " + totalStr, e);
+                                }
+                            }
+                        }
+
+                        // CRITICAL: Always set total, even if 0
+                        double finalTotal = (totalAmount != null) ? totalAmount : 0.0;
+                        order.setTotal(finalTotal);
+                        Log.d(TAG, "Order " + order.getOrderId() + " - Setting total to: " + finalTotal
+                                + " (from totalAmount: " + totalAmount + ")");
+
+                        // Check if this is a new order with breakdown fields
+                        Double subtotal = document.getDouble("subtotal");
+                        Double shippingFee = document.getDouble("shippingFee");
+                        Double voucherDiscount = document.getDouble("voucherDiscount");
+
+                        if (subtotal != null) {
+                            // New order format with breakdown
+                            order.setSubtotal(subtotal);
+                            order.setShippingFee(shippingFee != null ? shippingFee : 0);
+                            order.setVoucherDiscount(voucherDiscount != null ? voucherDiscount : 0);
+                            Log.d(TAG, "Order " + order.getOrderId() + " - New format: subtotal=" + subtotal +
+                                    ", shippingFee=" + (shippingFee != null ? shippingFee : 0) +
+                                    ", voucherDiscount=" + (voucherDiscount != null ? voucherDiscount : 0));
+                        } else if (totalAmount != null) {
+                            // Old order format - calculate breakdown from totalAmount
+                            // Get items first to calculate
+                            List<java.util.Map<String, Object>> oldOrderItems = (List<java.util.Map<String, Object>>) document
+                                    .get("items");
+                            double itemsTotal = 0;
+
+                            if (oldOrderItems != null) {
+                                for (java.util.Map<String, Object> itemData : oldOrderItems) {
+                                    Object priceObj = itemData.get("productPrice");
+                                    if (priceObj == null) {
+                                        priceObj = itemData.get("price");
+                                    }
+                                    Object quantityObj = itemData.get("quantity");
+                                    if (priceObj != null && quantityObj != null) {
+                                        double price = ((Number) priceObj).doubleValue();
+                                        int quantity = ((Number) quantityObj).intValue();
+                                        itemsTotal += price * quantity;
+                                    }
+                                }
+                            }
+
+                            // Calculate shipping fee (free if > 500k, else 30k)
+                            double calculatedShipping = itemsTotal >= 500000 ? 0 : 30000;
+
+                            order.setSubtotal(itemsTotal);
+                            order.setShippingFee(calculatedShipping);
+                            order.setVoucherDiscount(0);
+
+                            Log.d(TAG,
+                                    "Order " + order.getOrderId() + " - Old format calculated: itemsTotal=" + itemsTotal
+                                            +
+                                            ", calculatedShipping=" + calculatedShipping);
+                        } else {
+                            // No data available, set defaults
+                            order.setSubtotal(0);
+                            order.setShippingFee(0);
+                            order.setVoucherDiscount(0);
+                            Log.w(TAG, "Order " + order.getOrderId() + " has no breakdown data");
+                        }
+
                         order.setStatus(document.getString("status"));
                         order.setPaymentMethod(document.getString("paymentMethod"));
                         order.setShippingAddress(document.getString("shippingAddress"));
+                        order.setRecipientName(document.getString("recipientName"));
                         order.setPhoneNumber(document.getString("recipientPhone"));
 
                         // Set timestamp directly as Long
@@ -890,9 +970,28 @@ public class FirestoreManager {
                                 com.example.fashionstoreapp.model.Order.OrderItem item = new com.example.fashionstoreapp.model.Order.OrderItem();
                                 item.setProductId((String) itemData.get("productId"));
                                 item.setProductName((String) itemData.get("productName"));
-                                item.setImageUrl((String) itemData.get("productImage"));
-                                item.setPrice(((Number) itemData.get("productPrice")).doubleValue());
-                                item.setQuantity(((Number) itemData.get("quantity")).intValue());
+
+                                // Fix: Get productImage from items
+                                String imageUrl = (String) itemData.get("productImage");
+                                if (imageUrl == null) {
+                                    imageUrl = (String) itemData.get("imageUrl");
+                                }
+                                item.setImageUrl(imageUrl);
+                                Log.d(TAG, "Order item: " + itemData.get("productName") + " imageUrl: " + imageUrl);
+
+                                Object priceObj = itemData.get("productPrice");
+                                if (priceObj == null) {
+                                    priceObj = itemData.get("price");
+                                }
+                                if (priceObj != null) {
+                                    item.setPrice(((Number) priceObj).doubleValue());
+                                }
+
+                                Object quantityObj = itemData.get("quantity");
+                                if (quantityObj != null) {
+                                    item.setQuantity(((Number) quantityObj).intValue());
+                                }
+
                                 item.setSize((String) itemData.get("size"));
                                 item.setColor((String) itemData.get("color"));
                                 items.add(item);

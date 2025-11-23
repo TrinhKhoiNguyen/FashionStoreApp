@@ -13,9 +13,13 @@ public class Order {
     private String userId;
     private List<OrderItem> items;
     private double total;
-    private String status; // "Đang xử lý", "Đang giao", "Hoàn thành", "Đã hủy"
+    private double subtotal;
+    private double shippingFee;
+    private double voucherDiscount;
+    private String status; // "pending", "processing", "shipping", "delivered", "cancelled"
     private Long createdAt; // Stored as timestamp (milliseconds)
     private String shippingAddress;
+    private String recipientName;
     private String phoneNumber;
     private String paymentMethod;
 
@@ -23,15 +27,20 @@ public class Order {
         // Required empty constructor for Firestore
     }
 
-    public Order(String orderId, String userId, List<OrderItem> items, double total, String status, Long createdAt,
-            String shippingAddress, String phoneNumber, String paymentMethod) {
+    public Order(String orderId, String userId, List<OrderItem> items, double total, double subtotal,
+            double shippingFee, double voucherDiscount, String status, Long createdAt,
+            String shippingAddress, String recipientName, String phoneNumber, String paymentMethod) {
         this.orderId = orderId;
         this.userId = userId;
         this.items = items;
         this.total = total;
+        this.subtotal = subtotal;
+        this.shippingFee = shippingFee;
+        this.voucherDiscount = voucherDiscount;
         this.status = status;
         this.createdAt = createdAt;
         this.shippingAddress = shippingAddress;
+        this.recipientName = recipientName;
         this.phoneNumber = phoneNumber;
         this.paymentMethod = paymentMethod;
     }
@@ -69,6 +78,22 @@ public class Order {
         return phoneNumber;
     }
 
+    public String getRecipientName() {
+        return recipientName;
+    }
+
+    public double getSubtotal() {
+        return subtotal;
+    }
+
+    public double getShippingFee() {
+        return shippingFee;
+    }
+
+    public double getVoucherDiscount() {
+        return voucherDiscount;
+    }
+
     public String getPaymentMethod() {
         return paymentMethod;
     }
@@ -90,6 +115,15 @@ public class Order {
         this.total = total;
     }
 
+    // Alias for Firestore auto-mapping (totalAmount -> total)
+    public void setTotalAmount(double totalAmount) {
+        this.total = totalAmount;
+    }
+
+    public double getTotalAmount() {
+        return this.total;
+    }
+
     public void setStatus(String status) {
         this.status = status;
     }
@@ -106,13 +140,44 @@ public class Order {
         this.phoneNumber = phoneNumber;
     }
 
+    public void setRecipientName(String recipientName) {
+        this.recipientName = recipientName;
+    }
+
+    public void setSubtotal(double subtotal) {
+        this.subtotal = subtotal;
+    }
+
+    public void setShippingFee(double shippingFee) {
+        this.shippingFee = shippingFee;
+    }
+
+    public void setVoucherDiscount(double voucherDiscount) {
+        this.voucherDiscount = voucherDiscount;
+    }
+
     public void setPaymentMethod(String paymentMethod) {
         this.paymentMethod = paymentMethod;
     }
 
     // Helper methods
     public String getStatusText() {
-        return status != null ? status : "Không xác định";
+        if (status == null)
+            return "Không xác định";
+        switch (status) {
+            case "pending":
+                return "Chờ xác nhận";
+            case "processing":
+                return "Đang chuẩn bị";
+            case "shipping":
+                return "Đang giao";
+            case "delivered":
+                return "Đã giao";
+            case "cancelled":
+                return "Đã hủy";
+            default:
+                return status;
+        }
     }
 
     public String getFormattedCreatedDate() {
@@ -141,14 +206,16 @@ public class Order {
         if (status == null)
             return Color.parseColor("#9E9E9E");
         switch (status) {
-            case "Đang xử lý":
-                return Color.parseColor("#FF9800");
-            case "Đang giao":
-                return Color.parseColor("#2196F3");
-            case "Hoàn thành":
-                return Color.parseColor("#4CAF50");
-            case "Đã hủy":
-                return Color.parseColor("#F44336");
+            case "pending":
+                return Color.parseColor("#FFA726"); // Orange - Chờ xác nhận
+            case "processing":
+                return Color.parseColor("#42A5F5"); // Light Blue - Đang chuẩn bị
+            case "shipping":
+                return Color.parseColor("#2196F3"); // Blue - Đang giao
+            case "delivered":
+                return Color.parseColor("#4CAF50"); // Green - Đã giao
+            case "cancelled":
+                return Color.parseColor("#F44336"); // Red - Đã hủy
             default:
                 return Color.parseColor("#9E9E9E");
         }
@@ -220,6 +287,15 @@ public class Order {
             this.imageUrl = imageUrl;
         }
 
+        // Firestore compatibility - productImage maps to imageUrl
+        public void setProductImage(String productImage) {
+            this.imageUrl = productImage;
+        }
+
+        public String getProductImage() {
+            return this.imageUrl;
+        }
+
         public void setQuantity(int quantity) {
             this.quantity = quantity;
         }
@@ -228,12 +304,31 @@ public class Order {
             this.price = price;
         }
 
+        // Firestore compatibility - productPrice maps to price
+        public void setProductPrice(double productPrice) {
+            this.price = productPrice;
+        }
+
+        public double getProductPrice() {
+            return this.price;
+        }
+
         public void setSize(String size) {
             this.size = size;
         }
 
         public void setColor(String color) {
             this.color = color;
+        }
+
+        // Firestore compatibility - totalPrice field (ignored, calculated from price *
+        // quantity)
+        public void setTotalPrice(double totalPrice) {
+            // Ignore this field, we calculate from price * quantity
+        }
+
+        public double getTotalPrice() {
+            return this.price * this.quantity;
         }
     }
 }

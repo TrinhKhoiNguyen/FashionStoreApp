@@ -81,14 +81,15 @@ public class OrderItemAdapter extends RecyclerView.Adapter<OrderItemAdapter.View
             // Quantity
             tvProductQuantity.setText("x" + item.getQuantity());
 
-            // Image
-            if (item.getImageUrl() != null && !item.getImageUrl().isEmpty()) {
-                Glide.with(context)
-                        .load(item.getImageUrl())
-                        .placeholder(R.drawable.placeholder_image)
-                        .error(R.drawable.placeholder_image)
-                        .into(ivProductImage);
-            }
+            // Image - always load with Glide
+            String imageUrl = item.getImageUrl();
+            android.util.Log.d("OrderItemAdapter", "Loading image for " + item.getProductName() + ": " + imageUrl);
+
+            Glide.with(context)
+                    .load(imageUrl)
+                    .placeholder(R.drawable.placeholder_image)
+                    .error(R.drawable.placeholder_image)
+                    .into(ivProductImage);
         }
     }
 }

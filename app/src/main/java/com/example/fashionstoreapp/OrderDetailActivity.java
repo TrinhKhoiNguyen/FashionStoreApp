@@ -124,9 +124,8 @@ public class OrderDetailActivity extends AppCompatActivity {
 
         // Shipping Address (extract from order fields)
         tvShippingAddress.setText(order.getShippingAddress());
+        tvRecipientName.setText(order.getRecipientName() != null ? order.getRecipientName() : "Người nhận");
         tvRecipientPhone.setText(order.getPhoneNumber());
-        // You may need to add recipientName to Order model
-        tvRecipientName.setText("Người nhận");
 
         // Products
         if (order.getItems() != null) {
@@ -137,11 +136,11 @@ public class OrderDetailActivity extends AppCompatActivity {
         // Payment Details
         NumberFormat formatter = NumberFormat.getCurrencyInstance(new Locale("vi", "VN"));
 
-        double subtotal = order.getTotal();
+        // Use saved subtotal, shippingFee, voucherDiscount from order
+        double subtotal = order.getSubtotal();
         tvSubtotal.setText(formatter.format(subtotal));
 
-        // Shipping fee (default 30k, free if order > 500k)
-        double shippingFee = subtotal >= 500000 ? 0 : 30000;
+        double shippingFee = order.getShippingFee();
         if (shippingFee == 0) {
             tvShippingFee.setText("Miễn phí");
             tvShippingFee.setTextColor(getColor(android.R.color.holo_green_dark));
@@ -149,13 +148,20 @@ public class OrderDetailActivity extends AppCompatActivity {
             tvShippingFee.setText(formatter.format(shippingFee));
         }
 
-        // For now, hide discount sections (can be added later)
-        layoutShippingDiscount.setVisibility(View.GONE);
-        layoutVoucherDiscount.setVisibility(View.GONE);
+        // Show voucher discount if > 0
+        double voucherDiscount = order.getVoucherDiscount();
+        if (voucherDiscount > 0) {
+            layoutVoucherDiscount.setVisibility(View.VISIBLE);
+            tvVoucherDiscount.setText("-" + formatter.format(voucherDiscount));
+        } else {
+            layoutVoucherDiscount.setVisibility(View.GONE);
+        }
 
-        // Total
-        double total = subtotal + shippingFee;
-        tvTotalPayment.setText(formatter.format(total));
+        // Hide shipping discount for now
+        layoutShippingDiscount.setVisibility(View.GONE);
+
+        // Total from saved order data
+        tvTotalPayment.setText(formatter.format(order.getTotal()));
 
         // Payment Method
         tvPaymentMethod.setText(order.getPaymentMethod() != null ? order.getPaymentMethod() : "COD");

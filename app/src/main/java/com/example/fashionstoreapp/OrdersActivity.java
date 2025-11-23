@@ -50,16 +50,16 @@ public class OrdersActivity extends AppCompatActivity {
                 (tab, position) -> {
                     switch (position) {
                         case 0:
-                            tab.setText("Tất cả");
+                            tab.setText("Chờ xác nhận");
                             break;
                         case 1:
-                            tab.setText("Đang xử lý");
+                            tab.setText("Đang chuẩn bị");
                             break;
                         case 2:
                             tab.setText("Đang giao");
                             break;
                         case 3:
-                            tab.setText("Hoàn thành");
+                            tab.setText("Đã giao");
                             break;
                         case 4:
                             tab.setText("Đã hủy");
@@ -76,7 +76,13 @@ public class OrdersActivity extends AppCompatActivity {
         @NonNull
         @Override
         public Fragment createFragment(int position) {
-            String[] statuses = { "all", "Đang xử lý", "Đang giao", "Hoàn thành", "Đã hủy" };
+            // Status mapping:
+            // 0: Chờ xác nhận (pending)
+            // 1: Đang chuẩn bị (processing)
+            // 2: Đang giao (shipping)
+            // 3: Đã giao (delivered)
+            // 4: Đã hủy (cancelled)
+            String[] statuses = { "pending", "processing", "shipping", "delivered", "cancelled" };
             return OrdersFragment.newInstance(statuses[position]);
         }
 

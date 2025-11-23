@@ -101,9 +101,8 @@ public class OrdersFragment extends Fragment {
                     for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
                         Order order = doc.toObject(Order.class);
 
-                        // Filter by status if not "all"
-                        if (statusFilter == null || statusFilter.equals("all") ||
-                                order.getStatus().equals(statusFilter)) {
+                        // Filter by status (no "all" tab anymore)
+                        if (statusFilter == null || order.getStatus().equals(statusFilter)) {
                             orderList.add(order);
                         }
                     }
