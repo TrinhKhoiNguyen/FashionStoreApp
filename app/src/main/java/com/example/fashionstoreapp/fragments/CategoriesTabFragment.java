@@ -39,6 +39,7 @@ public class CategoriesTabFragment extends Fragment implements AdminCategoryAdap
     private FirestoreManager firestoreManager;
     private List<Category> allCategories = new ArrayList<>();
     private List<Category> filteredCategories = new ArrayList<>();
+    private boolean realtimeInitialized = false;
 
     @Nullable
     @Override
@@ -49,7 +50,9 @@ public class CategoriesTabFragment extends Fragment implements AdminCategoryAdap
         initViews(view);
         setupRecyclerView();
         setupListeners();
-        loadCategories();
+        // Do not call loadCategories() here to avoid overwriting realtime updates.
+        // loadCategories() will be used as a fallback in onResume if realtime hasn't
+        // initialized yet.
 
         return view;
     }
@@ -67,6 +70,7 @@ public class CategoriesTabFragment extends Fragment implements AdminCategoryAdap
     private void setupRealtimeListener() {
         com.google.firebase.firestore.FirebaseFirestore.getInstance()
                 .collection("categories")
+                .whereEqualTo("active", true)
                 .addSnapshotListener((snapshots, error) -> {
                     if (error != null) {
                         android.util.Log.e("CategoriesTab", "Realtime listener error: " + error.getMessage());
@@ -100,7 +104,10 @@ public class CategoriesTabFragment extends Fragment implements AdminCategoryAdap
                     allCategories.clear();
                     allCategories.addAll(categories);
                     filterCategories(searchCategoryInput.getText().toString());
+                    adapter.updateData(filteredCategories); // Ensure adapter receives the updated filtered list
                     android.util.Log.d("CategoriesTab", "Updated UI with " + filteredCategories.size() + " categories");
+                    // Mark that realtime has provided initial data
+                    realtimeInitialized = true;
                 });
     }
 
@@ -139,7 +146,13 @@ public class CategoriesTabFragment extends Fragment implements AdminCategoryAdap
     @Override
     public void onResume() {
         super.onResume();
-        loadCategories();
+        // Only use the fallback load if realtime listener hasn't initialized yet
+        if (!realtimeInitialized) {
+            android.util.Log.d("CategoriesTab", "Realtime not initialized yet; using fallback loadCategories()");
+            loadCategories();
+        } else {
+            android.util.Log.d("CategoriesTab", "Realtime already initialized; skipping fallback load");
+        }
     }
 
     private void loadCategories() {
@@ -150,7 +163,7 @@ public class CategoriesTabFragment extends Fragment implements AdminCategoryAdap
                 allCategories.addAll(categories);
                 filteredCategories.clear();
                 filteredCategories.addAll(categories);
-                adapter.notifyDataSetChanged();
+                adapter.updateData(filteredCategories); // Ensure adapter receives the updated filtered list
             }
 
             @Override
@@ -176,7 +189,7 @@ public class CategoriesTabFragment extends Fragment implements AdminCategoryAdap
         }
         android.util.Log.d("CategoriesTab",
                 "Filter applied. Showing " + filteredCategories.size() + " of " + allCategories.size() + " categories");
-        adapter.notifyDataSetChanged();
+        adapter.updateData(filteredCategories); // Ensure adapter receives the updated filtered list
     }
 
     @Override

@@ -16,6 +16,7 @@ import com.example.fashionstoreapp.R;
 import com.example.fashionstoreapp.models.Category;
 
 import java.util.List;
+import java.util.ArrayList;
 
 public class AdminCategoryAdapter extends RecyclerView.Adapter<AdminCategoryAdapter.ViewHolder> {
 
@@ -31,7 +32,10 @@ public class AdminCategoryAdapter extends RecyclerView.Adapter<AdminCategoryAdap
 
     public AdminCategoryAdapter(Context context, List<Category> categories, OnAdminCategoryClickListener listener) {
         this.context = context;
-        this.categories = categories;
+        // Copy incoming list to prevent external mutations affecting adapter state
+        this.categories = new ArrayList<>();
+        if (categories != null)
+            this.categories.addAll(categories);
         this.listener = listener;
     }
 
@@ -84,6 +88,8 @@ public class AdminCategoryAdapter extends RecyclerView.Adapter<AdminCategoryAdap
     }
 
     public void updateData(List<Category> newCategories) {
+        android.util.Log.d("AdminCategoryAdapter",
+                "updateData called. newCategories size: " + (newCategories == null ? 0 : newCategories.size()));
         this.categories.clear();
         this.categories.addAll(newCategories);
         notifyDataSetChanged();

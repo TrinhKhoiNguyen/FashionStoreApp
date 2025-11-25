@@ -318,8 +318,10 @@ public class FirestoreManager {
      * Load all categories from Firestore
      */
     public void loadCategories(OnCategoriesLoadedListener listener) {
+        // Query Firestore field name 'active' (Category uses @PropertyName("active")
+        // mapping)
         db.collection(COLLECTION_CATEGORIES)
-                .whereEqualTo("isActive", true)
+                .whereEqualTo("active", true)
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     List<Category> categories = new ArrayList<>();
@@ -1045,10 +1047,34 @@ public class FirestoreManager {
                         order.setOrderId(document.getId());
                         order.setUserId(document.getString("userId"));
 
+                        // Read total from whichever field exists: prefer numeric 'total' or
+                        // 'totalAmount'
+                        Double totalDouble = null;
                         Object totalObj = document.get("total");
-                        if (totalObj != null) {
-                            order.setTotal(((Number) totalObj).longValue());
+                        if (totalObj instanceof Number) {
+                            totalDouble = ((Number) totalObj).doubleValue();
+                        } else if (totalObj instanceof String) {
+                            try {
+                                totalDouble = Double.parseDouble(((String) totalObj).replaceAll("[^0-9.]", ""));
+                            } catch (Exception ignored) {
+                            }
                         }
+
+                        if (totalDouble == null) {
+                            // try alternative field name used elsewhere
+                            Double t = document.getDouble("totalAmount");
+                            if (t != null)
+                                totalDouble = t;
+                        }
+
+                        if (totalDouble == null) {
+                            // last resort: try 'total' as double
+                            Double t2 = document.getDouble("total");
+                            if (t2 != null)
+                                totalDouble = t2;
+                        }
+
+                        order.setTotal(totalDouble != null ? totalDouble : 0.0);
 
                         order.setStatus(document.getString("status"));
                         order.setPaymentMethod(document.getString("paymentMethod"));
