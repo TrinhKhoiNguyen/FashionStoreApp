@@ -81,6 +81,15 @@ public class Order implements Serializable {
         this.totalAmount = totalAmount;
     }
 
+    // Alias for admin compatibility
+    public long getTotal() {
+        return (long) totalAmount;
+    }
+
+    public void setTotal(long total) {
+        this.totalAmount = total;
+    }
+
     public double getSubtotal() {
         return subtotal;
     }

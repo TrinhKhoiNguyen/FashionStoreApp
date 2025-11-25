@@ -168,6 +168,26 @@
             android:exported="false"
             android:screenOrientation="portrait"
             android:parentActivityName=".ProfileActivity" />
+        
+        <activity
+            android:name=".AdminPanelActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:parentActivityName=".ProfileActivity" />
+        
+        <activity
+            android:name=".AddEditProductActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:parentActivityName=".AdminPanelActivity"
+            android:windowSoftInputMode="stateHidden|adjustResize" />
+        
+        <activity
+            android:name=".AddEditCategoryActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:parentActivityName=".AdminPanelActivity"
+            android:windowSoftInputMode="stateHidden|adjustResize" />
     </application>
 
 </manifest>

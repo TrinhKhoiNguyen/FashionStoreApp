@@ -70,6 +70,7 @@ public class ProfileActivity extends AppCompatActivity {
 
         // New section cards
         CardView personalInfoCard = findViewById(R.id.personalInfoCard);
+        CardView adminPanelCard = findViewById(R.id.adminPanelCard);
         CardView ordersCard = findViewById(R.id.ordersCard);
         CardView addressPaymentCard = findViewById(R.id.addressPaymentCard);
         CardView offersCard = findViewById(R.id.offersCard);
@@ -78,9 +79,16 @@ public class ProfileActivity extends AppCompatActivity {
         MaterialButton logoutButton = findViewById(R.id.logoutButton);
         bottomNavigation = findViewById(R.id.bottomNavigation);
 
+        // Check if user is admin and show admin panel
+        checkAdminStatus(adminPanelCard);
+
         // Set up click listeners for new cards
         personalInfoCard.setOnClickListener(v -> {
             startActivity(new Intent(ProfileActivity.this, PersonalInfoActivity.class));
+        });
+
+        adminPanelCard.setOnClickListener(v -> {
+            startActivity(new Intent(ProfileActivity.this, AdminPanelActivity.class));
         });
 
         ordersCard.setOnClickListener(v -> {
@@ -199,5 +207,31 @@ public class ProfileActivity extends AppCompatActivity {
     public void onBackPressed() {
         super.onBackPressed();
         finish();
+    }
+
+    private void checkAdminStatus(CardView adminPanelCard) {
+        FirebaseUser firebaseUser = mAuth.getCurrentUser();
+        if (firebaseUser != null) {
+            String userId = firebaseUser.getUid();
+
+            // Load user role from Firestore
+            firestoreManager.getUserRole(userId, new FirestoreManager.OnUserRoleLoadedListener() {
+                @Override
+                public void onRoleLoaded(String role) {
+                    if ("admin".equalsIgnoreCase(role)) {
+                        adminPanelCard.setVisibility(View.VISIBLE);
+                    } else {
+                        adminPanelCard.setVisibility(View.GONE);
+                    }
+                }
+
+                @Override
+                public void onError(String error) {
+                    adminPanelCard.setVisibility(View.GONE);
+                }
+            });
+        } else {
+            adminPanelCard.setVisibility(View.GONE);
+        }
     }
 }

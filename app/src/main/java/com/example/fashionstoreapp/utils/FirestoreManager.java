@@ -1021,4 +1021,588 @@ public class FirestoreManager {
 
         void onError(String error);
     }
+
+    // ==================== ADMIN METHODS ====================
+
+    /**
+     * Get all products (Admin)
+     */
+    public void getAllProducts(OnProductsLoadedListener listener) {
+        loadProducts(listener);
+    }
+
+    /**
+     * Get all orders (Admin)
+     */
+    public void getAllOrders(OnOrdersLoadedListener listener) {
+        db.collection(COLLECTION_ORDERS)
+                .orderBy("createdAt", Query.Direction.DESCENDING)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    List<com.example.fashionstoreapp.model.Order> orders = new ArrayList<>();
+                    for (DocumentSnapshot document : queryDocumentSnapshots) {
+                        com.example.fashionstoreapp.model.Order order = new com.example.fashionstoreapp.model.Order();
+                        order.setOrderId(document.getId());
+                        order.setUserId(document.getString("userId"));
+
+                        Object totalObj = document.get("total");
+                        if (totalObj != null) {
+                            order.setTotal(((Number) totalObj).longValue());
+                        }
+
+                        order.setStatus(document.getString("status"));
+                        order.setPaymentMethod(document.getString("paymentMethod"));
+
+                        Long createdAtLong = document.getLong("createdAt");
+                        if (createdAtLong != null) {
+                            order.setCreatedAt(createdAtLong);
+                        }
+
+                        orders.add(order);
+                    }
+                    Log.d(TAG, "Admin loaded " + orders.size() + " orders");
+                    listener.onOrdersLoaded(orders);
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error loading all orders", e);
+                    listener.onError(e.getMessage());
+                });
+    }
+
+    /**
+     * Get all users (Admin)
+     */
+    public void getAllUsers(OnUsersLoadedListener listener) {
+        db.collection(COLLECTION_USERS)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    List<com.example.fashionstoreapp.models.User> users = new ArrayList<>();
+                    for (DocumentSnapshot document : queryDocumentSnapshots) {
+                        com.example.fashionstoreapp.models.User user = new com.example.fashionstoreapp.models.User();
+                        user.setId(document.getId());
+                        user.setEmail(document.getString("email"));
+                        user.setName(document.getString("name"));
+                        user.setPhone(document.getString("phone"));
+                        user.setRole(document.getString("role"));
+                        user.setProfileImageUrl(document.getString("profileImageUrl"));
+
+                        Long createdAt = document.getLong("createdAt");
+                        if (createdAt != null) {
+                            user.setCreatedAt(createdAt);
+                        }
+
+                        users.add(user);
+                    }
+                    Log.d(TAG, "Admin loaded " + users.size() + " users");
+                    listener.onUsersLoaded(users);
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error loading all users", e);
+                    listener.onError(e.getMessage());
+                });
+    }
+
+    /**
+     * Update order status (Admin)
+     */
+    public void updateOrderStatus(String orderId, String newStatus, OnOrderStatusUpdatedListener listener) {
+        // First get the order to check payment method and update revenue if needed
+        db.collection(COLLECTION_ORDERS)
+                .document(orderId)
+                .get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (documentSnapshot.exists()) {
+                        String paymentMethod = documentSnapshot.getString("paymentMethod");
+                        Double totalAmount = documentSnapshot.getDouble("total");
+
+                        // Update the order status
+                        db.collection(COLLECTION_ORDERS)
+                                .document(orderId)
+                                .update("status", newStatus)
+                                .addOnSuccessListener(aVoid -> {
+                                    Log.d(TAG, "Order status updated: " + orderId + " -> " + newStatus);
+
+                                    // If order is delivered and payment method is COD, update revenue
+                                    if ("delivered".equals(newStatus) && paymentMethod != null &&
+                                            paymentMethod.contains("nhận hàng") && totalAmount != null) {
+                                        updateRevenue(totalAmount);
+                                    }
+
+                                    listener.onStatusUpdated();
+                                })
+                                .addOnFailureListener(e -> {
+                                    Log.e(TAG, "Error updating order status", e);
+                                    listener.onError(e.getMessage());
+                                });
+                    } else {
+                        listener.onError("Order not found");
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error loading order for status update", e);
+                    listener.onError(e.getMessage());
+                });
+    }
+
+    /**
+     * Update revenue counter (for COD orders when delivered)
+     */
+    private void updateRevenue(double amount) {
+        long todayStart = getTodayStartTimestamp();
+        String dateKey = String.valueOf(todayStart);
+
+        db.collection("revenue")
+                .document(dateKey)
+                .get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    double currentRevenue = 0;
+                    if (documentSnapshot.exists()) {
+                        Double revenue = documentSnapshot.getDouble("amount");
+                        if (revenue != null) {
+                            currentRevenue = revenue;
+                        }
+                    }
+
+                    double newRevenue = currentRevenue + amount;
+                    db.collection("revenue")
+                            .document(dateKey)
+                            .set(new java.util.HashMap<String, Object>() {
+                                {
+                                    put("amount", newRevenue);
+                                    put("date", todayStart);
+                                }
+                            })
+                            .addOnSuccessListener(aVoid -> Log.d(TAG, "Revenue updated: " + newRevenue))
+                            .addOnFailureListener(e -> Log.e(TAG, "Error updating revenue", e));
+                })
+                .addOnFailureListener(e -> Log.e(TAG, "Error loading revenue", e));
+    }
+
+    /**
+     * Update user role (Admin)
+     */
+    public void updateUserRole(String userId, String newRole, OnUserRoleUpdatedListener listener) {
+        db.collection(COLLECTION_USERS)
+                .document(userId)
+                .update("role", newRole)
+                .addOnSuccessListener(aVoid -> {
+                    Log.d(TAG, "User role updated: " + userId + " -> " + newRole);
+                    listener.onRoleUpdated();
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error updating user role", e);
+                    listener.onError(e.getMessage());
+                });
+    }
+
+    /**
+     * Delete product (Admin)
+     */
+    public void deleteProduct(String productId, OnProductDeletedListener listener) {
+        db.collection(COLLECTION_PRODUCTS)
+                .document(productId)
+                .delete()
+                .addOnSuccessListener(aVoid -> {
+                    Log.d(TAG, "Product deleted: " + productId);
+                    listener.onProductDeleted();
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error deleting product", e);
+                    listener.onError(e.getMessage());
+                });
+    }
+
+    /**
+     * Get user role
+     */
+    public void getUserRole(String userId, OnUserRoleLoadedListener listener) {
+        db.collection(COLLECTION_USERS)
+                .document(userId)
+                .get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (documentSnapshot.exists()) {
+                        String role = documentSnapshot.getString("role");
+                        if (role == null || role.isEmpty()) {
+                            role = "user"; // Default role
+                        }
+                        listener.onRoleLoaded(role);
+                    } else {
+                        listener.onRoleLoaded("user"); // Default for new users
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error loading user role", e);
+                    listener.onError(e.getMessage());
+                });
+    }
+
+    // ==================== ENHANCED ADMIN METHODS ====================
+
+    /**
+     * Get today's revenue
+     */
+    public void getTodayRevenue(OnRevenueLoadedListener listener) {
+        long todayStart = getTodayStartTimestamp();
+        long todayEnd = System.currentTimeMillis();
+
+        db.collection(COLLECTION_ORDERS)
+                .whereGreaterThanOrEqualTo("createdAt", todayStart)
+                .whereLessThanOrEqualTo("createdAt", todayEnd)
+                .whereEqualTo("status", "delivered")
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    double totalRevenue = 0;
+                    for (DocumentSnapshot doc : queryDocumentSnapshots) {
+                        Double total = doc.getDouble("total");
+                        if (total != null) {
+                            totalRevenue += total;
+                        }
+                    }
+                    Log.d(TAG, "Today's revenue: " + totalRevenue);
+                    listener.onRevenueLoaded(totalRevenue);
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error loading today's revenue", e);
+                    listener.onError(e.getMessage());
+                });
+    }
+
+    /**
+     * Get today's orders count
+     */
+    public void getTodayOrders(OnTodayOrdersLoadedListener listener) {
+        long todayStart = getTodayStartTimestamp();
+        long todayEnd = System.currentTimeMillis();
+
+        db.collection(COLLECTION_ORDERS)
+                .whereGreaterThanOrEqualTo("createdAt", todayStart)
+                .whereLessThanOrEqualTo("createdAt", todayEnd)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    int count = queryDocumentSnapshots.size();
+                    Log.d(TAG, "Today's orders: " + count);
+                    listener.onOrdersLoaded(count);
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error loading today's orders", e);
+                    listener.onError(e.getMessage());
+                });
+    }
+
+    /**
+     * Get today's new users count
+     */
+    public void getTodayNewUsers(OnTodayUsersLoadedListener listener) {
+        long todayStart = getTodayStartTimestamp();
+        long todayEnd = System.currentTimeMillis();
+
+        db.collection(COLLECTION_USERS)
+                .whereGreaterThanOrEqualTo("createdAt", todayStart)
+                .whereLessThanOrEqualTo("createdAt", todayEnd)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    int count = queryDocumentSnapshots.size();
+                    Log.d(TAG, "Today's new users: " + count);
+                    listener.onUsersLoaded(count);
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error loading today's new users", e);
+                    listener.onError(e.getMessage());
+                });
+    }
+
+    /**
+     * Get low stock products
+     */
+    public void getLowStockProducts(OnProductsLoadedListener listener) {
+        db.collection(COLLECTION_PRODUCTS)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    List<Product> lowStockProducts = new ArrayList<>();
+                    for (DocumentSnapshot document : queryDocumentSnapshots) {
+                        Product product = document.toObject(Product.class);
+                        if (product != null) {
+                            product.setId(document.getId());
+                            // Check if product is low stock or out of stock
+                            if (product.isLowStock() || product.isOutOfStock()) {
+                                lowStockProducts.add(product);
+                            }
+                        }
+                    }
+                    Log.d(TAG, "Low stock products: " + lowStockProducts.size());
+                    listener.onProductsLoaded(lowStockProducts);
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error loading low stock products", e);
+                    listener.onError(e.getMessage());
+                });
+    }
+
+    /**
+     * Get pending orders (waiting for confirmation)
+     */
+    public void getPendingOrders(OnOrdersLoadedListener listener) {
+        db.collection(COLLECTION_ORDERS)
+                .whereEqualTo("status", "pending")
+                .orderBy("createdAt", Query.Direction.DESCENDING)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    List<com.example.fashionstoreapp.model.Order> orders = new ArrayList<>();
+                    for (DocumentSnapshot document : queryDocumentSnapshots) {
+                        com.example.fashionstoreapp.model.Order order = document
+                                .toObject(com.example.fashionstoreapp.model.Order.class);
+                        if (order != null) {
+                            order.setOrderId(document.getId());
+                            orders.add(order);
+                        }
+                    }
+                    Log.d(TAG, "Pending orders: " + orders.size());
+                    listener.onOrdersLoaded(orders);
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error loading pending orders", e);
+                    listener.onError(e.getMessage());
+                });
+    }
+
+    /**
+     * Get top selling products
+     */
+    public void getTopSellingProducts(int limit, OnProductsLoadedListener listener) {
+        db.collection(COLLECTION_PRODUCTS)
+                .orderBy("totalSold", Query.Direction.DESCENDING)
+                .limit(limit)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    List<Product> products = new ArrayList<>();
+                    for (DocumentSnapshot document : queryDocumentSnapshots) {
+                        Product product = document.toObject(Product.class);
+                        if (product != null) {
+                            product.setId(document.getId());
+                            products.add(product);
+                        }
+                    }
+                    Log.d(TAG, "Top selling products: " + products.size());
+                    listener.onProductsLoaded(products);
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error loading top selling products", e);
+                    listener.onError(e.getMessage());
+                });
+    }
+
+    /**
+     * Update product stock for a specific size
+     */
+    public void updateProductStock(String productId, String size, int newStock, OnStockUpdatedListener listener) {
+        db.collection(COLLECTION_PRODUCTS)
+                .document(productId)
+                .get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    Product product = documentSnapshot.toObject(Product.class);
+                    if (product != null) {
+                        product.updateStockForSize(size, newStock);
+
+                        // Update in Firestore
+                        db.collection(COLLECTION_PRODUCTS)
+                                .document(productId)
+                                .update("sizeStocks", product.getSizeStocks())
+                                .addOnSuccessListener(aVoid -> {
+                                    Log.d(TAG, "Stock updated for product: " + productId);
+                                    listener.onStockUpdated();
+                                })
+                                .addOnFailureListener(e -> {
+                                    Log.e(TAG, "Error updating stock", e);
+                                    listener.onError(e.getMessage());
+                                });
+                    } else {
+                        listener.onError("Product not found");
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error loading product for stock update", e);
+                    listener.onError(e.getMessage());
+                });
+    }
+
+    /**
+     * Toggle product visibility
+     */
+    public void toggleProductVisibility(String productId, boolean isVisible, OnVisibilityToggledListener listener) {
+        db.collection(COLLECTION_PRODUCTS)
+                .document(productId)
+                .update("isVisible", isVisible)
+                .addOnSuccessListener(aVoid -> {
+                    Log.d(TAG, "Product visibility toggled: " + productId + " -> " + isVisible);
+                    listener.onVisibilityToggled();
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error toggling product visibility", e);
+                    listener.onError(e.getMessage());
+                });
+    }
+
+    /**
+     * Add or update product (Admin)
+     */
+    public void saveProduct(Product product, OnProductSavedListener listener) {
+        String productId = product.getId();
+        if (productId == null || productId.isEmpty()) {
+            // Create new product
+            productId = db.collection(COLLECTION_PRODUCTS).document().getId();
+            product.setId(productId);
+        }
+
+        final String finalProductId = productId; // Make final for lambda
+
+        db.collection(COLLECTION_PRODUCTS)
+                .document(finalProductId)
+                .set(product, com.google.firebase.firestore.SetOptions.merge()) // Use merge to preserve rating,
+                                                                                // reviews, etc.
+                .addOnSuccessListener(aVoid -> {
+                    Log.d(TAG, "Product saved: " + finalProductId);
+                    listener.onProductSaved(finalProductId);
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error saving product", e);
+                    listener.onError(e.getMessage());
+                });
+    }
+
+    /**
+     * Add or update category (Admin)
+     */
+    public void saveCategory(Category category, OnCategorySavedListener listener) {
+        String categoryId = category.getId();
+        if (categoryId == null || categoryId.isEmpty()) {
+            // Create new category
+            categoryId = db.collection(COLLECTION_CATEGORIES).document().getId();
+            category.setId(categoryId);
+        }
+
+        final String finalCategoryId = categoryId; // Make final for lambda
+
+        db.collection(COLLECTION_CATEGORIES)
+                .document(finalCategoryId)
+                .set(category, com.google.firebase.firestore.SetOptions.merge()) // Use merge to preserve other fields
+                .addOnSuccessListener(aVoid -> {
+                    Log.d(TAG, "Category saved: " + finalCategoryId);
+                    listener.onCategorySaved(finalCategoryId);
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error saving category", e);
+                    listener.onError(e.getMessage());
+                });
+    }
+
+    /**
+     * Delete category (Admin)
+     */
+    public void deleteCategory(String categoryId, OnCategoryDeletedListener listener) {
+        db.collection(COLLECTION_CATEGORIES)
+                .document(categoryId)
+                .delete()
+                .addOnSuccessListener(aVoid -> {
+                    Log.d(TAG, "Category deleted: " + categoryId);
+                    listener.onCategoryDeleted();
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error deleting category", e);
+                    listener.onError(e.getMessage());
+                });
+    }
+
+    /**
+     * Helper: Get today's start timestamp (00:00:00)
+     */
+    private long getTodayStartTimestamp() {
+        java.util.Calendar calendar = java.util.Calendar.getInstance();
+        calendar.set(java.util.Calendar.HOUR_OF_DAY, 0);
+        calendar.set(java.util.Calendar.MINUTE, 0);
+        calendar.set(java.util.Calendar.SECOND, 0);
+        calendar.set(java.util.Calendar.MILLISECOND, 0);
+        return calendar.getTimeInMillis();
+    }
+
+    // ==================== ADMIN LISTENERS ====================
+
+    public interface OnUsersLoadedListener {
+        void onUsersLoaded(List<com.example.fashionstoreapp.models.User> users);
+
+        void onError(String error);
+    }
+
+    public interface OnOrderStatusUpdatedListener {
+        void onStatusUpdated();
+
+        void onError(String error);
+    }
+
+    public interface OnUserRoleUpdatedListener {
+        void onRoleUpdated();
+
+        void onError(String error);
+    }
+
+    public interface OnProductDeletedListener {
+        void onProductDeleted();
+
+        void onError(String error);
+    }
+
+    public interface OnUserRoleLoadedListener {
+        void onRoleLoaded(String role);
+
+        void onError(String error);
+    }
+
+    // ==================== ENHANCED ADMIN LISTENERS ====================
+
+    public interface OnRevenueLoadedListener {
+        void onRevenueLoaded(double revenue);
+
+        void onError(String error);
+    }
+
+    public interface OnTodayOrdersLoadedListener {
+        void onOrdersLoaded(int count);
+
+        void onError(String error);
+    }
+
+    public interface OnTodayUsersLoadedListener {
+        void onUsersLoaded(int count);
+
+        void onError(String error);
+    }
+
+    public interface OnStockUpdatedListener {
+        void onStockUpdated();
+
+        void onError(String error);
+    }
+
+    public interface OnVisibilityToggledListener {
+        void onVisibilityToggled();
+
+        void onError(String error);
+    }
+
+    public interface OnProductSavedListener {
+        void onProductSaved(String productId);
+
+        void onError(String error);
+    }
+
+    public interface OnCategorySavedListener {
+        void onCategorySaved(String categoryId);
+
+        void onError(String error);
+    }
+
+    public interface OnCategoryDeletedListener {
+        void onCategoryDeleted();
+
+        void onError(String error);
+    }
 }

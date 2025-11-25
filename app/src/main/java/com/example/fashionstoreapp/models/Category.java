@@ -1,5 +1,7 @@
 package com.example.fashionstoreapp.models;
 
+import com.google.firebase.firestore.PropertyName;
+
 import java.io.Serializable;
 
 public class Category implements Serializable {
@@ -64,11 +66,13 @@ public class Category implements Serializable {
         this.displayOrder = displayOrder;
     }
 
+    @PropertyName("active")
     public boolean isActive() {
         return isActive;
     }
 
-    public void setActive(boolean active) {
+    @PropertyName("active")
+    public void setIsActive(boolean active) {
         isActive = active;
     }
 }

@@ -17,6 +17,7 @@ public class User implements Serializable {
     private String ward;
     private String birthday;
     private String gender;
+    private String role; // "admin" or "user"
     private List<String> favoriteProductIds;
     private long createdAt;
     private long lastLoginAt;
@@ -25,6 +26,7 @@ public class User implements Serializable {
     public User() {
         this.favoriteProductIds = new ArrayList<>();
         this.createdAt = System.currentTimeMillis();
+        this.role = "user"; // Default role
     }
 
     public User(String email, String password) {
@@ -144,6 +146,18 @@ public class User implements Serializable {
 
     public void setGender(String gender) {
         this.gender = gender;
+    }
+
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
+    }
+
+    public boolean isAdmin() {
+        return "admin".equalsIgnoreCase(role);
     }
 
     public List<String> getFavoriteProductIds() {

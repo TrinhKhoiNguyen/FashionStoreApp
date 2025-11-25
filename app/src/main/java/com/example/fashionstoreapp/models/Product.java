@@ -23,6 +23,13 @@ public class Product implements Serializable {
     private double rating;
     private int reviewCount;
 
+    // New fields for enhanced admin management
+    private List<SizeStock> sizeStocks; // Stock management by size
+    private List<String> colors; // Available colors
+    private boolean isVisible = true; // Product visibility (shown/hidden)
+    private int lowStockThreshold = 10; // Alert threshold for low stock
+    private int totalSold = 0; // Track total units sold
+
     // Constructor
     public Product() {
     }
@@ -194,5 +201,168 @@ public class Product implements Serializable {
     // Check if product has discount
     public boolean hasDiscount() {
         return discountPercent > 0;
+    }
+
+    // Alias for category name (for admin compatibility)
+    public String getCategoryName() {
+        return category;
+    }
+
+    // Alias for product ID (for admin compatibility)
+    public String getProductId() {
+        return id;
+    }
+
+    // ==================== NEW GETTERS/SETTERS FOR ENHANCED ADMIN
+    // ====================
+
+    public List<SizeStock> getSizeStocks() {
+        // Initialize with default sizes if null
+        if (sizeStocks == null || sizeStocks.isEmpty()) {
+            sizeStocks = new ArrayList<>();
+            // Create default size stocks based on availableSizes or standard sizes
+            List<String> sizes = availableSizes != null ? availableSizes : Arrays.asList("S", "M", "L", "XL");
+            int stockPerSize = stockQuantity > 0 ? stockQuantity / sizes.size() : 0;
+            for (String size : sizes) {
+                sizeStocks.add(new SizeStock(size, stockPerSize));
+            }
+        }
+        return sizeStocks;
+    }
+
+    public void setSizeStocks(List<SizeStock> sizeStocks) {
+        this.sizeStocks = sizeStocks;
+    }
+
+    public List<String> getColors() {
+        return colors;
+    }
+
+    public void setColors(Object colors) {
+        // Handle both String (old format) and List<String> (new format)
+        if (colors instanceof String) {
+            this.colors = new ArrayList<>();
+            if (!((String) colors).isEmpty()) {
+                this.colors.add((String) colors);
+            }
+        } else if (colors instanceof List) {
+            this.colors = (List<String>) colors;
+        } else if (colors == null) {
+            this.colors = new ArrayList<>();
+        }
+    }
+
+    public boolean isVisible() {
+        return isVisible;
+    }
+
+    public void setVisible(boolean visible) {
+        isVisible = visible;
+    }
+
+    public int getLowStockThreshold() {
+        return lowStockThreshold;
+    }
+
+    public void setLowStockThreshold(int lowStockThreshold) {
+        this.lowStockThreshold = lowStockThreshold;
+    }
+
+    public int getTotalSold() {
+        return totalSold;
+    }
+
+    public void setTotalSold(int totalSold) {
+        this.totalSold = totalSold;
+    }
+
+    // ==================== UTILITY METHODS ====================
+
+    /**
+     * Get total stock across all sizes
+     */
+    public int getTotalStock() {
+        if (sizeStocks == null || sizeStocks.isEmpty()) {
+            return stockQuantity; // Fallback to legacy stock
+        }
+        int total = 0;
+        for (SizeStock sizeStock : sizeStocks) {
+            total += sizeStock.getStock();
+        }
+        return total;
+    }
+
+    /**
+     * Check if product is low on stock
+     */
+    public boolean isLowStock() {
+        return getTotalStock() <= lowStockThreshold && getTotalStock() > 0;
+    }
+
+    /**
+     * Check if product is out of stock
+     */
+    public boolean isOutOfStock() {
+        return getTotalStock() == 0;
+    }
+
+    /**
+     * Get stock for specific size
+     */
+    public int getStockForSize(String size) {
+        if (sizeStocks == null)
+            return 0;
+        for (SizeStock sizeStock : sizeStocks) {
+            if (sizeStock.getSize().equals(size)) {
+                return sizeStock.getStock();
+            }
+        }
+        return 0;
+    }
+
+    /**
+     * Update stock for specific size
+     */
+    public void updateStockForSize(String size, int newStock) {
+        if (sizeStocks == null) {
+            sizeStocks = new ArrayList<>();
+        }
+        boolean found = false;
+        for (SizeStock sizeStock : sizeStocks) {
+            if (sizeStock.getSize().equals(size)) {
+                sizeStock.setStock(newStock);
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            sizeStocks.add(new SizeStock(size, newStock));
+        }
+    }
+
+    /**
+     * Get stock status text for admin
+     */
+    public String getStockStatusText() {
+        int total = getTotalStock();
+        if (total == 0)
+            return "Hết hàng";
+        if (total <= lowStockThreshold)
+            return "Sắp hết (" + total + ")";
+        return "Còn hàng (" + total + ")";
+    }
+
+    /**
+     * Get stock status color for UI
+     * 
+     * @return 0=red (out), 1=orange (low), 2=green (ok)
+     */
+    public int getStockStatusColor() {
+        int total = getTotalStock();
+        if (total == 0)
+            return 0; // Red
+        if (total <= lowStockThreshold)
+            return 1; // Orange
+        return 2; // Green
     }
 }
