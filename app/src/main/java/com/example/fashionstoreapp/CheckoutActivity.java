@@ -21,6 +21,9 @@ import com.example.fashionstoreapp.utils.CartManager;
 import com.example.fashionstoreapp.utils.FirestoreManager;
 import com.example.fashionstoreapp.utils.SessionManager;
 import com.google.android.material.appbar.MaterialToolbar;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+import android.Manifest;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.firestore.FirebaseFirestore;
 
@@ -37,6 +40,7 @@ public class CheckoutActivity extends AppCompatActivity {
     private Button btnPlaceOrder, btnApplyVoucher;
     private android.view.View layoutVoucherDiscount, layoutAppliedVoucher;
     private android.widget.ImageView ivRemoveVoucher;
+    private com.google.android.material.button.MaterialButton btnSelectAddress;
 
     private CheckoutItemAdapter checkoutItemAdapter;
 
@@ -50,6 +54,10 @@ public class CheckoutActivity extends AppCompatActivity {
     private double shippingFeeAmount = 0;
     private double voucherDiscount = 0;
     private String appliedVoucherCode = null;
+
+    // Notification permission handling
+    private static final int REQ_POST_NOTIF = 1001;
+    private String pendingNotifTitle, pendingNotifMessage;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -65,6 +73,7 @@ public class CheckoutActivity extends AppCompatActivity {
         loadOrderData();
         setupClickListeners();
         setupVoucherListeners();
+        setupAddressSelection();
     }
 
     private void initViews() {
@@ -91,6 +100,7 @@ public class CheckoutActivity extends AppCompatActivity {
         layoutAppliedVoucher = findViewById(R.id.layoutAppliedVoucher);
         tvAppliedVoucherInfo = findViewById(R.id.tvAppliedVoucherInfo);
         ivRemoveVoucher = findViewById(R.id.ivRemoveVoucher);
+        btnSelectAddress = findViewById(R.id.btnSelectAddress);
 
         // Debug: Check if views are found
         if (layoutVoucherDiscount == null) {
@@ -183,6 +193,39 @@ public class CheckoutActivity extends AppCompatActivity {
     private void setupVoucherListeners() {
         btnApplyVoucher.setOnClickListener(v -> applyVoucher());
         ivRemoveVoucher.setOnClickListener(v -> removeVoucher());
+    }
+
+    private androidx.activity.result.ActivityResultLauncher<android.content.Intent> selectAddressLauncher;
+
+    private void setupAddressSelection() {
+        // Register ActivityResult launcher to receive selected address
+        selectAddressLauncher = registerForActivityResult(
+                new androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult(),
+                result -> {
+                    if (result != null && result.getResultCode() == RESULT_OK && result.getData() != null) {
+                        android.content.Intent data = result.getData();
+                        String name = data.getStringExtra("name");
+                        String phone = data.getStringExtra("phone");
+                        String address = data.getStringExtra("address");
+                        String city = data.getStringExtra("city");
+
+                        if (name != null)
+                            etRecipientName.setText(name);
+                        if (phone != null)
+                            etRecipientPhone.setText(phone);
+                        if (address != null && city != null)
+                            etShippingAddress.setText(address + ", " + city);
+                    }
+                });
+
+        if (btnSelectAddress != null) {
+            btnSelectAddress.setOnClickListener(v -> {
+                android.content.Intent intent = new android.content.Intent(CheckoutActivity.this,
+                        AddressPaymentActivity.class);
+                intent.putExtra("select_address", true);
+                selectAddressLauncher.launch(intent);
+            });
+        }
     }
 
     private void applyVoucher() {
@@ -445,6 +488,11 @@ public class CheckoutActivity extends AppCompatActivity {
 
                 // Show success dialog
                 showSuccessDialog(orderId);
+                // Show immediate local notification for feedback (request permission on Android
+                // 13+)
+                String title = "Đặt hàng thành công";
+                String message = "Mã đơn hàng: " + orderId + " - Cảm ơn bạn đã mua hàng!";
+                showOrRequestNotification(title, message, orderId.hashCode());
             }
 
             @Override
@@ -465,5 +513,44 @@ public class CheckoutActivity extends AppCompatActivity {
         });
         builder.setCancelable(false);
         builder.show();
+    }
+
+    private void showOrRequestNotification(String title, String message, int id) {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this,
+                    Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                // Request permission and save pending payload
+                pendingNotifTitle = title;
+                pendingNotifMessage = message;
+                ActivityCompat.requestPermissions(this, new String[] { Manifest.permission.POST_NOTIFICATIONS },
+                        REQ_POST_NOTIF);
+                return;
+            }
+        }
+
+        // Permission granted or not required
+        try {
+            new com.example.fashionstoreapp.NotificationHelper(this).showNotification(title, message, id);
+        } catch (Exception ignored) {
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == REQ_POST_NOTIF) {
+            if (grantResults.length > 0 && grantResults[0] == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                if (pendingNotifTitle != null && pendingNotifMessage != null) {
+                    try {
+                        new com.example.fashionstoreapp.NotificationHelper(this)
+                                .showNotification(pendingNotifTitle, pendingNotifMessage, pendingNotifTitle.hashCode());
+                    } catch (Exception ignored) {
+                    }
+                }
+            }
+            // Clear pending
+            pendingNotifTitle = null;
+            pendingNotifMessage = null;
+        }
     }
 }

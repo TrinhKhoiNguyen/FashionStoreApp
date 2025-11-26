@@ -322,7 +322,6 @@ public class FirestoreManager {
     public void loadNotifications(String userId, OnNotificationsLoadedListener listener) {
         db.collection(COLLECTION_NOTIFICATIONS)
                 .whereEqualTo("userId", userId)
-                .orderBy("timestamp", Query.Direction.DESCENDING)
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     List<com.example.fashionstoreapp.models.Notification> notifications = new ArrayList<>();
@@ -331,9 +330,22 @@ public class FirestoreManager {
                                 .toObject(com.example.fashionstoreapp.models.Notification.class);
                         if (notification != null) {
                             notification.setId(document.getId());
+                            // If timestamp wasn't set yet (serverTimestamp pending), use now as fallback
+                            if (notification.getTimestamp() == null) {
+                                java.util.Date ts = document.getDate("timestamp");
+                                if (ts != null) {
+                                    notification.setTimestamp(ts);
+                                } else {
+                                    notification.setTimestamp(new java.util.Date());
+                                }
+                            }
                             notifications.add(notification);
                         }
                     }
+
+                    // Sort client-side by timestamp desc to avoid relying on server index/order
+                    notifications.sort((n1, n2) -> n2.getTimestamp().compareTo(n1.getTimestamp()));
+
                     Log.d(TAG, "Loaded " + notifications.size() + " notifications for user: " + userId);
                     listener.onNotificationsLoaded(notifications);
                 })
@@ -349,7 +361,6 @@ public class FirestoreManager {
     public void loadGlobalNotifications(OnNotificationsLoadedListener listener) {
         db.collection(COLLECTION_NOTIFICATIONS)
                 .whereEqualTo("userId", "") // Empty userId means global notification
-                .orderBy("timestamp", Query.Direction.DESCENDING)
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     List<com.example.fashionstoreapp.models.Notification> notifications = new ArrayList<>();
@@ -358,9 +369,21 @@ public class FirestoreManager {
                                 .toObject(com.example.fashionstoreapp.models.Notification.class);
                         if (notification != null) {
                             notification.setId(document.getId());
+                            if (notification.getTimestamp() == null) {
+                                java.util.Date ts = document.getDate("timestamp");
+                                if (ts != null) {
+                                    notification.setTimestamp(ts);
+                                } else {
+                                    notification.setTimestamp(new java.util.Date());
+                                }
+                            }
                             notifications.add(notification);
                         }
                     }
+
+                    // Sort client-side by timestamp desc
+                    notifications.sort((n1, n2) -> n2.getTimestamp().compareTo(n1.getTimestamp()));
+
                     Log.d(TAG, "Loaded " + notifications.size() + " global notifications");
                     listener.onNotificationsLoaded(notifications);
                 })
@@ -427,17 +450,35 @@ public class FirestoreManager {
      */
     public void createNotification(com.example.fashionstoreapp.models.Notification notification,
             OnNotificationCreatedListener listener) {
-        db.collection(COLLECTION_NOTIFICATIONS)
-                .add(notification)
-                .addOnSuccessListener(documentReference -> {
-                    String notificationId = documentReference.getId();
-                    Log.d(TAG, "Notification created: " + notificationId);
-                    listener.onCreated(notificationId);
-                })
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, "Error creating notification", e);
-                    listener.onError(e.getMessage());
-                });
+        try {
+            java.util.Map<String, Object> data = new java.util.HashMap<>();
+            data.put("userId", notification.getUserId() == null ? "" : notification.getUserId());
+            data.put("title", notification.getTitle());
+            data.put("message", notification.getMessage());
+            data.put("type", notification.getType());
+            data.put("imageUrl", notification.getImageUrl());
+            data.put("isRead", notification.isRead());
+            data.put("actionUrl", notification.getActionUrl());
+            data.put("orderId", notification.getOrderId());
+            data.put("productId", notification.getProductId());
+            // Use server timestamp to ensure consistent ordering/indexing
+            data.put("timestamp", com.google.firebase.firestore.FieldValue.serverTimestamp());
+
+            db.collection(COLLECTION_NOTIFICATIONS)
+                    .add(data)
+                    .addOnSuccessListener(documentReference -> {
+                        String notificationId = documentReference.getId();
+                        Log.d(TAG, "Notification created (serverTimestamp): " + notificationId);
+                        listener.onCreated(notificationId);
+                    })
+                    .addOnFailureListener(e -> {
+                        Log.e(TAG, "Error creating notification", e);
+                        listener.onError(e.getMessage());
+                    });
+        } catch (Exception e) {
+            Log.e(TAG, "Exception creating notification", e);
+            listener.onError(e.getMessage());
+        }
     }
 
     // ==================== INTERFACES ====================
@@ -980,6 +1021,32 @@ public class FirestoreManager {
                 .addOnSuccessListener(aVoid -> {
                     Log.d(TAG, "Order saved successfully: " + order.getOrderId());
                     listener.onOrderSaved(order.getOrderId());
+                    // Create a user notification for order placed
+                    try {
+                        com.example.fashionstoreapp.models.Notification notif = new com.example.fashionstoreapp.models.Notification();
+                        notif.setUserId(order.getUserId());
+                        notif.setType("order");
+                        notif.setOrderId(order.getOrderId());
+                        notif.setTitle("Đặt hàng thành công");
+                        notif.setMessage("Đơn hàng " + order.getOrderId() + " của bạn đã được tạo. Tổng: "
+                                + String.format("%,.0f₫", order.getTotalAmount()));
+                        notif.setTimestamp(new java.util.Date());
+                        notif.setRead(false);
+                        // Use existing createNotification helper
+                        createNotification(notif, new OnNotificationCreatedListener() {
+                            @Override
+                            public void onCreated(String notificationId) {
+                                Log.d(TAG, "Order notification created: " + notificationId);
+                            }
+
+                            @Override
+                            public void onError(String error) {
+                                Log.e(TAG, "Failed to create order notification: " + error);
+                            }
+                        });
+                    } catch (Exception e) {
+                        Log.e(TAG, "Error creating notification for order", e);
+                    }
                 })
                 .addOnFailureListener(e -> {
                     Log.e(TAG, "Error saving order", e);
@@ -1280,6 +1347,49 @@ public class FirestoreManager {
                                     if ("delivered".equals(newStatus) && paymentMethod != null &&
                                             paymentMethod.contains("nhận hàng") && totalAmount != null) {
                                         updateRevenue(totalAmount);
+                                    }
+
+                                    // Create a notification for the user about status change
+                                    try {
+                                        String userId = documentSnapshot.getString("userId");
+                                        if (userId != null) {
+                                            com.example.fashionstoreapp.models.Notification notif = new com.example.fashionstoreapp.models.Notification();
+                                            notif.setUserId(userId);
+                                            notif.setType("order");
+                                            notif.setOrderId(orderId);
+                                            notif.setTitle("Cập nhật đơn hàng");
+                                            String statusText = newStatus;
+                                            // Provide friendly Vietnamese status labels for common statuses
+                                            if ("pending".equals(newStatus))
+                                                statusText = "Đang chờ xác nhận";
+                                            else if ("confirmed".equals(newStatus))
+                                                statusText = "Đã xác nhận";
+                                            else if ("shipping".equals(newStatus) || "shipped".equals(newStatus))
+                                                statusText = "Đang giao";
+                                            else if ("delivered".equals(newStatus))
+                                                statusText = "Đã giao";
+                                            else if ("cancelled".equals(newStatus) || "canceled".equals(newStatus))
+                                                statusText = "Đã hủy";
+
+                                            notif.setMessage("Đơn hàng " + orderId + " đã chuyển sang trạng thái: "
+                                                    + statusText);
+                                            notif.setTimestamp(new java.util.Date());
+                                            notif.setRead(false);
+
+                                            createNotification(notif, new OnNotificationCreatedListener() {
+                                                @Override
+                                                public void onCreated(String notificationId) {
+                                                    Log.d(TAG, "Order status notification created: " + notificationId);
+                                                }
+
+                                                @Override
+                                                public void onError(String error) {
+                                                    Log.e(TAG, "Failed to create order status notification: " + error);
+                                                }
+                                            });
+                                        }
+                                    } catch (Exception e) {
+                                        Log.e(TAG, "Error creating status-change notification", e);
                                     }
 
                                     listener.onStatusUpdated();

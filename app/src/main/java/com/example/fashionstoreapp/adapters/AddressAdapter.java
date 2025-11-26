@@ -23,6 +23,8 @@ public class AddressAdapter extends RecyclerView.Adapter<AddressAdapter.AddressV
 
     public interface OnAddressActionListener {
         void onDelete(Address address);
+
+        void onSelect(Address address);
     }
 
     public AddressAdapter(Context context, List<Address> addresses, OnAddressActionListener listener) {
@@ -65,6 +67,14 @@ public class AddressAdapter extends RecyclerView.Adapter<AddressAdapter.AddressV
                 int position = getAdapterPosition();
                 if (position != RecyclerView.NO_POSITION && listener != null) {
                     listener.onDelete(addresses.get(position));
+                }
+            });
+
+            // Click on whole item to select (used when checkout wants to pick an address)
+            itemView.setOnClickListener(v -> {
+                int position = getAdapterPosition();
+                if (position != RecyclerView.NO_POSITION && listener != null) {
+                    listener.onSelect(addresses.get(position));
                 }
             });
         }

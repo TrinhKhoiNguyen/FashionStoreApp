@@ -14,11 +14,11 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.fashionstoreapp.adapters.AddressAdapter;
-import com.example.fashionstoreapp.adapters.PaymentMethodAdapter;
 import com.example.fashionstoreapp.model.Address;
-import com.example.fashionstoreapp.model.PaymentMethod;
+// Payment methods removed — app now uses addresses only
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -32,14 +32,13 @@ import java.util.Map;
 public class AddressPaymentActivity extends AppCompatActivity {
 
     private MaterialToolbar toolbar;
-    private RecyclerView addressesRecyclerView, paymentMethodsRecyclerView;
-    private MaterialButton btnAddAddress, btnAddPayment;
-    private LinearLayout addressEmptyLayout, paymentEmptyLayout;
+    private RecyclerView addressesRecyclerView;
+    private MaterialButton btnAddAddress;
+    private LinearLayout addressEmptyLayout;
 
     private AddressAdapter addressAdapter;
-    private PaymentMethodAdapter paymentAdapter;
     private List<Address> addressList;
-    private List<PaymentMethod> paymentList;
+    private FloatingActionButton fabAddAddress;
 
     private FirebaseFirestore db;
     private FirebaseAuth auth;
@@ -57,43 +56,70 @@ public class AddressPaymentActivity extends AppCompatActivity {
         setupRecyclerViews();
         setupListeners();
         loadAddresses();
-        loadPaymentMethods();
     }
 
     private void initViews() {
         toolbar = findViewById(R.id.toolbar);
         addressesRecyclerView = findViewById(R.id.addressesRecyclerView);
-        paymentMethodsRecyclerView = findViewById(R.id.paymentMethodsRecyclerView);
         btnAddAddress = findViewById(R.id.btnAddAddress);
-        btnAddPayment = findViewById(R.id.btnAddPayment);
+        fabAddAddress = findViewById(R.id.fabAddAddress);
         addressEmptyLayout = findViewById(R.id.addressEmptyLayout);
-        paymentEmptyLayout = findViewById(R.id.paymentEmptyLayout);
     }
 
+    private boolean selectMode = false;
+
     private void setupToolbar() {
+        // Determine mode from intent
+        selectMode = getIntent() != null && getIntent().getBooleanExtra("select_address", false);
+
         setSupportActionBar(toolbar);
         if (getSupportActionBar() != null) {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-            getSupportActionBar().setTitle("Địa chỉ & Thanh toán");
+            // If opened as address book from profile or selection mode, show "Sổ địa chỉ"
+            if (selectMode) {
+                getSupportActionBar().setTitle("Chọn địa chỉ");
+            } else {
+                getSupportActionBar().setTitle("Sổ địa chỉ");
+            }
         }
         toolbar.setNavigationOnClickListener(v -> finish());
     }
 
     private void setupRecyclerViews() {
         addressList = new ArrayList<>();
-        addressAdapter = new AddressAdapter(this, addressList, this::onAddressDelete);
+        addressAdapter = new AddressAdapter(this, addressList,
+                new com.example.fashionstoreapp.adapters.AddressAdapter.OnAddressActionListener() {
+                    @Override
+                    public void onDelete(Address address) {
+                        onAddressDelete(address);
+                    }
+
+                    @Override
+                    public void onSelect(Address address) {
+                        // If activity started for selection, return selected address
+                        if (selectMode) {
+                            android.content.Intent result = new android.content.Intent();
+                            result.putExtra("name", address.getName());
+                            result.putExtra("phone", address.getPhone());
+                            result.putExtra("address", address.getAddress());
+                            result.putExtra("city", address.getCity());
+                            result.putExtra("addressId", address.getAddressId());
+                            setResult(RESULT_OK, result);
+                            finish();
+                        }
+                    }
+                });
         addressesRecyclerView.setLayoutManager(new LinearLayoutManager(this));
         addressesRecyclerView.setAdapter(addressAdapter);
 
-        paymentList = new ArrayList<>();
-        paymentAdapter = new PaymentMethodAdapter(this, paymentList, this::onPaymentDelete);
-        paymentMethodsRecyclerView.setLayoutManager(new LinearLayoutManager(this));
-        paymentMethodsRecyclerView.setAdapter(paymentAdapter);
+        // Payment methods removed — nothing to setup here
     }
 
     private void setupListeners() {
         btnAddAddress.setOnClickListener(v -> showAddAddressDialog());
-        btnAddPayment.setOnClickListener(v -> showAddPaymentDialog());
+        if (fabAddAddress != null) {
+            fabAddAddress.setOnClickListener(v -> showAddAddressDialog());
+        }
     }
 
     private void loadAddresses() {
@@ -108,27 +134,13 @@ public class AddressPaymentActivity extends AppCompatActivity {
                     addressList.clear();
                     for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
                         Address address = doc.toObject(Address.class);
-                        addressList.add(address);
+                        if (address != null) {
+                            // Ensure addressId is set so delete operations work and selection returns id
+                            address.setAddressId(doc.getId());
+                            addressList.add(address);
+                        }
                     }
                     updateAddressUI();
-                });
-    }
-
-    private void loadPaymentMethods() {
-        if (auth.getCurrentUser() == null)
-            return;
-
-        db.collection("users")
-                .document(auth.getCurrentUser().getUid())
-                .collection("paymentMethods")
-                .get()
-                .addOnSuccessListener(queryDocumentSnapshots -> {
-                    paymentList.clear();
-                    for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
-                        PaymentMethod payment = doc.toObject(PaymentMethod.class);
-                        paymentList.add(payment);
-                    }
-                    updatePaymentUI();
                 });
     }
 
@@ -140,17 +152,6 @@ public class AddressPaymentActivity extends AppCompatActivity {
             addressEmptyLayout.setVisibility(View.GONE);
             addressesRecyclerView.setVisibility(View.VISIBLE);
             addressAdapter.notifyDataSetChanged();
-        }
-    }
-
-    private void updatePaymentUI() {
-        if (paymentList.isEmpty()) {
-            paymentEmptyLayout.setVisibility(View.VISIBLE);
-            paymentMethodsRecyclerView.setVisibility(View.GONE);
-        } else {
-            paymentEmptyLayout.setVisibility(View.GONE);
-            paymentMethodsRecyclerView.setVisibility(View.VISIBLE);
-            paymentAdapter.notifyDataSetChanged();
         }
     }
 
@@ -206,39 +207,6 @@ public class AddressPaymentActivity extends AppCompatActivity {
                 });
     }
 
-    private void showAddPaymentDialog() {
-        String[] options = { "Thanh toán khi nhận hàng", "Thẻ ngân hàng", "Ví điện tử" };
-
-        new AlertDialog.Builder(this)
-                .setTitle("Chọn phương thức")
-                .setItems(options, (dialog, which) -> {
-                    String type = options[which];
-                    savePaymentMethod(type);
-                })
-                .show();
-    }
-
-    private void savePaymentMethod(String type) {
-        if (auth.getCurrentUser() == null)
-            return;
-
-        Map<String, Object> paymentData = new HashMap<>();
-        paymentData.put("type", type);
-        paymentData.put("isDefault", paymentList.isEmpty());
-
-        db.collection("users")
-                .document(auth.getCurrentUser().getUid())
-                .collection("paymentMethods")
-                .add(paymentData)
-                .addOnSuccessListener(documentReference -> {
-                    Toast.makeText(this, "Đã thêm phương thức thanh toán", Toast.LENGTH_SHORT).show();
-                    loadPaymentMethods();
-                })
-                .addOnFailureListener(e -> {
-                    Toast.makeText(this, "Lỗi: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                });
-    }
-
     private void onAddressDelete(Address address) {
         if (auth.getCurrentUser() == null)
             return;
@@ -255,28 +223,6 @@ public class AddressPaymentActivity extends AppCompatActivity {
                             .addOnSuccessListener(aVoid -> {
                                 Toast.makeText(this, "Đã xóa", Toast.LENGTH_SHORT).show();
                                 loadAddresses();
-                            });
-                })
-                .setNegativeButton("Hủy", null)
-                .show();
-    }
-
-    private void onPaymentDelete(PaymentMethod payment) {
-        if (auth.getCurrentUser() == null)
-            return;
-
-        new AlertDialog.Builder(this)
-                .setTitle("Xóa phương thức")
-                .setMessage("Bạn có chắc muốn xóa?")
-                .setPositiveButton("Xóa", (dialog, which) -> {
-                    db.collection("users")
-                            .document(auth.getCurrentUser().getUid())
-                            .collection("paymentMethods")
-                            .document(payment.getPaymentId())
-                            .delete()
-                            .addOnSuccessListener(aVoid -> {
-                                Toast.makeText(this, "Đã xóa", Toast.LENGTH_SHORT).show();
-                                loadPaymentMethods();
                             });
                 })
                 .setNegativeButton("Hủy", null)

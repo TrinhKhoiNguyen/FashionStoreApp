@@ -253,7 +253,7 @@
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:layout_marginStart="16dp"
-                            android:text="Địa chỉ và Thanh toán"
+                            android:text="Sổ địa chỉ"
                             android:textColor="#1a1a1a"
                             android:textSize="15sp"
                             android:textStyle="bold" />

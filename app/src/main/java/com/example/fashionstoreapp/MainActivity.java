@@ -45,6 +45,9 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.DocumentChange;
+import com.google.firebase.firestore.QuerySnapshot;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -124,6 +127,9 @@ public class MainActivity extends AppCompatActivity
 
     // Real-time listeners
     private Map<String, ListenerRegistration> categoryListeners = new HashMap<>();
+    private ListenerRegistration userNotifListener;
+    private ListenerRegistration globalNotifListener;
+    private static final long NOTIF_LOCAL_THRESHOLD_MS = 2000; // skip very-recent notifications (we show local)
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -163,6 +169,80 @@ public class MainActivity extends AppCompatActivity
 
         // Update cart badge
         updateCartBadge();
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        FirebaseUser user = mAuth.getCurrentUser();
+        if (user != null) {
+            String uid = user.getUid();
+            FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+            // Listen to user-specific notifications
+            userNotifListener = db.collection("notifications")
+                    .whereEqualTo("userId", uid)
+                    .addSnapshotListener((snapshots, e) -> {
+                        if (e != null || snapshots == null)
+                            return;
+                        for (DocumentChange dc : snapshots.getDocumentChanges()) {
+                            if (dc.getType() == DocumentChange.Type.ADDED) {
+                                try {
+                                    java.util.Date ts = dc.getDocument().getDate("timestamp");
+                                    long now = System.currentTimeMillis();
+                                    if (ts != null && (now - ts.getTime()) < NOTIF_LOCAL_THRESHOLD_MS) {
+                                        // likely created by this device just now — skip to avoid duplicate
+                                        continue;
+                                    }
+                                    String title = dc.getDocument().getString("title");
+                                    String message = dc.getDocument().getString("message");
+                                    String id = dc.getDocument().getId();
+                                    if (title != null && message != null) {
+                                        new com.example.fashionstoreapp.NotificationHelper(MainActivity.this)
+                                                .showNotification(title, message, id.hashCode());
+                                    }
+                                } catch (Exception ignored) {
+                                }
+                            }
+                        }
+                    });
+
+            // Listen to global notifications (userId == "")
+            globalNotifListener = db.collection("notifications")
+                    .whereEqualTo("userId", "")
+                    .addSnapshotListener((snapshots, e) -> {
+                        if (e != null || snapshots == null)
+                            return;
+                        for (DocumentChange dc : snapshots.getDocumentChanges()) {
+                            if (dc.getType() == DocumentChange.Type.ADDED) {
+                                try {
+                                    java.util.Date ts = dc.getDocument().getDate("timestamp");
+                                    long now = System.currentTimeMillis();
+                                    if (ts != null && (now - ts.getTime()) < NOTIF_LOCAL_THRESHOLD_MS) {
+                                        continue;
+                                    }
+                                    String title = dc.getDocument().getString("title");
+                                    String message = dc.getDocument().getString("message");
+                                    String id = dc.getDocument().getId();
+                                    if (title != null && message != null) {
+                                        new com.example.fashionstoreapp.NotificationHelper(MainActivity.this)
+                                                .showNotification(title, message, id.hashCode());
+                                    }
+                                } catch (Exception ignored) {
+                                }
+                            }
+                        }
+                    });
+        }
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        if (userNotifListener != null)
+            userNotifListener.remove();
+        if (globalNotifListener != null)
+            globalNotifListener.remove();
     }
 
     private void initViews() {

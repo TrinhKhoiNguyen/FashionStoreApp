@@ -100,6 +100,17 @@
                             android:inputType="textMultiLine"
                             android:minLines="2" />
                     </com.google.android.material.textfield.TextInputLayout>
+                    
+                        <!-- Button to choose saved address -->
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnSelectAddress"
+                            android:layout_width="wrap_content"
+                            android:layout_height="40dp"
+                            android:layout_marginTop="8dp"
+                            android:backgroundTint="#000000"
+                            android:text="Chọn địa chỉ"
+                            android:textColor="#FFD700"
+                            android:textAllCaps="false" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
