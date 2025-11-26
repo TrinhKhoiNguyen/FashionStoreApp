@@ -49,6 +49,7 @@
             android:text="Size: M, Màu: Đen"
             android:textColor="#999999"
             android:textSize="12sp"
+            android:textStyle="bold"
             android:layout_marginBottom="4dp" />
 
         <LinearLayout

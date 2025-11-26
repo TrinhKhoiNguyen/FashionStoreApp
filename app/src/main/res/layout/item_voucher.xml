@@ -60,6 +60,7 @@
                 android:layout_marginTop="8dp"
                 android:text="Đơn tối thiểu 500.000₫"
                 android:textColor="#666666"
+                android:textStyle="bold"
                 android:textSize="12sp" />
 
             <TextView
@@ -69,6 +70,7 @@
                 android:layout_marginTop="4dp"
                 android:text="HSD: 31/12/2024"
                 android:textColor="#999999"
+                android:textStyle="bold"
                 android:textSize="11sp" />
         </LinearLayout>
 
@@ -80,9 +82,9 @@
             android:layout_gravity="center_vertical"
             android:text="Sao chép"
             android:textSize="12sp"
-            android:textColor="#FFFFFF"
+            android:textColor="#FFD700"
             app:cornerRadius="8dp"
-            android:backgroundTint="#FFD700"
+            android:backgroundTint="#000000"
             style="@style/Widget.Material3.Button" />
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

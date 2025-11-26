@@ -3,7 +3,7 @@
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:padding="8dp"
+    android:padding="12dp"
     android:gravity="center">
 
     <ImageView
@@ -19,8 +19,9 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Tên"
-        android:textSize="12sp"
-        android:textColor="#111111"
+        android:textSize="14sp"
+        android:textColor="#000000"
+        android:textStyle="bold"
         android:layout_marginTop="6dp"
         android:maxLines="1"
         android:ellipsize="end" />

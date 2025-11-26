@@ -53,6 +53,7 @@
             android:layout_marginTop="8dp"
             android:text="Khách hàng: Nguyễn Văn A"
             android:textColor="#666666"
+            android:textStyle="bold"
             android:textSize="13sp" />
 
         <!-- Order Date -->
@@ -62,6 +63,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
             android:text="22/11/2024 10:30"
+            android:textStyle="bold"
             android:textColor="#666666"
             android:textSize="12sp" />
 
@@ -72,8 +74,8 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:text="Tổng: 848,000₫"
-            android:textColor="#FFD700"
-            android:textSize="16sp"
+            android:textColor="#F44336"
+            android:textSize="18sp"
             android:textStyle="bold" />
 
         <!-- Action Buttons -->

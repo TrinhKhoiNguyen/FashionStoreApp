@@ -10,26 +10,26 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:background="?attr/selectableItemBackground"
         android:orientation="horizontal"
-        android:padding="12dp"
-        android:background="?attr/selectableItemBackground">
+        android:padding="12dp">
 
         <!-- Notification Icon/Image -->
         <ImageView
             android:id="@+id/notificationIcon"
             android:layout_width="48dp"
             android:layout_height="48dp"
+            android:background="@drawable/notification_icon_background"
             android:scaleType="centerCrop"
             android:src="@drawable/baseline_notifications_24"
-            android:tint="#FFD700"
-            android:background="@drawable/notification_icon_background" />
+            android:tint="#FFD700" />
 
         <!-- Notification Content -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
             android:layout_marginStart="12dp"
+            android:layout_weight="1"
             android:orientation="vertical">
 
             <!-- Title -->
@@ -37,12 +37,12 @@
                 android:id="@+id/notificationTitle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="2"
                 android:text="Đơn hàng đã được xác nhận"
                 android:textColor="#1a1a1a"
-                android:textSize="14sp"
-                android:textStyle="bold"
-                android:maxLines="2"
-                android:ellipsize="end" />
+                android:textSize="16sp"
+                android:textStyle="bold" />
 
             <!-- Message -->
             <TextView
@@ -50,11 +50,12 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
+                android:ellipsize="end"
+                android:maxLines="3"
                 android:text="Đơn hàng #12345 của bạn đã được xác nhận và đang được chuẩn bị"
                 android:textColor="#666666"
-                android:textSize="13sp"
-                android:maxLines="3"
-                android:ellipsize="end" />
+                android:textStyle="bold"
+                android:textSize="13sp" />
 
             <!-- Time -->
             <TextView
@@ -64,6 +65,7 @@
                 android:layout_marginTop="4dp"
                 android:text="2 giờ trước"
                 android:textColor="#999999"
+                android:textStyle="bold"
                 android:textSize="12sp" />
         </LinearLayout>
 
@@ -72,8 +74,8 @@
             android:id="@+id/unreadIndicator"
             android:layout_width="8dp"
             android:layout_height="8dp"
-            android:layout_marginStart="8dp"
             android:layout_gravity="center_vertical"
+            android:layout_marginStart="8dp"
             android:background="@drawable/unread_indicator"
             android:visibility="visible" />
 
