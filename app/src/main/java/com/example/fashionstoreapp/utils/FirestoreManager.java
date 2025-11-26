@@ -312,6 +312,134 @@ public class FirestoreManager {
                 });
     }
 
+    // ==================== NOTIFICATIONS ====================
+
+    private static final String COLLECTION_NOTIFICATIONS = "notifications";
+
+    /**
+     * Load notifications for a specific user
+     */
+    public void loadNotifications(String userId, OnNotificationsLoadedListener listener) {
+        db.collection(COLLECTION_NOTIFICATIONS)
+                .whereEqualTo("userId", userId)
+                .orderBy("timestamp", Query.Direction.DESCENDING)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    List<com.example.fashionstoreapp.models.Notification> notifications = new ArrayList<>();
+                    for (DocumentSnapshot document : queryDocumentSnapshots) {
+                        com.example.fashionstoreapp.models.Notification notification = document
+                                .toObject(com.example.fashionstoreapp.models.Notification.class);
+                        if (notification != null) {
+                            notification.setId(document.getId());
+                            notifications.add(notification);
+                        }
+                    }
+                    Log.d(TAG, "Loaded " + notifications.size() + " notifications for user: " + userId);
+                    listener.onNotificationsLoaded(notifications);
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error loading notifications", e);
+                    listener.onError(e.getMessage());
+                });
+    }
+
+    /**
+     * Load all global notifications (for all users)
+     */
+    public void loadGlobalNotifications(OnNotificationsLoadedListener listener) {
+        db.collection(COLLECTION_NOTIFICATIONS)
+                .whereEqualTo("userId", "") // Empty userId means global notification
+                .orderBy("timestamp", Query.Direction.DESCENDING)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    List<com.example.fashionstoreapp.models.Notification> notifications = new ArrayList<>();
+                    for (DocumentSnapshot document : queryDocumentSnapshots) {
+                        com.example.fashionstoreapp.models.Notification notification = document
+                                .toObject(com.example.fashionstoreapp.models.Notification.class);
+                        if (notification != null) {
+                            notification.setId(document.getId());
+                            notifications.add(notification);
+                        }
+                    }
+                    Log.d(TAG, "Loaded " + notifications.size() + " global notifications");
+                    listener.onNotificationsLoaded(notifications);
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error loading global notifications", e);
+                    listener.onError(e.getMessage());
+                });
+    }
+
+    /**
+     * Get unread notifications count
+     */
+    public void getUnreadNotificationsCount(String userId, OnUnreadCountLoadedListener listener) {
+        db.collection(COLLECTION_NOTIFICATIONS)
+                .whereEqualTo("userId", userId)
+                .whereEqualTo("isRead", false)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    int count = queryDocumentSnapshots.size();
+                    listener.onCountLoaded(count);
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error getting unread count", e);
+                    listener.onError(e.getMessage());
+                });
+    }
+
+    /**
+     * Mark notification as read
+     */
+    public void markNotificationAsRead(String notificationId, OnNotificationUpdatedListener listener) {
+        db.collection(COLLECTION_NOTIFICATIONS)
+                .document(notificationId)
+                .update("isRead", true)
+                .addOnSuccessListener(aVoid -> {
+                    Log.d(TAG, "Notification marked as read: " + notificationId);
+                    listener.onUpdated();
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error marking notification as read", e);
+                    listener.onError(e.getMessage());
+                });
+    }
+
+    /**
+     * Delete notification
+     */
+    public void deleteNotification(String notificationId, OnNotificationDeletedListener listener) {
+        db.collection(COLLECTION_NOTIFICATIONS)
+                .document(notificationId)
+                .delete()
+                .addOnSuccessListener(aVoid -> {
+                    Log.d(TAG, "Notification deleted: " + notificationId);
+                    listener.onDeleted();
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error deleting notification", e);
+                    listener.onError(e.getMessage());
+                });
+    }
+
+    /**
+     * Create a new notification (admin only)
+     */
+    public void createNotification(com.example.fashionstoreapp.models.Notification notification,
+            OnNotificationCreatedListener listener) {
+        db.collection(COLLECTION_NOTIFICATIONS)
+                .add(notification)
+                .addOnSuccessListener(documentReference -> {
+                    String notificationId = documentReference.getId();
+                    Log.d(TAG, "Notification created: " + notificationId);
+                    listener.onCreated(notificationId);
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error creating notification", e);
+                    listener.onError(e.getMessage());
+                });
+    }
+
     // ==================== INTERFACES ====================
 
     /**
@@ -1628,6 +1756,38 @@ public class FirestoreManager {
 
     public interface OnCategoryDeletedListener {
         void onCategoryDeleted();
+
+        void onError(String error);
+    }
+
+    // ==================== NOTIFICATION LISTENERS ====================
+
+    public interface OnNotificationsLoadedListener {
+        void onNotificationsLoaded(List<com.example.fashionstoreapp.models.Notification> notifications);
+
+        void onError(String error);
+    }
+
+    public interface OnUnreadCountLoadedListener {
+        void onCountLoaded(int count);
+
+        void onError(String error);
+    }
+
+    public interface OnNotificationUpdatedListener {
+        void onUpdated();
+
+        void onError(String error);
+    }
+
+    public interface OnNotificationDeletedListener {
+        void onDeleted();
+
+        void onError(String error);
+    }
+
+    public interface OnNotificationCreatedListener {
+        void onCreated(String notificationId);
 
         void onError(String error);
     }

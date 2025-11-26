@@ -31,6 +31,7 @@ import com.example.fashionstoreapp.adapters.SearchSuggestionAdapter;
 import com.example.fashionstoreapp.models.Banner;
 import com.example.fashionstoreapp.models.CartItem;
 import com.example.fashionstoreapp.models.Category;
+import com.example.fashionstoreapp.models.FilterCriteria;
 import com.example.fashionstoreapp.models.Product;
 import com.example.fashionstoreapp.models.User;
 import com.example.fashionstoreapp.utils.CartManager;
@@ -81,14 +82,18 @@ public class MainActivity extends AppCompatActivity
     private int currentBannerPosition = 0;
 
     private RecyclerView voucherRecyclerView, retroSportsRecyclerView;
+    private RecyclerView featuredCategoriesRecyclerView;
     private RecyclerView newArrivalsRecyclerView, outletRecyclerView;
     private RecyclerView shirtsRecyclerView, poloRecyclerView, somiRecyclerView, hoodiesRecyclerView;
     private RecyclerView aoKhoacRecyclerView, quanSotRecyclerView, quanTayRecyclerView;
+    private RecyclerView filteredResultsRecyclerView;
 
     private ProductAdapter voucherAdapter, retroSportsAdapter;
+    private com.example.fashionstoreapp.adapters.FeaturedCategoryAdapter featuredAdapter;
     private ProductAdapter newArrivalsAdapter, outletAdapter;
     private ProductAdapter shirtsAdapter, poloAdapter, somiAdapter, hoodiesAdapter;
     private ProductAdapter aoKhoacAdapter, quanSotAdapter, quanTayAdapter;
+    private ProductAdapter filteredResultsAdapter;
 
     private Button btnViewAllRetro, btnViewAllOutlet, btnViewAllShirts, btnViewAllPolo;
     private Button btnViewAllSomi, btnViewAllHoodies;
@@ -98,6 +103,24 @@ public class MainActivity extends AppCompatActivity
     private SessionManager sessionManager;
     private FirebaseAuth mAuth;
     private FirestoreManager firestoreManager;
+
+    // Filter
+    private LinearLayout filterButton, sortButton;
+    private TextView filterBadge;
+    private FilterCriteria currentFilter;
+
+    // Store original product lists for filtering
+    private List<Product> originalVoucherProducts = new ArrayList<>();
+    private List<Product> originalRetroProducts = new ArrayList<>();
+    private List<Product> originalNewProducts = new ArrayList<>();
+    private List<Product> originalOutletProducts = new ArrayList<>();
+    private List<Product> originalShirtsProducts = new ArrayList<>();
+    private List<Product> originalPoloProducts = new ArrayList<>();
+    private List<Product> originalSomiProducts = new ArrayList<>();
+    private List<Product> originalHoodiesProducts = new ArrayList<>();
+    private List<Product> originalAoKhoacProducts = new ArrayList<>();
+    private List<Product> originalQuanSotProducts = new ArrayList<>();
+    private List<Product> originalQuanTayProducts = new ArrayList<>();
 
     // Real-time listeners
     private Map<String, ListenerRegistration> categoryListeners = new HashMap<>();
@@ -112,6 +135,9 @@ public class MainActivity extends AppCompatActivity
         sessionManager = new SessionManager(this);
         mAuth = FirebaseAuth.getInstance();
         firestoreManager = FirestoreManager.getInstance();
+
+        // Initialize filter
+        currentFilter = new FilterCriteria();
 
         // Initialize views
         initViews();
@@ -163,6 +189,7 @@ public class MainActivity extends AppCompatActivity
         bannerIndicator = findViewById(R.id.bannerIndicator);
 
         voucherRecyclerView = findViewById(R.id.voucherRecyclerView);
+        featuredCategoriesRecyclerView = findViewById(R.id.featuredCategoriesRecyclerView);
         retroSportsRecyclerView = findViewById(R.id.retroSportsRecyclerView);
         newArrivalsRecyclerView = findViewById(R.id.newArrivalsRecyclerView);
         outletRecyclerView = findViewById(R.id.outletRecyclerView);
@@ -183,9 +210,17 @@ public class MainActivity extends AppCompatActivity
         quanSotRecyclerView = findViewById(R.id.quanSotRecyclerView);
         quanTayRecyclerView = findViewById(R.id.quanTayRecyclerView);
 
+        // Filtered combined results list (hidden by default)
+        filteredResultsRecyclerView = findViewById(R.id.filteredResultsRecyclerView);
+
         btnViewAllAoKhoac = findViewById(R.id.btnViewAllAoKhoac);
         btnViewAllQuanSot = findViewById(R.id.btnViewAllQuanSot);
         btnViewAllQuanTay = findViewById(R.id.btnViewAllQuanTay);
+
+        // Filter bar
+        filterButton = findViewById(R.id.filterButton);
+        sortButton = findViewById(R.id.sortButton);
+        filterBadge = findViewById(R.id.filterBadge);
     }
 
     private void setupBannerSlider() {
@@ -293,6 +328,7 @@ public class MainActivity extends AppCompatActivity
     private void setupRecyclerViews() {
         // Horizontal RecyclerViews
         setupHorizontalRecyclerView(voucherRecyclerView);
+        setupHorizontalRecyclerView(featuredCategoriesRecyclerView);
         setupHorizontalRecyclerView(retroSportsRecyclerView);
         setupHorizontalRecyclerView(shirtsRecyclerView);
         setupHorizontalRecyclerView(poloRecyclerView);
@@ -305,6 +341,93 @@ public class MainActivity extends AppCompatActivity
         // Grid RecyclerViews
         setupGridRecyclerView(newArrivalsRecyclerView);
         setupGridRecyclerView(outletRecyclerView);
+
+        // Setup filtered results (vertical list)
+        if (filteredResultsRecyclerView != null) {
+            LinearLayoutManager lm = new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false);
+            filteredResultsRecyclerView.setLayoutManager(lm);
+            filteredResultsAdapter = new ProductAdapter(this, new ArrayList<>(), this);
+            filteredResultsRecyclerView.setAdapter(filteredResultsAdapter);
+        }
+    }
+
+    private List<Product> filterAndSortList(List<Product> originalProducts) {
+        List<Product> filteredProducts = new ArrayList<>();
+        if (originalProducts == null || originalProducts.isEmpty())
+            return filteredProducts;
+
+        for (Product product : originalProducts) {
+            boolean passesFilter = true;
+
+            // Price filter
+            if (currentFilter.getMinPrice() != null && product.getCurrentPrice() < currentFilter.getMinPrice()) {
+                passesFilter = false;
+            }
+            if (currentFilter.getMaxPrice() != null && product.getCurrentPrice() > currentFilter.getMaxPrice()) {
+                passesFilter = false;
+            }
+
+            // Stock filter
+            if (currentFilter.isInStockOnly() && product.getStockQuantity() <= 0) {
+                passesFilter = false;
+            }
+
+            // Category filter
+            if (!currentFilter.getCategories().isEmpty()) {
+                boolean matchesCategory = false;
+                for (String category : currentFilter.getCategories()) {
+                    if (product.getCategory() != null
+                            && product.getCategory().toLowerCase().contains(category.toLowerCase())) {
+                        matchesCategory = true;
+                        break;
+                    }
+                }
+                if (!matchesCategory)
+                    passesFilter = false;
+            }
+
+            // Size filter
+            if (!currentFilter.getSizes().isEmpty()) {
+                boolean matchesSize = false;
+                if (product.getAvailableSizes() != null) {
+                    for (String size : currentFilter.getSizes()) {
+                        if (product.getAvailableSizes().contains(size)) {
+                            matchesSize = true;
+                            break;
+                        }
+                    }
+                }
+                if (!matchesSize)
+                    passesFilter = false;
+            }
+
+            if (passesFilter)
+                filteredProducts.add(product);
+        }
+
+        // Apply sorting
+        String sortBy = currentFilter.getSortBy();
+        if (sortBy != null) {
+            switch (sortBy) {
+                case "name_asc":
+                    filteredProducts.sort((p1, p2) -> p1.getName().compareToIgnoreCase(p2.getName()));
+                    break;
+                case "name_desc":
+                    filteredProducts.sort((p1, p2) -> p2.getName().compareToIgnoreCase(p1.getName()));
+                    break;
+                case "price_asc":
+                    filteredProducts.sort((p1, p2) -> Double.compare(p1.getCurrentPrice(), p2.getCurrentPrice()));
+                    break;
+                case "price_desc":
+                    filteredProducts.sort((p1, p2) -> Double.compare(p2.getCurrentPrice(), p1.getCurrentPrice()));
+                    break;
+                case "newest":
+                    // keep original order
+                    break;
+            }
+        }
+
+        return filteredProducts;
     }
 
     private void setupHorizontalRecyclerView(RecyclerView recyclerView) {
@@ -394,6 +517,7 @@ public class MainActivity extends AppCompatActivity
             @Override
             public void onProductsLoaded(List<Product> products) {
                 if (!products.isEmpty()) {
+                    originalVoucherProducts = new ArrayList<>(products);
                     voucherAdapter = new ProductAdapter(MainActivity.this, products, MainActivity.this);
                     voucherRecyclerView.setAdapter(voucherAdapter);
                 } else {
@@ -414,6 +538,7 @@ public class MainActivity extends AppCompatActivity
             @Override
             public void onProductsLoaded(List<Product> products) {
                 if (!products.isEmpty()) {
+                    originalNewProducts = new ArrayList<>(products);
                     newArrivalsAdapter = new ProductAdapter(MainActivity.this, products, MainActivity.this);
                     newArrivalsRecyclerView.setAdapter(newArrivalsAdapter);
                 } else {
@@ -430,46 +555,55 @@ public class MainActivity extends AppCompatActivity
 
         // Load products by category
         loadProductsByCategory("retro-sports", retroSportsRecyclerView, products -> {
+            originalRetroProducts = new ArrayList<>(products);
             retroSportsAdapter = new ProductAdapter(MainActivity.this, products, MainActivity.this);
             retroSportsRecyclerView.setAdapter(retroSportsAdapter);
         });
 
         loadProductsByCategory("outlet", outletRecyclerView, products -> {
+            originalOutletProducts = new ArrayList<>(products);
             outletAdapter = new ProductAdapter(MainActivity.this, products, MainActivity.this);
             outletRecyclerView.setAdapter(outletAdapter);
         });
 
         loadProductsByCategory("ao-thun", shirtsRecyclerView, products -> {
+            originalShirtsProducts = new ArrayList<>(products);
             shirtsAdapter = new ProductAdapter(MainActivity.this, products, MainActivity.this);
             shirtsRecyclerView.setAdapter(shirtsAdapter);
         });
 
         loadProductsByCategory("ao-polo", poloRecyclerView, products -> {
+            originalPoloProducts = new ArrayList<>(products);
             poloAdapter = new ProductAdapter(MainActivity.this, products, MainActivity.this);
             poloRecyclerView.setAdapter(poloAdapter);
         });
 
         loadProductsByCategory("ao-so-mi", somiRecyclerView, products -> {
+            originalSomiProducts = new ArrayList<>(products);
             somiAdapter = new ProductAdapter(MainActivity.this, products, MainActivity.this);
             somiRecyclerView.setAdapter(somiAdapter);
         });
 
         loadProductsByCategory("ao-hoodie", hoodiesRecyclerView, products -> {
+            originalHoodiesProducts = new ArrayList<>(products);
             hoodiesAdapter = new ProductAdapter(MainActivity.this, products, MainActivity.this);
             hoodiesRecyclerView.setAdapter(hoodiesAdapter);
         });
 
         loadProductsByCategory("ao-khoac", aoKhoacRecyclerView, products -> {
+            originalAoKhoacProducts = new ArrayList<>(products);
             aoKhoacAdapter = new ProductAdapter(MainActivity.this, products, MainActivity.this);
             aoKhoacRecyclerView.setAdapter(aoKhoacAdapter);
         });
 
         loadProductsByCategory("quan-sot", quanSotRecyclerView, products -> {
+            originalQuanSotProducts = new ArrayList<>(products);
             quanSotAdapter = new ProductAdapter(MainActivity.this, products, MainActivity.this);
             quanSotRecyclerView.setAdapter(quanSotAdapter);
         });
 
         loadProductsByCategory("quan-tay", quanTayRecyclerView, products -> {
+            originalQuanTayProducts = new ArrayList<>(products);
             quanTayAdapter = new ProductAdapter(MainActivity.this, products, MainActivity.this);
             quanTayRecyclerView.setAdapter(quanTayAdapter);
         });
@@ -516,10 +650,14 @@ public class MainActivity extends AppCompatActivity
         firestoreManager.loadCategories(new FirestoreManager.OnCategoriesLoadedListener() {
             @Override
             public void onCategoriesLoaded(List<Category> categories) {
-                // You can use categories for navigation or filtering
-                // For now, just log them
-                for (Category category : categories) {
-                    android.util.Log.d("MainActivity", "Category: " + category.getName());
+                // Setup featured categories horizontal list
+                if (categories != null && !categories.isEmpty()) {
+                    featuredAdapter = new com.example.fashionstoreapp.adapters.FeaturedCategoryAdapter(
+                            MainActivity.this, categories, category -> {
+                                // Open category products when clicked
+                                openCategoryProducts(category.getId(), category.getName());
+                            });
+                    featuredCategoriesRecyclerView.setAdapter(featuredAdapter);
                 }
             }
 
@@ -537,6 +675,7 @@ public class MainActivity extends AppCompatActivity
             p.setHasVoucher(true);
             p.setVoucherText("Voucher 15K");
         }
+        originalVoucherProducts = new ArrayList<>(voucherProducts);
         voucherAdapter = new ProductAdapter(this, voucherProducts, this);
         voucherRecyclerView.setAdapter(voucherAdapter);
     }
@@ -546,6 +685,7 @@ public class MainActivity extends AppCompatActivity
         for (Product p : newProducts) {
             p.setNew(true);
         }
+        originalNewProducts = new ArrayList<>(newProducts);
         newArrivalsAdapter = new ProductAdapter(this, newProducts, this);
         newArrivalsRecyclerView.setAdapter(newArrivalsAdapter);
     }
@@ -588,11 +728,73 @@ public class MainActivity extends AppCompatActivity
             // Sử dụng tên drawable cho imageUrl
             String imageUrl = imageUrls[i % imageUrls.length];
 
+            // Normalize category -> use internal id (ao-thun, ao-polo, etc.) to keep
+            // consistency with Firestore data
+            String normalizedCategory = normalizeCategoryId(category);
+
             Product product = new Product(id, name, "Mô tả sản phẩm " + name,
-                    currentPrice, originalPrice, imageUrl, category);
+                    currentPrice, originalPrice, imageUrl, normalizedCategory);
             products.add(product);
         }
         return products;
+    }
+
+    // Helper to convert display category or id into normalized internal category id
+    private String normalizeCategoryId(String category) {
+        if (category == null)
+            return "";
+        String c = category.trim().toLowerCase();
+        // Common mapping for Vietnamese display names
+        switch (c) {
+            case "áo thun":
+            case "ao thun":
+            case "ao-thun":
+                return "ao-thun";
+            case "áo polo":
+            case "ao polo":
+            case "ao-polo":
+                return "ao-polo";
+            case "áo sơ mi":
+            case "áo sơ-mi":
+            case "ao sơ mi":
+            case "ao-so-mi":
+                return "ao-so-mi";
+            case "áo khoác":
+            case "ao khoac":
+            case "ao-khoac":
+                return "ao-khoac";
+            case "áo hoodie":
+            case "ao hoodie":
+            case "ao-hoodie":
+                return "ao-hoodie";
+            case "quần sọt":
+            case "quan sot":
+            case "quan-sot":
+                return "quan-sot";
+            case "quần tây":
+            case "quan tay":
+            case "quan-tay":
+                return "quan-tay";
+            case "outlet":
+                return "outlet";
+            case "voucher":
+            case "hàng mới":
+            case "hang moi":
+                return c.replaceAll("\\s+", "-");
+            default:
+                // Fallback: slugify by replacing spaces with '-' and remove diacritics
+                String slug = c.replaceAll("\\s+", "-");
+                // remove Vietnamese diacritics approx by basic replacements
+                slug = slug.replaceAll("[áàảãạăắằẳẵặâấầẩẫậ]", "a");
+                slug = slug.replaceAll("[đ]", "d");
+                slug = slug.replaceAll("[éèẻẽẹêếềểễệ]", "e");
+                slug = slug.replaceAll("[íìỉĩị]", "i");
+                slug = slug.replaceAll("[óòỏõọôốồổỗộơớờởỡợ]", "o");
+                slug = slug.replaceAll("[úùủũụưứừửữự]", "u");
+                slug = slug.replaceAll("[ýỳỷỹỵ]", "y");
+                slug = slug.replaceAll("[^a-z0-9-]", "");
+                return slug;
+        }
     }
 
     private void setupClickListeners() {
@@ -603,15 +805,25 @@ public class MainActivity extends AppCompatActivity
         });
 
         notificationIcon.setOnClickListener(v -> {
-            // Show notifications
-            Toast.makeText(this, "Chưa có thông báo mới", Toast.LENGTH_SHORT).show();
-            // TODO: Open notifications activity
+            // Open notifications activity
+            Intent intent = new Intent(MainActivity.this, NotificationsActivity.class);
+            startActivity(intent);
         });
 
         cartIcon.setOnClickListener(v -> {
             // Open cart activity
             Intent intent = new Intent(MainActivity.this, CartActivity.class);
             startActivity(intent);
+        });
+
+        // Filter button click
+        filterButton.setOnClickListener(v -> {
+            showFilterDialog();
+        });
+
+        // Sort button click
+        sortButton.setOnClickListener(v -> {
+            showSortDialog();
         });
 
         btnViewAllRetro.setOnClickListener(v -> {
@@ -996,6 +1208,331 @@ public class MainActivity extends AppCompatActivity
     @Override
     public void onSuggestionClick(Product product) {
         hideSearchPanel();
+    }
+
+    // ==================== FILTER METHODS ====================
+
+    private void showFilterDialog() {
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_filter_products, null);
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setView(dialogView);
+        AlertDialog dialog = builder.create();
+
+        // Get views from dialog
+        EditText minPriceEt = dialogView.findViewById(R.id.minPriceEt);
+        EditText maxPriceEt = dialogView.findViewById(R.id.maxPriceEt);
+        android.widget.CheckBox inStockCb = dialogView.findViewById(R.id.inStockCb);
+        com.google.android.material.chip.ChipGroup categoryChipGroup = dialogView.findViewById(R.id.categoryChipGroup);
+        com.google.android.material.chip.ChipGroup sizeChipGroup = dialogView.findViewById(R.id.sizeChipGroup);
+        Button resetFilterBtn = dialogView.findViewById(R.id.resetFilterBtn);
+        Button applyFilterBtn = dialogView.findViewById(R.id.applyFilterBtn);
+
+        // Populate current filter values
+        if (currentFilter.getMinPrice() != null) {
+            minPriceEt.setText(String.valueOf(currentFilter.getMinPrice().intValue()));
+        }
+        if (currentFilter.getMaxPrice() != null) {
+            maxPriceEt.setText(String.valueOf(currentFilter.getMaxPrice().intValue()));
+        }
+        inStockCb.setChecked(currentFilter.isInStockOnly());
+
+        // Add category chips (display name vs internal id)
+        String[] categoryDisplay = { "Áo thun", "Áo sơ mi", "Quần jean", "Áo khoác" };
+        String[] categoryIds = { "ao-thun", "ao-so-mi", "quan-jean", "ao-khoac" };
+        for (int i = 0; i < categoryDisplay.length; i++) {
+            com.google.android.material.chip.Chip chip = new com.google.android.material.chip.Chip(this);
+            chip.setText(categoryDisplay[i]);
+            chip.setTag(categoryIds[i]);
+            chip.setCheckable(true);
+            chip.setChecked(currentFilter.getCategories().contains(categoryIds[i]));
+            categoryChipGroup.addView(chip);
+        }
+
+        // Add size chips
+        String[] sizes = { "S", "M", "L", "XL" };
+        for (String size : sizes) {
+            com.google.android.material.chip.Chip chip = new com.google.android.material.chip.Chip(this);
+            chip.setText(size);
+            chip.setCheckable(true);
+            chip.setChecked(currentFilter.getSizes().contains(size));
+            sizeChipGroup.addView(chip);
+        }
+
+        // Reset button
+        resetFilterBtn.setOnClickListener(v -> {
+            currentFilter.reset();
+            updateFilterBadge();
+            applyFilters();
+            dialog.dismiss();
+            Toast.makeText(this, "Đã xóa tất cả bộ lọc", Toast.LENGTH_SHORT).show();
+        });
+
+        // Apply button
+        applyFilterBtn.setOnClickListener(v -> {
+            // Get price range
+            String minPriceStr = minPriceEt.getText().toString().trim();
+            String maxPriceStr = maxPriceEt.getText().toString().trim();
+
+            if (!minPriceStr.isEmpty()) {
+                currentFilter.setMinPrice(Double.parseDouble(minPriceStr));
+            } else {
+                currentFilter.setMinPrice(null);
+            }
+
+            if (!maxPriceStr.isEmpty()) {
+                currentFilter.setMaxPrice(Double.parseDouble(maxPriceStr));
+            } else {
+                currentFilter.setMaxPrice(null);
+            }
+
+            // Get in stock only
+            currentFilter.setInStockOnly(inStockCb.isChecked());
+
+            // Get selected categories (use internal ids stored in tag)
+            currentFilter.getCategories().clear();
+            for (int i = 0; i < categoryChipGroup.getChildCount(); i++) {
+                com.google.android.material.chip.Chip chip = (com.google.android.material.chip.Chip) categoryChipGroup
+                        .getChildAt(i);
+                if (chip.isChecked()) {
+                    Object tag = chip.getTag();
+                    if (tag != null) {
+                        currentFilter.getCategories().add(tag.toString());
+                    } else {
+                        currentFilter.getCategories().add(chip.getText().toString());
+                    }
+                }
+            }
+
+            // Get selected sizes
+            currentFilter.getSizes().clear();
+            for (int i = 0; i < sizeChipGroup.getChildCount(); i++) {
+                com.google.android.material.chip.Chip chip = (com.google.android.material.chip.Chip) sizeChipGroup
+                        .getChildAt(i);
+                if (chip.isChecked()) {
+                    currentFilter.getSizes().add(chip.getText().toString());
+                }
+            }
+
+            updateFilterBadge();
+            applyFilters();
+            dialog.dismiss();
+
+            String message = currentFilter.hasActiveFilters()
+                    ? "Đã áp dụng " + currentFilter.getActiveFilterCount() + " bộ lọc"
+                    : "Đã xóa tất cả bộ lọc";
+            Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+        });
+
+        dialog.show();
+    }
+
+    private void showSortDialog() {
+        String[] sortOptions = {
+                "Tên: A-Z",
+                "Tên: Z-A",
+                "Giá: Thấp đến cao",
+                "Giá: Cao đến thấp",
+                "Mới nhất"
+        };
+
+        String[] sortValues = {
+                "name_asc",
+                "name_desc",
+                "price_asc",
+                "price_desc",
+                "newest"
+        };
+
+        // Find current selection
+        int currentSelection = 0;
+        for (int i = 0; i < sortValues.length; i++) {
+            if (sortValues[i].equals(currentFilter.getSortBy())) {
+                currentSelection = i;
+                break;
+            }
+        }
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Sắp xếp theo")
+                .setSingleChoiceItems(sortOptions, currentSelection, (dialog, which) -> {
+                    currentFilter.setSortBy(sortValues[which]);
+                    applyFilters();
+                    dialog.dismiss();
+                    Toast.makeText(this, "Đã sắp xếp: " + sortOptions[which], Toast.LENGTH_SHORT).show();
+                })
+                .setNegativeButton("Hủy", null);
+
+        builder.create().show();
+    }
+
+    private void updateFilterBadge() {
+        int count = currentFilter.getActiveFilterCount();
+        if (count > 0) {
+            filterBadge.setVisibility(View.VISIBLE);
+            filterBadge.setText(String.valueOf(count));
+        } else {
+            filterBadge.setVisibility(View.GONE);
+        }
+    }
+
+    private void applyFilters() {
+        // If filters are active, show combined filtered results in a single list
+        if (currentFilter.hasActiveFilters()) {
+            List<Product> combined = new ArrayList<>();
+            combined.addAll(filterAndSortList(originalVoucherProducts));
+            combined.addAll(filterAndSortList(originalRetroProducts));
+            combined.addAll(filterAndSortList(originalNewProducts));
+            combined.addAll(filterAndSortList(originalOutletProducts));
+            combined.addAll(filterAndSortList(originalShirtsProducts));
+            combined.addAll(filterAndSortList(originalPoloProducts));
+            combined.addAll(filterAndSortList(originalSomiProducts));
+            combined.addAll(filterAndSortList(originalHoodiesProducts));
+            combined.addAll(filterAndSortList(originalAoKhoacProducts));
+            combined.addAll(filterAndSortList(originalQuanSotProducts));
+            combined.addAll(filterAndSortList(originalQuanTayProducts));
+
+            // Show combined results
+            if (filteredResultsAdapter != null) {
+                filteredResultsAdapter.updateProducts(combined);
+                filteredResultsRecyclerView.setVisibility(View.VISIBLE);
+            }
+
+            // Hide sectioned lists to avoid empty collapsed sections
+            voucherRecyclerView.setVisibility(View.GONE);
+            retroSportsRecyclerView.setVisibility(View.GONE);
+            newArrivalsRecyclerView.setVisibility(View.GONE);
+            outletRecyclerView.setVisibility(View.GONE);
+            shirtsRecyclerView.setVisibility(View.GONE);
+            poloRecyclerView.setVisibility(View.GONE);
+            somiRecyclerView.setVisibility(View.GONE);
+            hoodiesRecyclerView.setVisibility(View.GONE);
+            aoKhoacRecyclerView.setVisibility(View.GONE);
+            quanSotRecyclerView.setVisibility(View.GONE);
+            quanTayRecyclerView.setVisibility(View.GONE);
+        } else {
+            // No active filters: hide combined results and restore sectioned lists
+            if (filteredResultsRecyclerView != null)
+                filteredResultsRecyclerView.setVisibility(View.GONE);
+
+            voucherRecyclerView.setVisibility(View.VISIBLE);
+            retroSportsRecyclerView.setVisibility(View.VISIBLE);
+            newArrivalsRecyclerView.setVisibility(View.VISIBLE);
+            outletRecyclerView.setVisibility(View.VISIBLE);
+            shirtsRecyclerView.setVisibility(View.VISIBLE);
+            poloRecyclerView.setVisibility(View.VISIBLE);
+            somiRecyclerView.setVisibility(View.VISIBLE);
+            hoodiesRecyclerView.setVisibility(View.VISIBLE);
+            aoKhoacRecyclerView.setVisibility(View.VISIBLE);
+            quanSotRecyclerView.setVisibility(View.VISIBLE);
+            quanTayRecyclerView.setVisibility(View.VISIBLE);
+
+            // Restore original lists in each adapter
+            if (voucherAdapter != null)
+                voucherAdapter.updateProducts(originalVoucherProducts);
+            if (retroSportsAdapter != null)
+                retroSportsAdapter.updateProducts(originalRetroProducts);
+            if (newArrivalsAdapter != null)
+                newArrivalsAdapter.updateProducts(originalNewProducts);
+            if (outletAdapter != null)
+                outletAdapter.updateProducts(originalOutletProducts);
+            if (shirtsAdapter != null)
+                shirtsAdapter.updateProducts(originalShirtsProducts);
+            if (poloAdapter != null)
+                poloAdapter.updateProducts(originalPoloProducts);
+            if (somiAdapter != null)
+                somiAdapter.updateProducts(originalSomiProducts);
+            if (hoodiesAdapter != null)
+                hoodiesAdapter.updateProducts(originalHoodiesProducts);
+            if (aoKhoacAdapter != null)
+                aoKhoacAdapter.updateProducts(originalAoKhoacProducts);
+            if (quanSotAdapter != null)
+                quanSotAdapter.updateProducts(originalQuanSotProducts);
+            if (quanTayAdapter != null)
+                quanTayAdapter.updateProducts(originalQuanTayProducts);
+        }
+    }
+
+    private void applyFilterToAdapter(ProductAdapter adapter, List<Product> originalProducts) {
+        List<Product> filteredProducts = new ArrayList<>();
+
+        // Apply filters
+        for (Product product : originalProducts) {
+            boolean passesFilter = true;
+
+            // Price filter
+            if (currentFilter.getMinPrice() != null && product.getCurrentPrice() < currentFilter.getMinPrice()) {
+                passesFilter = false;
+            }
+            if (currentFilter.getMaxPrice() != null && product.getCurrentPrice() > currentFilter.getMaxPrice()) {
+                passesFilter = false;
+            }
+
+            // Stock filter
+            if (currentFilter.isInStockOnly() && product.getStockQuantity() <= 0) {
+                passesFilter = false;
+            }
+
+            // Category filter (if categories selected)
+            if (!currentFilter.getCategories().isEmpty()) {
+                boolean matchesCategory = false;
+                for (String category : currentFilter.getCategories()) {
+                    if (product.getCategory() != null &&
+                            product.getCategory().toLowerCase().contains(category.toLowerCase())) {
+                        matchesCategory = true;
+                        break;
+                    }
+                }
+                if (!matchesCategory) {
+                    passesFilter = false;
+                }
+            }
+
+            // Size filter (if sizes selected)
+            if (!currentFilter.getSizes().isEmpty()) {
+                boolean matchesSize = false;
+                if (product.getAvailableSizes() != null) {
+                    for (String size : currentFilter.getSizes()) {
+                        if (product.getAvailableSizes().contains(size)) {
+                            matchesSize = true;
+                            break;
+                        }
+                    }
+                }
+                if (!matchesSize) {
+                    passesFilter = false;
+                }
+            }
+
+            if (passesFilter) {
+                filteredProducts.add(product);
+            }
+        }
+
+        // Apply sorting
+        String sortBy = currentFilter.getSortBy();
+        if (sortBy != null) {
+            switch (sortBy) {
+                case "name_asc":
+                    filteredProducts.sort((p1, p2) -> p1.getName().compareToIgnoreCase(p2.getName()));
+                    break;
+                case "name_desc":
+                    filteredProducts.sort((p1, p2) -> p2.getName().compareToIgnoreCase(p1.getName()));
+                    break;
+                case "price_asc":
+                    filteredProducts.sort((p1, p2) -> Double.compare(p1.getCurrentPrice(), p2.getCurrentPrice()));
+                    break;
+                case "price_desc":
+                    filteredProducts.sort((p1, p2) -> Double.compare(p2.getCurrentPrice(), p1.getCurrentPrice()));
+                    break;
+                case "newest":
+                    // Assuming products are already sorted by newest from Firestore
+                    break;
+            }
+        }
+
+        // Update adapter
+        adapter.updateProducts(filteredProducts);
     }
 
     @Override

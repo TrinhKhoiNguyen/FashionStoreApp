@@ -131,6 +131,9 @@
                 android:layout_width="match_parent"
                 android:layout_height="60dp"
                 android:text="Lưu Danh Mục"
+                android:backgroundTint="#000000"
+                android:textColor="#FFD700"
+                android:textStyle="bold"
                 android:textSize="16sp" />
 
         </LinearLayout>

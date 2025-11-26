@@ -16,6 +16,7 @@
             android:background="#000000"
             app:title="Thanh toán"
             app:titleTextColor="#FFD700"
+            app:navigationIconTint="#FFFFFF"
             app:navigationIcon="@drawable/baseline_arrow_back_24" />
     </com.google.android.material.appbar.AppBarLayout>
 
@@ -368,6 +369,7 @@
                             android:layout_height="wrap_content"
                             android:text="Miễn phí"
                             android:textColor="#4CAF50"
+                            android:textStyle="bold"
                             android:textSize="14sp" />
                     </LinearLayout>
 

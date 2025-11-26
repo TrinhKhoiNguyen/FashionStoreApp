@@ -43,7 +43,7 @@
         android:layout_gravity="bottom|end"
         android:layout_margin="16dp"
         android:src="@android:drawable/ic_input_add"
-        app:tint="@color/white"
-        app:backgroundTint="@color/purple_500" />
+        app:tint="#FFD700"
+        app:backgroundTint="#000000" />
 
 </LinearLayout>

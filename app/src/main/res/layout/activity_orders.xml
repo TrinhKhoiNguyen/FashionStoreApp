@@ -18,9 +18,9 @@
             android:layout_height="?attr/actionBarSize"
             android:background="#000000"
             app:navigationIcon="@drawable/ic_back"
-            app:navigationIconTint="#FFD700"
+            app:navigationIconTint="#FFFFFF"
             app:title="Đơn hàng của tôi"
-            app:titleTextColor="#FFFFFF" />
+            app:titleTextColor="#FFD700" />
 
         <com.google.android.material.tabs.TabLayout
             android:id="@+id/tabLayout"

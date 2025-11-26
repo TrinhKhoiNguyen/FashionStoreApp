@@ -102,6 +102,7 @@
             android:layout_weight="1"
             android:backgroundTint="#000000"
             android:text="Hủy"
+            android:textStyle="bold"
             android:textColor="#FFD700" />
 
         <Button
@@ -111,6 +112,7 @@
             android:layout_weight="1"
             android:backgroundTint="#000000"
             android:text="Gửi đánh giá"
+            android:textStyle="bold"
             android:textColor="#FFD700" />
     </LinearLayout>
 
