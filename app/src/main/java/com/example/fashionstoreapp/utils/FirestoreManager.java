@@ -1579,10 +1579,28 @@ public class FirestoreManager {
                                 .addOnSuccessListener(aVoid -> {
                                     Log.d(TAG, "Order status updated: " + orderId + " -> " + newStatus);
 
+                                    // Diagnostic: log payment method and total before revenue update decision
+                                    Log.d(TAG, "Order update diagnostics: orderId=" + orderId
+                                            + ", paymentMethod=" + paymentMethodFinal
+                                            + ", totalAmount=" + totalAmountFinal);
+
                                     // If order is delivered and payment method is COD, update revenue
-                                    if ("delivered".equals(newStatus) && paymentMethodFinal != null &&
-                                            paymentMethodFinal.contains("nhận hàng") && totalAmountFinal != null) {
-                                        updateRevenue(totalAmountFinal);
+                                    if ("delivered".equals(newStatus)) {
+                                        boolean isCod = paymentMethodFinal != null
+                                                && paymentMethodFinal.toLowerCase().contains("nhận hàng")
+                                                || (paymentMethodFinal != null
+                                                        && paymentMethodFinal.toLowerCase().contains("cod"))
+                                                || (paymentMethodFinal != null
+                                                        && paymentMethodFinal.toLowerCase().contains("cash"));
+                                        if (isCod && totalAmountFinal != null) {
+                                            Log.d(TAG, "Invoking updateRevenue for order " + orderId + " amount="
+                                                    + totalAmountFinal);
+                                            updateRevenue(totalAmountFinal);
+                                        } else {
+                                            Log.d(TAG,
+                                                    "Skipping revenue update for order " + orderId + ", isCod=" + isCod
+                                                            + ", totalAmountPresent=" + (totalAmountFinal != null));
+                                        }
                                     }
 
                                     // Create a notification for the user about status change
@@ -1656,6 +1674,8 @@ public class FirestoreManager {
         long todayStart = getTodayStartTimestamp();
         String dateKey = String.valueOf(todayStart);
 
+        Log.d(TAG, "updateRevenue called. dateKey=" + dateKey + ", amount=" + amount);
+
         db.collection("revenue")
                 .document(dateKey)
                 .get()
@@ -1669,6 +1689,9 @@ public class FirestoreManager {
                     }
 
                     double newRevenue = currentRevenue + amount;
+                    Log.d(TAG, "Current revenue=" + currentRevenue + ", newRevenue=" + newRevenue + ", dateKey="
+                            + dateKey);
+
                     db.collection("revenue")
                             .document(dateKey)
                             .set(new java.util.HashMap<String, Object>() {
