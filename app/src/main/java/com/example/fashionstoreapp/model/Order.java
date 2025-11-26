@@ -17,6 +17,7 @@ public class Order {
     private double shippingFee;
     private double voucherDiscount;
     private String status; // "pending", "processing", "shipping", "delivered", "cancelled"
+    private String cancelReason; // optional reason when order is cancelled by admin
     private Long createdAt; // Stored as timestamp (milliseconds)
     private String shippingAddress;
     private String recipientName;
@@ -96,6 +97,14 @@ public class Order {
 
     public String getPaymentMethod() {
         return paymentMethod;
+    }
+
+    public String getCancelReason() {
+        return cancelReason;
+    }
+
+    public void setCancelReason(String cancelReason) {
+        this.cancelReason = cancelReason;
     }
 
     // Setters

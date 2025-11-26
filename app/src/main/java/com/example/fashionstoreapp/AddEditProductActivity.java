@@ -157,6 +157,36 @@ public class AddEditProductActivity extends AppCompatActivity {
         categoryDropdown.setAdapter(adapter);
     }
 
+    // Helper: find category ID by display name
+    private String getCategoryIdByName(String name) {
+        if (name == null || name.isEmpty() || categoriesList == null)
+            return null;
+        for (Category c : categoriesList) {
+            if (c == null)
+                continue;
+            String n = c.getName();
+            if (n != null && n.equalsIgnoreCase(name.trim())) {
+                return c.getId();
+            }
+        }
+        return null;
+    }
+
+    // Helper: find display name by category ID
+    private String getCategoryNameById(String id) {
+        if (id == null || id.isEmpty() || categoriesList == null)
+            return null;
+        for (Category c : categoriesList) {
+            if (c == null)
+                continue;
+            String cid = c.getId();
+            if (cid != null && cid.equals(id)) {
+                return c.getName();
+            }
+        }
+        return null;
+    }
+
     private void setupSizeStocks() {
         sizeStockContainer.removeAllViews();
 
@@ -273,7 +303,14 @@ public class AddEditProductActivity extends AppCompatActivity {
         currentPriceInput.setText(String.valueOf((int) product.getCurrentPrice()));
         originalPriceInput.setText(String.valueOf((int) product.getOriginalPrice()));
         imageUrlInput.setText(product.getImageUrl());
-        categoryDropdown.setText(product.getCategory(), false);
+        // product.getCategory() may store the internal category ID; show the display
+        // name
+        String categoryDisplay = getCategoryNameById(product.getCategory());
+        if (categoryDisplay != null) {
+            categoryDropdown.setText(categoryDisplay, false);
+        } else {
+            categoryDropdown.setText(product.getCategory(), false);
+        }
         isVisibleCheckbox.setChecked(product.isVisible());
 
         loadImagePreview(product.getImageUrl());
@@ -334,7 +371,13 @@ public class AddEditProductActivity extends AppCompatActivity {
         product.setCurrentPrice(currentPrice);
         product.setOriginalPrice(originalPrice);
         product.setImageUrl(imageUrl);
-        product.setCategory(category);
+        // Map selected display name back to category ID (store ID in product.category)
+        String categoryId = getCategoryIdByName(category);
+        if (categoryId == null) {
+            // If not found, fallback to the raw text (maintain backward compatibility)
+            categoryId = category;
+        }
+        product.setCategory(categoryId);
         product.setVisible(isVisibleCheckbox.isChecked());
         product.setSizeStocks(sizeStocks);
         product.setColors(selectedColors);

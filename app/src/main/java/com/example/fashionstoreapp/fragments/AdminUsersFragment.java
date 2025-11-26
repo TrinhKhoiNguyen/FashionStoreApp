@@ -118,22 +118,23 @@ public class AdminUsersFragment extends Fragment implements AdminUserAdapter.OnA
     @Override
     public void onUserClick(User user) {
         // Show user options dialog
-        String[] options = { "Xem chi tiết", "Thay đổi quyền", "Vô hiệu hóa tài khoản" };
+        String[] options = { "Xem chi tiết", "Thay đổi quyền", "Vô hiệu hóa tài khoản", "Xóa tài khoản" };
 
         new androidx.appcompat.app.AlertDialog.Builder(getContext())
                 .setTitle(user.getDisplayName())
                 .setItems(options, (dialog, which) -> {
                     switch (which) {
                         case 0: // View details
-                            Toast.makeText(getContext(), "Xem chi tiết: " + user.getDisplayName(),
-                                    Toast.LENGTH_SHORT).show();
+                            showUserDetails(user);
                             break;
                         case 1: // Change role
                             changeUserRole(user);
                             break;
                         case 2: // Disable account
-                            Toast.makeText(getContext(), "Vô hiệu hóa tài khoản: " + user.getDisplayName(),
-                                    Toast.LENGTH_SHORT).show();
+                            toggleUserActive(user);
+                            break;
+                        case 3: // Delete account
+                            confirmAndDeleteUser(user);
                             break;
                     }
                 })
@@ -167,6 +168,71 @@ public class AdminUsersFragment extends Fragment implements AdminUserAdapter.OnA
                                     Toast.makeText(getContext(), "Lỗi: " + error, Toast.LENGTH_SHORT).show();
                                 }
                             });
+                })
+                .setNegativeButton("Hủy", null)
+                .show();
+    }
+
+    private void showUserDetails(User user) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Tên: ").append(user.getDisplayName() == null ? "-" : user.getDisplayName()).append("\n");
+        sb.append("Email: ").append(user.getEmail() == null ? "-" : user.getEmail()).append("\n");
+        sb.append("Số điện thoại: ").append(user.getPhone() == null ? "-" : user.getPhone()).append("\n");
+        sb.append("Vai trò: ").append(user.getRole() == null ? "user" : user.getRole()).append("\n");
+        sb.append("Trạng thái: ").append(user.isActive() ? "Hoạt động" : "Vô hiệu hóa");
+
+        new androidx.appcompat.app.AlertDialog.Builder(getContext())
+                .setTitle("Chi tiết người dùng")
+                .setMessage(sb.toString())
+                .setPositiveButton("Đóng", null)
+                .show();
+    }
+
+    private void toggleUserActive(User user) {
+        boolean currentlyActive = user.isActive();
+        String verb = currentlyActive ? "Vô hiệu hóa" : "Kích hoạt";
+        new androidx.appcompat.app.AlertDialog.Builder(getContext())
+                .setTitle(verb + " tài khoản")
+                .setMessage(
+                        "Bạn có chắc muốn " + verb.toLowerCase() + " tài khoản của '" + user.getDisplayName() + "'?")
+                .setPositiveButton(verb, (dialog, which) -> {
+                    firestoreManager.setUserActive(user.getId(), !currentlyActive,
+                            new FirestoreManager.OnUserRoleUpdatedListener() {
+                                @Override
+                                public void onRoleUpdated() {
+                                    Toast.makeText(getContext(), verb + " thành công", Toast.LENGTH_SHORT).show();
+                                    loadUsers();
+                                }
+
+                                @Override
+                                public void onError(String error) {
+                                    Toast.makeText(getContext(), "Lỗi: " + error, Toast.LENGTH_SHORT).show();
+                                }
+                            });
+                })
+                .setNegativeButton("Hủy", null)
+                .show();
+    }
+
+    private void confirmAndDeleteUser(User user) {
+        new androidx.appcompat.app.AlertDialog.Builder(getContext())
+                .setTitle("Xóa tài khoản")
+                .setMessage(
+                        "Xóa người dùng sẽ xóa hồ sơ trong Firestore nhưng KHÔNG xóa tài khoản Auth. Bạn có chắc muốn xóa '"
+                                + user.getDisplayName() + "'?")
+                .setPositiveButton("Xóa", (dialog, which) -> {
+                    firestoreManager.deleteUser(user.getId(), new FirestoreManager.OnProductDeletedListener() {
+                        @Override
+                        public void onProductDeleted() {
+                            Toast.makeText(getContext(), "Đã xóa người dùng", Toast.LENGTH_SHORT).show();
+                            loadUsers();
+                        }
+
+                        @Override
+                        public void onError(String error) {
+                            Toast.makeText(getContext(), "Lỗi: " + error, Toast.LENGTH_SHORT).show();
+                        }
+                    });
                 })
                 .setNegativeButton("Hủy", null)
                 .show();

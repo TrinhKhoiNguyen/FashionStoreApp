@@ -21,12 +21,14 @@ public class User implements Serializable {
     private List<String> favoriteProductIds;
     private long createdAt;
     private long lastLoginAt;
+    private boolean isActive; // account enabled/disabled
 
     // Constructor
     public User() {
         this.favoriteProductIds = new ArrayList<>();
         this.createdAt = System.currentTimeMillis();
         this.role = "user"; // Default role
+        this.isActive = true; // Default active
     }
 
     public User(String email, String password) {
@@ -158,6 +160,14 @@ public class User implements Serializable {
 
     public boolean isAdmin() {
         return "admin".equalsIgnoreCase(role);
+    }
+
+    public boolean isActive() {
+        return isActive;
+    }
+
+    public void setActive(boolean active) {
+        this.isActive = active;
     }
 
     public List<String> getFavoriteProductIds() {

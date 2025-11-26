@@ -24,6 +24,7 @@ import com.example.fashionstoreapp.models.User;
 import com.example.fashionstoreapp.utils.SessionManager;
 import com.example.fashionstoreapp.utils.FirestoreManager;
 import com.google.android.material.appbar.MaterialToolbar;
+import androidx.appcompat.app.AlertDialog;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.button.MaterialButton;
 import com.google.firebase.auth.FirebaseAuth;
@@ -117,19 +118,27 @@ public class ProfileActivity extends AppCompatActivity {
     }
 
     private void handleLogout() {
-        // Sign out from Firebase
-        mAuth.signOut();
+        // Ask for confirmation before signing out
+        new AlertDialog.Builder(this)
+                .setTitle("Đăng xuất")
+                .setMessage("Bạn có chắc chắn muốn đăng xuất?")
+                .setPositiveButton("Đăng xuất", (dialog, which) -> {
+                    // Sign out from Firebase
+                    mAuth.signOut();
 
-        // Clear session
-        sessionManager.logout();
+                    // Clear session
+                    sessionManager.logout();
 
-        // Navigate to login
-        Intent intent = new Intent(ProfileActivity.this, LoginActivity.class);
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-        startActivity(intent);
-        finish();
+                    // Navigate to login
+                    Intent intent = new Intent(ProfileActivity.this, LoginActivity.class);
+                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                    startActivity(intent);
+                    finish();
 
-        Toast.makeText(this, "Đã đăng xuất thành công", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "Đã đăng xuất thành công", Toast.LENGTH_SHORT).show();
+                })
+                .setNegativeButton("Hủy", (dialog, which) -> dialog.dismiss())
+                .show();
     }
 
     private void setupToolbar() {

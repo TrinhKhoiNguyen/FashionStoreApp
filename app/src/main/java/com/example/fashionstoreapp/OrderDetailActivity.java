@@ -267,33 +267,86 @@ public class OrderDetailActivity extends AppCompatActivity {
             updateStatusButton.setEnabled(false);
         }
 
-        firestoreManager.updateOrderStatus(order.getOrderId(), newStatus,
-                new FirestoreManager.OnOrderStatusUpdatedListener() {
-                    @Override
-                    public void onStatusUpdated() {
+        // If cancelling, ask for reason
+        if ("cancelled".equals(newStatus) || "canceled".equals(newStatus)) {
+            final android.widget.EditText input = new android.widget.EditText(this);
+            input.setHint("Lý do hủy đơn (ví dụ: hết hàng, lỗi hệ thống)");
+            new AlertDialog.Builder(this)
+                    .setTitle("Lý do hủy đơn")
+                    .setView(input)
+                    .setPositiveButton("Gửi", (dialog, which) -> {
+                        String reason = input.getText() != null ? input.getText().toString().trim() : "";
+                        firestoreManager.updateOrderStatus(order.getOrderId(), newStatus, reason,
+                                new FirestoreManager.OnOrderStatusUpdatedListener() {
+                                    @Override
+                                    public void onStatusUpdated() {
+                                        if (progressBar != null) {
+                                            progressBar.setVisibility(View.GONE);
+                                        }
+                                        if (updateStatusButton != null) {
+                                            updateStatusButton.setEnabled(true);
+                                        }
+                                        Toast.makeText(OrderDetailActivity.this, "Đã cập nhật trạng thái đơn hàng",
+                                                Toast.LENGTH_SHORT)
+                                                .show();
+
+                                        // Reload order detail
+                                        loadOrderDetail(order.getOrderId());
+                                    }
+
+                                    @Override
+                                    public void onError(String error) {
+                                        if (progressBar != null) {
+                                            progressBar.setVisibility(View.GONE);
+                                        }
+                                        if (updateStatusButton != null) {
+                                            updateStatusButton.setEnabled(true);
+                                        }
+                                        Toast.makeText(OrderDetailActivity.this, "Lỗi cập nhật: " + error,
+                                                Toast.LENGTH_SHORT).show();
+                                    }
+                                });
+                    })
+                    .setNegativeButton("Hủy", (d, w) -> {
                         if (progressBar != null) {
                             progressBar.setVisibility(View.GONE);
                         }
                         if (updateStatusButton != null) {
                             updateStatusButton.setEnabled(true);
                         }
-                        Toast.makeText(OrderDetailActivity.this, "Đã cập nhật trạng thái đơn hàng", Toast.LENGTH_SHORT)
-                                .show();
+                    })
+                    .show();
+        } else {
+            firestoreManager.updateOrderStatus(order.getOrderId(), newStatus, null,
+                    new FirestoreManager.OnOrderStatusUpdatedListener() {
+                        @Override
+                        public void onStatusUpdated() {
+                            if (progressBar != null) {
+                                progressBar.setVisibility(View.GONE);
+                            }
+                            if (updateStatusButton != null) {
+                                updateStatusButton.setEnabled(true);
+                            }
+                            Toast.makeText(OrderDetailActivity.this, "Đã cập nhật trạng thái đơn hàng",
+                                    Toast.LENGTH_SHORT)
+                                    .show();
 
-                        // Reload order detail
-                        loadOrderDetail(order.getOrderId());
-                    }
+                            // Reload order detail
+                            loadOrderDetail(order.getOrderId());
+                        }
 
-                    @Override
-                    public void onError(String error) {
-                        if (progressBar != null) {
-                            progressBar.setVisibility(View.GONE);
+                        @Override
+                        public void onError(String error) {
+                            if (progressBar != null) {
+                                progressBar.setVisibility(View.GONE);
+                            }
+                            if (updateStatusButton != null) {
+                                updateStatusButton.setEnabled(true);
+                            }
+                            Toast.makeText(OrderDetailActivity.this, "Lỗi cập nhật: " + error, Toast.LENGTH_SHORT)
+                                    .show();
                         }
-                        if (updateStatusButton != null) {
-                            updateStatusButton.setEnabled(true);
-                        }
-                        Toast.makeText(OrderDetailActivity.this, "Lỗi cập nhật: " + error, Toast.LENGTH_SHORT).show();
-                    }
-                });
+                    });
+        }
     }
 }

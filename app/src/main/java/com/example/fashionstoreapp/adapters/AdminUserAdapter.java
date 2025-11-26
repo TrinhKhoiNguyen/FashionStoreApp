@@ -63,9 +63,17 @@ public class AdminUserAdapter extends RecyclerView.Adapter<AdminUserAdapter.View
         }
 
         // Show admin badge if user is admin
-        if (user.isAdmin()) {
+        if (!user.isActive()) {
+            holder.userRoleBadge.setVisibility(View.VISIBLE);
+            holder.userRoleBadge.setText("Vô hiệu");
+            holder.userRoleBadge.setBackgroundColor(android.graphics.Color.parseColor("#B00020"));
+            holder.userRoleBadge.setTextColor(android.graphics.Color.WHITE);
+        } else if (user.isAdmin()) {
             holder.userRoleBadge.setVisibility(View.VISIBLE);
             holder.userRoleBadge.setText("Admin");
+            // keep drawable background defined in XML
+            holder.userRoleBadge.setBackgroundResource(R.drawable.bg_admin_badge);
+            holder.userRoleBadge.setTextColor(android.graphics.Color.WHITE);
         } else {
             holder.userRoleBadge.setVisibility(View.GONE);
         }

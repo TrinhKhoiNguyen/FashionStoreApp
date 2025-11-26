@@ -117,7 +117,15 @@ public class RegisterActivity extends AppCompatActivity {
                     timeoutHandler.removeCallbacks(timeoutRunnable);
 
                     if (task.isSuccessful()) {
-                        FirebaseUser user = mAuth.getCurrentUser();
+                        FirebaseUser user = null;
+                        if (task.getResult() != null) {
+                            user = task.getResult().getUser();
+                        }
+                        if (user == null) {
+                            // Fallback to currentUser (rare cases)
+                            user = mAuth.getCurrentUser();
+                        }
+
                         if (user != null) {
                             // Thực hiện song song updateProfile và saveToFirestore để nhanh hơn
                             String userId = user.getUid();
@@ -129,22 +137,113 @@ public class RegisterActivity extends AppCompatActivity {
                                     .build();
                             user.updateProfile(profileUpdates);
 
-                            // Lưu vào Firestore ngay (song song với updateProfile)
-                            firestoreManager.saveUserProfileWithEmail(userId, fullName, email, passwordHash, "", "", "",
-                                    new FirestoreManager.OnUserProfileSavedListener() {
-                                        @Override
-                                        public void onProfileSaved() {
-                                            hideLoading();
-                                            showSuccessDialogWithoutVerification(email);
-                                        }
+                            // Use an AuthStateListener to ensure FirebaseAuth state and token are
+                            // fully established before attempting a Firestore write. This is
+                            // more robust than a single getIdToken() call immediately after
+                            // createUserWithEmailAndPassword which can still see an unauthenticated
+                            // state and produce PERMISSION_DENIED.
+                            final FirebaseAuth.AuthStateListener[] listenerHolder = new FirebaseAuth.AuthStateListener[1];
 
-                                        @Override
-                                        public void onError(String error) {
+                            FirebaseAuth.AuthStateListener authListener = new FirebaseAuth.AuthStateListener() {
+                                @Override
+                                public void onAuthStateChanged(FirebaseAuth firebaseAuth) {
+                                    FirebaseUser current = firebaseAuth.getCurrentUser();
+                                    if (current != null && current.getUid().equals(userId)) {
+                                        // Try to get a fresh token and then write
+                                        current.getIdToken(true).addOnCompleteListener(tt -> {
+                                            if (tt.isSuccessful()) {
+                                                boolean tokenPresent = tt.getResult() != null
+                                                        && tt.getResult().getToken() != null
+                                                        && !tt.getResult().getToken().isEmpty();
+                                                Log.d(TAG, "AuthStateListener: current UID=" + userId
+                                                        + ", tokenPresent=" + tokenPresent);
+
+                                                firestoreManager.saveUserProfileWithEmail(userId, fullName, email,
+                                                        passwordHash, "", "", "",
+                                                        new FirestoreManager.OnUserProfileSavedListener() {
+                                                            @Override
+                                                            public void onProfileSaved() {
+                                                                // cleanup listener
+                                                                if (listenerHolder[0] != null)
+                                                                    mAuth.removeAuthStateListener(listenerHolder[0]);
+                                                                hideLoading();
+                                                                showSuccessDialogWithoutVerification(email);
+                                                            }
+
+                                                            @Override
+                                                            public void onError(String error) {
+                                                                if (listenerHolder[0] != null)
+                                                                    mAuth.removeAuthStateListener(listenerHolder[0]);
+                                                                hideLoading();
+                                                                Toast.makeText(RegisterActivity.this,
+                                                                        "Lỗi lưu thông tin: " + error,
+                                                                        Toast.LENGTH_SHORT).show();
+                                                            }
+                                                        });
+                                            }
+                                        });
+                                    }
+                                }
+                            };
+
+                            listenerHolder[0] = authListener;
+                            mAuth.addAuthStateListener(authListener);
+
+                            // Safety timeout: if auth state / token not ready in 10s, remove listener
+                            // and show an error to the user.
+                            timeoutHandler.postDelayed(() -> {
+                                if (listenerHolder[0] != null) {
+                                    mAuth.removeAuthStateListener(listenerHolder[0]);
+                                    hideLoading();
+                                    Toast.makeText(RegisterActivity.this,
+                                            "Đăng ký thất bại: không thể xác thực người dùng. Vui lòng thử lại.",
+                                            Toast.LENGTH_LONG).show();
+                                }
+                            }, 10000);
+                        } else {
+                            // Very unlikely: user still null even after success; wait briefly then try to
+                            // fetch currentUser
+                            new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                                FirebaseUser fallback = mAuth.getCurrentUser();
+                                if (fallback != null) {
+                                    String userId = fallback.getUid();
+                                    String passwordHash = hashPassword(password);
+
+                                    // Ensure token is ready before writing
+                                    fallback.getIdToken(true).addOnCompleteListener(tt -> {
+                                        if (tt.isSuccessful()) {
+                                            firestoreManager.saveUserProfileWithEmail(userId, fullName, email,
+                                                    passwordHash, "",
+                                                    "", "",
+                                                    new FirestoreManager.OnUserProfileSavedListener() {
+                                                        @Override
+                                                        public void onProfileSaved() {
+                                                            hideLoading();
+                                                            showSuccessDialogWithoutVerification(email);
+                                                        }
+
+                                                        @Override
+                                                        public void onError(String error) {
+                                                            hideLoading();
+                                                            Toast.makeText(RegisterActivity.this,
+                                                                    "Lỗi lưu thông tin: " + error, Toast.LENGTH_SHORT)
+                                                                    .show();
+                                                        }
+                                                    });
+                                        } else {
                                             hideLoading();
                                             Toast.makeText(RegisterActivity.this,
-                                                    "Lỗi lưu thông tin: " + error, Toast.LENGTH_SHORT).show();
+                                                    "Tạo tài khoản thất bại: không thể xác thực người dùng để lưu dữ liệu.",
+                                                    Toast.LENGTH_LONG).show();
                                         }
                                     });
+                                } else {
+                                    hideLoading();
+                                    Toast.makeText(RegisterActivity.this,
+                                            "Tạo tài khoản thất bại: không thể xác thực người dùng để lưu dữ liệu.",
+                                            Toast.LENGTH_LONG).show();
+                                }
+                            }, 1000);
                         }
                     } else {
                         hideLoading();

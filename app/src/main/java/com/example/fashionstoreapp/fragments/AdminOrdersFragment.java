@@ -149,18 +149,47 @@ public class AdminOrdersFragment extends Fragment implements AdminOrderAdapter.O
     }
 
     private void updateOrderStatus(Order order, String newStatus) {
-        firestoreManager.updateOrderStatus(order.getOrderId(), newStatus,
-                new FirestoreManager.OnOrderStatusUpdatedListener() {
-                    @Override
-                    public void onStatusUpdated() {
-                        Toast.makeText(getContext(), "Đã cập nhật trạng thái", Toast.LENGTH_SHORT).show();
-                        loadOrders(); // Reload list
-                    }
+        // If cancelling, prompt for a reason first
+        if ("cancelled".equals(newStatus) || "canceled".equals(newStatus)) {
+            final android.widget.EditText input = new android.widget.EditText(getContext());
+            input.setHint("Lý do hủy đơn (ví dụ: hết hàng, lỗi hệ thống)");
+            new androidx.appcompat.app.AlertDialog.Builder(getContext())
+                    .setTitle("Lý do hủy đơn")
+                    .setView(input)
+                    .setPositiveButton("Gửi", (dialog, which) -> {
+                        String reason = input.getText() != null ? input.getText().toString().trim() : "";
+                        firestoreManager.updateOrderStatus(order.getOrderId(), newStatus, reason,
+                                new FirestoreManager.OnOrderStatusUpdatedListener() {
+                                    @Override
+                                    public void onStatusUpdated() {
+                                        Toast.makeText(getContext(), "Đã cập nhật trạng thái", Toast.LENGTH_SHORT)
+                                                .show();
+                                        loadOrders(); // Reload list
+                                    }
 
-                    @Override
-                    public void onError(String error) {
-                        Toast.makeText(getContext(), "Lỗi cập nhật: " + error, Toast.LENGTH_SHORT).show();
-                    }
-                });
+                                    @Override
+                                    public void onError(String error) {
+                                        Toast.makeText(getContext(), "Lỗi cập nhật: " + error, Toast.LENGTH_SHORT)
+                                                .show();
+                                    }
+                                });
+                    })
+                    .setNegativeButton("Hủy", null)
+                    .show();
+        } else {
+            firestoreManager.updateOrderStatus(order.getOrderId(), newStatus, null,
+                    new FirestoreManager.OnOrderStatusUpdatedListener() {
+                        @Override
+                        public void onStatusUpdated() {
+                            Toast.makeText(getContext(), "Đã cập nhật trạng thái", Toast.LENGTH_SHORT).show();
+                            loadOrders(); // Reload list
+                        }
+
+                        @Override
+                        public void onError(String error) {
+                            Toast.makeText(getContext(), "Lỗi cập nhật: " + error, Toast.LENGTH_SHORT).show();
+                        }
+                    });
+        }
     }
 }

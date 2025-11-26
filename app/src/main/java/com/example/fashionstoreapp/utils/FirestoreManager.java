@@ -663,17 +663,79 @@ public class FirestoreManager {
         profileData.put("phone", phone != null ? phone : ""); // Luôn lưu phone, cho phép rỗng
         profileData.put("updatedAt", System.currentTimeMillis());
 
-        db.collection(COLLECTION_USERS)
-                .document(userId)
-                .set(profileData, com.google.firebase.firestore.SetOptions.merge())
-                .addOnSuccessListener(aVoid -> {
-                    Log.d(TAG, "User profile saved successfully");
-                    listener.onProfileSaved();
-                })
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, "Error saving user profile", e);
-                    listener.onError(e.getMessage());
-                });
+        // Diagnostic: log current auth UID before write
+        com.google.firebase.auth.FirebaseAuth auth = com.google.firebase.auth.FirebaseAuth.getInstance();
+        com.google.firebase.auth.FirebaseUser current = auth.getCurrentUser();
+        String currentUid = current != null ? current.getUid() : "null";
+        Log.d(TAG,
+                "Attempting to save user profile (merge). targetUserId=" + userId + ", currentAuthUid=" + currentUid);
+
+        // redact any sensitive fields for logs
+        java.util.Map<String, Object> safeLog = new java.util.HashMap<>(profileData);
+        if (safeLog.containsKey("passwordHash")) {
+            safeLog.put("passwordHash", "<redacted>");
+        }
+        Log.d(TAG, "Profile merge keys to write=" + safeLog.keySet());
+
+        if (current != null) {
+            current.getIdToken(true).addOnCompleteListener(tt -> {
+                boolean tokenPresent = tt.isSuccessful() && tt.getResult() != null && tt.getResult().getToken() != null;
+                String token = tt.isSuccessful() && tt.getResult() != null ? tt.getResult().getToken() : null;
+                int tokenLen = token != null ? token.length() : 0;
+                Log.d(TAG, "Merge write - ID token present=" + tokenPresent + ", tokenLength=" + tokenLen
+                        + ", currentUidEqualsTarget=" + current.getUid().equals(userId));
+
+                db.collection(COLLECTION_USERS)
+                        .document(userId)
+                        .set(profileData, com.google.firebase.firestore.SetOptions.merge())
+                        .addOnSuccessListener(aVoid -> {
+                            Log.d(TAG, "User profile saved successfully");
+                            listener.onProfileSaved();
+                        })
+                        .addOnFailureListener(e -> {
+                            Log.e(TAG,
+                                    "Error saving user profile (merge). targetUserId=" + userId + ", currentAuthUid="
+                                            + currentUid
+                                            + ", profileKeys=" + profileData.keySet(),
+                                    e);
+                            listener.onError(e.getMessage());
+                        });
+            }).addOnFailureListener(err -> {
+                Log.e(TAG, "Failed to fetch ID token before merge write: " + err.getMessage(), err);
+                // Try write anyway (will likely be denied)
+                db.collection(COLLECTION_USERS)
+                        .document(userId)
+                        .set(profileData, com.google.firebase.firestore.SetOptions.merge())
+                        .addOnSuccessListener(aVoid -> {
+                            Log.d(TAG, "User profile saved successfully (token fetch failed path)");
+                            listener.onProfileSaved();
+                        })
+                        .addOnFailureListener(e -> {
+                            Log.e(TAG,
+                                    "Error saving user profile (merge, token fetch failed). targetUserId=" + userId
+                                            + ", profileKeys=" + profileData.keySet(),
+                                    e);
+                            listener.onError(e.getMessage());
+                        });
+            });
+        } else {
+            Log.w(TAG,
+                    "No current FirebaseAuth user present before saving user profile (merge). targetUserId=" + userId);
+            db.collection(COLLECTION_USERS)
+                    .document(userId)
+                    .set(profileData, com.google.firebase.firestore.SetOptions.merge())
+                    .addOnSuccessListener(aVoid -> {
+                        Log.d(TAG, "User profile saved successfully (no-auth fallback)");
+                        listener.onProfileSaved();
+                    })
+                    .addOnFailureListener(e -> {
+                        Log.e(TAG,
+                                "Error saving user profile (merge, no-auth). targetUserId=" + userId + ", profileKeys="
+                                        + profileData.keySet(),
+                                e);
+                        listener.onError(e.getMessage());
+                    });
+        }
     }
 
     /**
@@ -689,20 +751,92 @@ public class FirestoreManager {
         profileData.put("birthday", birthday);
         profileData.put("gender", gender);
         profileData.put("phone", phone != null ? phone : "");
+        // Ensure default role and flags are present so Firestore rules that require
+        // these fields on create won't reject the write.
+        profileData.put("role", "user");
+        profileData.put("isAdmin", false);
+        profileData.put("isBlocked", false);
         profileData.put("createdAt", System.currentTimeMillis());
         profileData.put("updatedAt", System.currentTimeMillis());
 
-        db.collection(COLLECTION_USERS)
-                .document(userId)
-                .set(profileData)
-                .addOnSuccessListener(aVoid -> {
-                    Log.d(TAG, "User profile with email saved successfully");
-                    listener.onProfileSaved();
-                })
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, "Error saving user profile with email", e);
-                    listener.onError(e.getMessage());
-                });
+        // Diagnostic: log current auth UID and token presence before attempting write
+        com.google.firebase.auth.FirebaseAuth auth = com.google.firebase.auth.FirebaseAuth.getInstance();
+        com.google.firebase.auth.FirebaseUser current = auth.getCurrentUser();
+        String currentUid = current != null ? current.getUid() : "null";
+        Log.d(TAG, "Attempting to save user profile (with email). targetUserId=" + userId + ", currentAuthUid="
+                + currentUid);
+
+        // Create a safe copy for logging (omit sensitive fields like passwordHash)
+        java.util.Map<String, Object> safeLog = new java.util.HashMap<>(profileData);
+        if (safeLog.containsKey("passwordHash")) {
+            safeLog.put("passwordHash", "<redacted>");
+        }
+        Log.d(TAG, "Profile data keys to write=" + safeLog.keySet());
+
+        if (current != null) {
+            current.getIdToken(true).addOnCompleteListener(tt -> {
+                boolean tokenPresent = tt.isSuccessful() && tt.getResult() != null && tt.getResult().getToken() != null;
+                String token = tt.isSuccessful() && tt.getResult() != null ? tt.getResult().getToken() : null;
+                int tokenLen = token != null ? token.length() : 0;
+                Log.d(TAG, "Current ID token present=" + tokenPresent + ", tokenLength=" + tokenLen
+                        + ", currentUidEqualsTarget=" + current.getUid().equals(userId));
+
+                // Now attempt write (we waited for a fresh token)
+                db.collection(COLLECTION_USERS)
+                        .document(userId)
+                        .set(profileData)
+                        .addOnSuccessListener(aVoid -> {
+                            Log.d(TAG, "User profile with email saved successfully");
+                            listener.onProfileSaved();
+                        })
+                        .addOnFailureListener(e -> {
+                            Log.e(TAG,
+                                    "Error saving user profile with email. targetUserId=" + userId
+                                            + ", currentAuthUid=" + currentUid + ", profileKeys="
+                                            + profileData.keySet(),
+                                    e);
+                            listener.onError(e.getMessage());
+                        });
+            }).addOnFailureListener(ttErr -> {
+                Log.e(TAG, "Failed to fetch ID token before saving user profile: " + ttErr.getMessage(), ttErr);
+                // Still attempt the write (will likely fail if token missing)
+                db.collection(COLLECTION_USERS)
+                        .document(userId)
+                        .set(profileData)
+                        .addOnSuccessListener(aVoid -> {
+                            Log.d(TAG, "User profile with email saved successfully (token fetch failed path)");
+                            listener.onProfileSaved();
+                        })
+                        .addOnFailureListener(e -> {
+                            Log.e(TAG,
+                                    "Error saving user profile with email (token fetch failed). targetUserId=" + userId
+                                            + ", currentAuthUid=" + currentUid + ", profileKeys="
+                                            + profileData.keySet(),
+                                    e);
+                            listener.onError(e.getMessage());
+                        });
+            });
+        } else {
+            // No authenticated user present; log and attempt write (will likely be denied
+            // by rules)
+            Log.w(TAG, "No current FirebaseAuth user present before saving user profile (targetUserId=" + userId
+                    + ")");
+            db.collection(COLLECTION_USERS)
+                    .document(userId)
+                    .set(profileData)
+                    .addOnSuccessListener(aVoid -> {
+                        Log.d(TAG, "User profile with email saved successfully (no-auth fallback)");
+                        listener.onProfileSaved();
+                    })
+                    .addOnFailureListener(e -> {
+                        Log.e(TAG,
+                                "Error saving user profile with email (no-auth). targetUserId=" + userId
+                                        + ", profileKeys="
+                                        + profileData.keySet(),
+                                e);
+                        listener.onError(e.getMessage());
+                    });
+        }
     }
 
     /**
@@ -1371,6 +1505,14 @@ public class FirestoreManager {
                         user.setRole(document.getString("role"));
                         user.setProfileImageUrl(document.getString("profileImageUrl"));
 
+                        // isActive flag (may be absent for legacy users)
+                        Boolean isActive = document.getBoolean("isActive");
+                        if (isActive != null) {
+                            user.setActive(isActive);
+                        } else {
+                            user.setActive(true);
+                        }
+
                         Long createdAt = document.getLong("createdAt");
                         if (createdAt != null) {
                             user.setCreatedAt(createdAt);
@@ -1390,7 +1532,8 @@ public class FirestoreManager {
     /**
      * Update order status (Admin)
      */
-    public void updateOrderStatus(String orderId, String newStatus, OnOrderStatusUpdatedListener listener) {
+    public void updateOrderStatus(String orderId, String newStatus, String cancelReason,
+            OnOrderStatusUpdatedListener listener) {
         // First get the order to check payment method and update revenue if needed
         db.collection(COLLECTION_ORDERS)
                 .document(orderId)
@@ -1398,19 +1541,48 @@ public class FirestoreManager {
                 .addOnSuccessListener(documentSnapshot -> {
                     if (documentSnapshot.exists()) {
                         String paymentMethod = documentSnapshot.getString("paymentMethod");
-                        Double totalAmount = documentSnapshot.getDouble("total");
+                        // Read total amount robustly: support 'total', 'totalAmount', or string formats
+                        Double totalAmount = null;
+                        Object totalObj = documentSnapshot.get("total");
+                        if (totalObj instanceof Number) {
+                            totalAmount = ((Number) totalObj).doubleValue();
+                        } else if (totalObj instanceof String) {
+                            try {
+                                totalAmount = Double.parseDouble(((String) totalObj).replaceAll("[^0-9.]", ""));
+                            } catch (Exception ignored) {
+                            }
+                        }
+                        if (totalAmount == null) {
+                            Double ta = documentSnapshot.getDouble("totalAmount");
+                            if (ta != null)
+                                totalAmount = ta;
+                        }
 
-                        // Update the order status
+                        // Make final copies for use inside inner lambdas
+                        final String paymentMethodFinal = paymentMethod;
+                        final Double totalAmountFinal = totalAmount;
+
+                        // Update the order status (and optional cancel reason)
+                        java.util.Map<String, Object> updates = new java.util.HashMap<>();
+                        updates.put("status", newStatus);
+                        if (cancelReason != null && !cancelReason.trim().isEmpty()
+                                && ("cancelled".equals(newStatus) || "canceled".equals(newStatus))) {
+                            updates.put("cancelReason", cancelReason.trim());
+                        } else if (!"cancelled".equals(newStatus) && !"canceled".equals(newStatus)) {
+                            // clear previous cancel reason when moving away from cancelled
+                            updates.put("cancelReason", null);
+                        }
+
                         db.collection(COLLECTION_ORDERS)
                                 .document(orderId)
-                                .update("status", newStatus)
+                                .update(updates)
                                 .addOnSuccessListener(aVoid -> {
                                     Log.d(TAG, "Order status updated: " + orderId + " -> " + newStatus);
 
                                     // If order is delivered and payment method is COD, update revenue
-                                    if ("delivered".equals(newStatus) && paymentMethod != null &&
-                                            paymentMethod.contains("nhận hàng") && totalAmount != null) {
-                                        updateRevenue(totalAmount);
+                                    if ("delivered".equals(newStatus) && paymentMethodFinal != null &&
+                                            paymentMethodFinal.contains("nhận hàng") && totalAmountFinal != null) {
+                                        updateRevenue(totalAmountFinal);
                                     }
 
                                     // Create a notification for the user about status change
@@ -1435,8 +1607,13 @@ public class FirestoreManager {
                                             else if ("cancelled".equals(newStatus) || "canceled".equals(newStatus))
                                                 statusText = "Đã hủy";
 
-                                            notif.setMessage("Đơn hàng " + orderId + " đã chuyển sang trạng thái: "
-                                                    + statusText);
+                                            String message = "Đơn hàng " + orderId + " đã chuyển sang trạng thái: "
+                                                    + statusText;
+                                            if (("cancelled".equals(newStatus) || "canceled".equals(newStatus))
+                                                    && cancelReason != null && !cancelReason.trim().isEmpty()) {
+                                                message += "\nLý do: " + cancelReason.trim();
+                                            }
+                                            notif.setMessage(message);
                                             notif.setTimestamp(new java.util.Date());
                                             notif.setRead(false);
 
@@ -1524,6 +1701,41 @@ public class FirestoreManager {
     }
 
     /**
+     * Disable or enable a user account (set isActive flag)
+     */
+    public void setUserActive(String userId, boolean isActive, OnUserRoleUpdatedListener listener) {
+        db.collection(COLLECTION_USERS)
+                .document(userId)
+                .update("isActive", isActive)
+                .addOnSuccessListener(aVoid -> {
+                    Log.d(TAG, "User active flag updated: " + userId + " -> " + isActive);
+                    listener.onRoleUpdated();
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error updating user active flag", e);
+                    listener.onError(e.getMessage());
+                });
+    }
+
+    /**
+     * Delete a user document from Firestore. Note: this does NOT delete the
+     * Firebase Auth user.
+     */
+    public void deleteUser(String userId, OnProductDeletedListener listener) {
+        db.collection(COLLECTION_USERS)
+                .document(userId)
+                .delete()
+                .addOnSuccessListener(aVoid -> {
+                    Log.d(TAG, "User deleted: " + userId);
+                    listener.onProductDeleted();
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error deleting user", e);
+                    listener.onError(e.getMessage());
+                });
+    }
+
+    /**
      * Delete product (Admin)
      */
     public void deleteProduct(String productId, OnProductDeletedListener listener) {
@@ -1581,7 +1793,23 @@ public class FirestoreManager {
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     double totalRevenue = 0;
                     for (DocumentSnapshot doc : queryDocumentSnapshots) {
-                        Double total = doc.getDouble("total");
+                        // Support different field names/formats: 'total' (number), 'totalAmount', or
+                        // numeric string
+                        Double total = null;
+                        Object to = doc.get("total");
+                        if (to instanceof Number) {
+                            total = ((Number) to).doubleValue();
+                        } else if (to instanceof String) {
+                            try {
+                                total = Double.parseDouble(((String) to).replaceAll("[^0-9.]", ""));
+                            } catch (Exception ignored) {
+                            }
+                        }
+                        if (total == null) {
+                            Double ta = doc.getDouble("totalAmount");
+                            if (ta != null)
+                                total = ta;
+                        }
                         if (total != null) {
                             totalRevenue += total;
                         }
