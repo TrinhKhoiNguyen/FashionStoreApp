@@ -121,10 +121,19 @@ public class CheckoutActivity extends AppCompatActivity {
     }
 
     private void loadOrderData() {
-        // Get selected items from cart
-        orderItems = cartManager.getSelectedItems();
+        // Check if we're in single-item (Buy Now) mode via Intent extra
+        if (getIntent() != null && getIntent().hasExtra("single_item")) {
+            CartItem single = (CartItem) getIntent().getSerializableExtra("single_item");
+            orderItems = new java.util.ArrayList<>();
+            if (single != null) {
+                orderItems.add(single);
+            }
+        } else {
+            // Get selected items from cart
+            orderItems = cartManager.getSelectedItems();
+        }
 
-        if (orderItems.isEmpty()) {
+        if (orderItems == null || orderItems.isEmpty()) {
             Toast.makeText(this, "Giỏ hàng trống", Toast.LENGTH_SHORT).show();
             finish();
             return;
@@ -483,11 +492,23 @@ public class CheckoutActivity extends AppCompatActivity {
             public void onOrderSaved(String orderId) {
                 progressDialog.dismiss();
 
+                // Update totalSold for each product (client-side increment) via
+                // FirestoreManager
+                try {
+                    if (orderItems != null) {
+                        firestoreManager.incrementProductsSold(orderItems);
+                    }
+                } catch (Exception e) {
+                    android.util.Log.e("CheckoutActivity",
+                            "Exception updating totalSold via manager: " + e.getMessage());
+                }
+
                 // Remove ordered items from cart
                 cartManager.clearSelectedItems();
 
                 // Show success dialog
                 showSuccessDialog(orderId);
+
                 // Show immediate local notification for feedback (request permission on Android
                 // 13+)
                 String title = "Đặt hàng thành công";

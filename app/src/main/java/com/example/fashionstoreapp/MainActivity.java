@@ -58,8 +58,12 @@ public class MainActivity extends AppCompatActivity
         implements ProductAdapter.OnProductClickListener, BannerAdapter.OnBannerClickListener,
         SearchSuggestionAdapter.OnSuggestionClickListener {
 
-    private ImageView menuIcon, searchIcon, notificationIcon, cartIcon;
+    private ImageView menuIcon, notificationIcon, cartIcon;
+    private LinearLayout toolbarSearchContainer;
+    private ImageView toolbarSearchIcon;
+    private EditText toolbarSearchInput;
     private TextView cartBadge;
+    private TextView notificationBadge;
     private BottomNavigationView bottomNavigation;
 
     // Search Panel
@@ -90,6 +94,9 @@ public class MainActivity extends AppCompatActivity
     private RecyclerView shirtsRecyclerView, poloRecyclerView, somiRecyclerView, hoodiesRecyclerView;
     private RecyclerView aoKhoacRecyclerView, quanSotRecyclerView, quanTayRecyclerView;
     private RecyclerView filteredResultsRecyclerView;
+    private LinearLayout filteredResultsHeader;
+    private LinearLayout filteredNoResultsLayout;
+    private TextView viewAllFilteredResults;
 
     private ProductAdapter voucherAdapter, retroSportsAdapter;
     private com.example.fashionstoreapp.adapters.FeaturedCategoryAdapter featuredAdapter;
@@ -205,6 +212,8 @@ public class MainActivity extends AppCompatActivity
                                 }
                             }
                         }
+                        // Refresh badge after processing changes
+                        refreshUnreadCount();
                     });
 
             // Listen to global notifications (userId == "")
@@ -232,7 +241,11 @@ public class MainActivity extends AppCompatActivity
                                 }
                             }
                         }
+                        // Refresh badge after processing changes
+                        refreshUnreadCount();
                     });
+            // Initial badge refresh
+            refreshUnreadCount();
         }
     }
 
@@ -246,8 +259,12 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void initViews() {
-        searchIcon = findViewById(R.id.searchIcon);
+        // Toolbar search pill
+        toolbarSearchContainer = findViewById(R.id.toolbarSearchContainer);
+        toolbarSearchIcon = findViewById(R.id.toolbarSearchIcon);
+        toolbarSearchInput = findViewById(R.id.toolbarSearchInput);
         notificationIcon = findViewById(R.id.notificationIcon);
+        notificationBadge = findViewById(R.id.notificationBadge);
         cartIcon = findViewById(R.id.cartIcon);
         cartBadge = findViewById(R.id.cartBadge);
         // fabCall removed - no longer in layout
@@ -292,6 +309,9 @@ public class MainActivity extends AppCompatActivity
 
         // Filtered combined results list (hidden by default)
         filteredResultsRecyclerView = findViewById(R.id.filteredResultsRecyclerView);
+        filteredResultsHeader = findViewById(R.id.filteredResultsHeader);
+        filteredNoResultsLayout = findViewById(R.id.filteredNoResultsLayout);
+        viewAllFilteredResults = findViewById(R.id.viewAllFilteredResults);
 
         btnViewAllAoKhoac = findViewById(R.id.btnViewAllAoKhoac);
         btnViewAllQuanSot = findViewById(R.id.btnViewAllQuanSot);
@@ -301,6 +321,42 @@ public class MainActivity extends AppCompatActivity
         filterButton = findViewById(R.id.filterButton);
         sortButton = findViewById(R.id.sortButton);
         filterBadge = findViewById(R.id.filterBadge);
+    }
+
+    private void updateNotificationBadge(int count) {
+        if (notificationBadge == null)
+            return;
+        if (count <= 0) {
+            notificationBadge.setVisibility(View.GONE);
+            return;
+        }
+        notificationBadge.setVisibility(View.VISIBLE);
+        if (count > 99) {
+            notificationBadge.setText("99+");
+        } else {
+            notificationBadge.setText(String.valueOf(count));
+        }
+    }
+
+    private void refreshUnreadCount() {
+        String uid = null;
+        if (mAuth != null && mAuth.getCurrentUser() != null) {
+            uid = mAuth.getCurrentUser().getUid();
+        }
+        // If user not logged in, pass empty string to count only global notifications
+        String userIdParam = uid != null ? uid : "";
+        firestoreManager.getUnreadNotificationsCount(userIdParam, new FirestoreManager.OnUnreadCountLoadedListener() {
+            @Override
+            public void onCountLoaded(int count) {
+                runOnUiThread(() -> updateNotificationBadge(count));
+            }
+
+            @Override
+            public void onError(String error) {
+                // On error, hide badge
+                runOnUiThread(() -> updateNotificationBadge(0));
+            }
+        });
     }
 
     private void setupBannerSlider() {
@@ -879,10 +935,13 @@ public class MainActivity extends AppCompatActivity
 
     private void setupClickListeners() {
 
-        searchIcon.setOnClickListener(v -> {
-            // Show search panel instead of opening new activity
-            showSearchPanel();
-        });
+        View.OnClickListener openSearch = v -> showSearchPanel();
+        if (toolbarSearchContainer != null)
+            toolbarSearchContainer.setOnClickListener(openSearch);
+        if (toolbarSearchIcon != null)
+            toolbarSearchIcon.setOnClickListener(openSearch);
+        if (toolbarSearchInput != null)
+            toolbarSearchInput.setOnClickListener(openSearch);
 
         notificationIcon.setOnClickListener(v -> {
             // Open notifications activity
@@ -1059,6 +1118,7 @@ public class MainActivity extends AppCompatActivity
     protected void onResume() {
         super.onResume();
         updateCartBadge();
+        refreshUnreadCount();
         startBannerAutoScroll();
     }
 
@@ -1457,7 +1517,7 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void applyFilters() {
-        // If filters are active, show combined filtered results in a single list
+        // If filters are active, show combined filtered results inline under filter bar
         if (currentFilter.hasActiveFilters()) {
             List<Product> combined = new ArrayList<>();
             combined.addAll(filterAndSortList(originalVoucherProducts));
@@ -1472,13 +1532,74 @@ public class MainActivity extends AppCompatActivity
             combined.addAll(filterAndSortList(originalQuanSotProducts));
             combined.addAll(filterAndSortList(originalQuanTayProducts));
 
-            // Show combined results
+            // If combined result is empty, keep sectioned lists visible and show a message
+            if (combined.isEmpty()) {
+                Toast.makeText(this, "Không tìm thấy sản phẩm phù hợp với bộ lọc", Toast.LENGTH_SHORT).show();
+                if (filteredResultsRecyclerView != null)
+                    filteredResultsRecyclerView.setVisibility(View.GONE);
+                if (filteredResultsHeader != null)
+                    filteredResultsHeader.setVisibility(View.GONE);
+                if (viewAllFilteredResults != null)
+                    viewAllFilteredResults.setVisibility(View.GONE);
+                if (filteredNoResultsLayout != null)
+                    filteredNoResultsLayout.setVisibility(View.GONE);
+
+                // Ensure main content sections are visible
+                if (mainScrollView != null)
+                    mainScrollView.setVisibility(View.VISIBLE);
+
+                voucherRecyclerView.setVisibility(View.VISIBLE);
+                retroSportsRecyclerView.setVisibility(View.VISIBLE);
+                newArrivalsRecyclerView.setVisibility(View.VISIBLE);
+                outletRecyclerView.setVisibility(View.VISIBLE);
+                shirtsRecyclerView.setVisibility(View.VISIBLE);
+                poloRecyclerView.setVisibility(View.VISIBLE);
+                somiRecyclerView.setVisibility(View.VISIBLE);
+                hoodiesRecyclerView.setVisibility(View.VISIBLE);
+                aoKhoacRecyclerView.setVisibility(View.VISIBLE);
+                quanSotRecyclerView.setVisibility(View.VISIBLE);
+                quanTayRecyclerView.setVisibility(View.VISIBLE);
+                return;
+            }
+
+            // Apply global sorting across the combined list
+            String sortBy = currentFilter.getSortBy();
+            if (sortBy != null) {
+                switch (sortBy) {
+                    case "name_asc":
+                        combined.sort((p1, p2) -> p1.getName().compareToIgnoreCase(p2.getName()));
+                        break;
+                    case "name_desc":
+                        combined.sort((p1, p2) -> p2.getName().compareToIgnoreCase(p1.getName()));
+                        break;
+                    case "price_asc":
+                        combined.sort((p1, p2) -> Double.compare(p1.getCurrentPrice(), p2.getCurrentPrice()));
+                        break;
+                    case "price_desc":
+                        combined.sort((p1, p2) -> Double.compare(p2.getCurrentPrice(), p1.getCurrentPrice()));
+                        break;
+                    case "newest":
+                        // keep current order
+                        break;
+                }
+            }
+
             if (filteredResultsAdapter != null) {
                 filteredResultsAdapter.updateProducts(combined);
                 filteredResultsRecyclerView.setVisibility(View.VISIBLE);
             }
 
-            // Hide sectioned lists to avoid empty collapsed sections
+            // Show inline filtered header and update counts
+            if (filteredResultsHeader != null)
+                filteredResultsHeader.setVisibility(View.VISIBLE);
+            if (viewAllFilteredResults != null)
+                viewAllFilteredResults.setText("Xem tất cả " + combined.size() + " sản phẩm");
+            if (viewAllFilteredResults != null)
+                viewAllFilteredResults.setVisibility(View.VISIBLE);
+            if (filteredNoResultsLayout != null)
+                filteredNoResultsLayout.setVisibility(View.GONE);
+
+            // Hide sectioned lists to avoid duplicate items showing
             voucherRecyclerView.setVisibility(View.GONE);
             retroSportsRecyclerView.setVisibility(View.GONE);
             newArrivalsRecyclerView.setVisibility(View.GONE);
@@ -1494,6 +1615,12 @@ public class MainActivity extends AppCompatActivity
             // No active filters: hide combined results and restore sectioned lists
             if (filteredResultsRecyclerView != null)
                 filteredResultsRecyclerView.setVisibility(View.GONE);
+            if (filteredResultsHeader != null)
+                filteredResultsHeader.setVisibility(View.GONE);
+            if (viewAllFilteredResults != null)
+                viewAllFilteredResults.setVisibility(View.GONE);
+            if (filteredNoResultsLayout != null)
+                filteredNoResultsLayout.setVisibility(View.GONE);
 
             voucherRecyclerView.setVisibility(View.VISIBLE);
             retroSportsRecyclerView.setVisibility(View.VISIBLE);
@@ -1507,29 +1634,40 @@ public class MainActivity extends AppCompatActivity
             quanSotRecyclerView.setVisibility(View.VISIBLE);
             quanTayRecyclerView.setVisibility(View.VISIBLE);
 
-            // Restore original lists in each adapter
+            // Restore original lists in each adapter but apply current sort (if any)
             if (voucherAdapter != null)
-                voucherAdapter.updateProducts(originalVoucherProducts);
+                applyFilterToAdapter(voucherAdapter,
+                        originalVoucherProducts != null ? originalVoucherProducts : new ArrayList<>());
             if (retroSportsAdapter != null)
-                retroSportsAdapter.updateProducts(originalRetroProducts);
+                applyFilterToAdapter(retroSportsAdapter,
+                        originalRetroProducts != null ? originalRetroProducts : new ArrayList<>());
             if (newArrivalsAdapter != null)
-                newArrivalsAdapter.updateProducts(originalNewProducts);
+                applyFilterToAdapter(newArrivalsAdapter,
+                        originalNewProducts != null ? originalNewProducts : new ArrayList<>());
             if (outletAdapter != null)
-                outletAdapter.updateProducts(originalOutletProducts);
+                applyFilterToAdapter(outletAdapter,
+                        originalOutletProducts != null ? originalOutletProducts : new ArrayList<>());
             if (shirtsAdapter != null)
-                shirtsAdapter.updateProducts(originalShirtsProducts);
+                applyFilterToAdapter(shirtsAdapter,
+                        originalShirtsProducts != null ? originalShirtsProducts : new ArrayList<>());
             if (poloAdapter != null)
-                poloAdapter.updateProducts(originalPoloProducts);
+                applyFilterToAdapter(poloAdapter,
+                        originalPoloProducts != null ? originalPoloProducts : new ArrayList<>());
             if (somiAdapter != null)
-                somiAdapter.updateProducts(originalSomiProducts);
+                applyFilterToAdapter(somiAdapter,
+                        originalSomiProducts != null ? originalSomiProducts : new ArrayList<>());
             if (hoodiesAdapter != null)
-                hoodiesAdapter.updateProducts(originalHoodiesProducts);
+                applyFilterToAdapter(hoodiesAdapter,
+                        originalHoodiesProducts != null ? originalHoodiesProducts : new ArrayList<>());
             if (aoKhoacAdapter != null)
-                aoKhoacAdapter.updateProducts(originalAoKhoacProducts);
+                applyFilterToAdapter(aoKhoacAdapter,
+                        originalAoKhoacProducts != null ? originalAoKhoacProducts : new ArrayList<>());
             if (quanSotAdapter != null)
-                quanSotAdapter.updateProducts(originalQuanSotProducts);
+                applyFilterToAdapter(quanSotAdapter,
+                        originalQuanSotProducts != null ? originalQuanSotProducts : new ArrayList<>());
             if (quanTayAdapter != null)
-                quanTayAdapter.updateProducts(originalQuanTayProducts);
+                applyFilterToAdapter(quanTayAdapter,
+                        originalQuanTayProducts != null ? originalQuanTayProducts : new ArrayList<>());
         }
     }
 

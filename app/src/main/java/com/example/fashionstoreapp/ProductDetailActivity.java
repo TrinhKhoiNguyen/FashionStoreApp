@@ -397,10 +397,12 @@ public class ProductDetailActivity extends AppCompatActivity implements ProductA
         });
 
         btnBuyNow.setOnClickListener(v -> {
+            // Create a single cart item and open Checkout for a single-item purchase flow
             CartItem cartItem = new CartItem(product, 1, selectedSize, "");
-            CartManager.getInstance().addItem(cartItem);
-            Toast.makeText(this, "Chức năng mua ngay đang phát triển", Toast.LENGTH_SHORT).show();
-            // TODO: Navigate to checkout
+            android.content.Intent intent = new android.content.Intent(ProductDetailActivity.this,
+                    CheckoutActivity.class);
+            intent.putExtra("single_item", cartItem);
+            startActivity(intent);
         });
 
         btnWriteReview.setOnClickListener(v -> {

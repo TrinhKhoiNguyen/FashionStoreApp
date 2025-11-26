@@ -80,6 +80,7 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
         TextView productName, currentPrice, originalPrice;
         TextView discountBadge, newBadge, voucherBadge;
         TextView ratingScore, reviewCount, stockStatus;
+        TextView soldCount;
 
         public ProductViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -96,6 +97,7 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
             ratingScore = itemView.findViewById(R.id.ratingScore);
             reviewCount = itemView.findViewById(R.id.reviewCount);
             stockStatus = itemView.findViewById(R.id.stockStatus);
+            soldCount = itemView.findViewById(R.id.soldCount);
         }
 
         public void bind(Product product) {
@@ -176,6 +178,11 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
                 stockStatus.setBackgroundColor(0xFFFFEBEE);
             }
             stockStatus.setVisibility(View.VISIBLE);
+
+            // Sold count: always show, default to 0 if not sold yet
+            int totalSold = product.getTotalSold();
+            soldCount.setVisibility(View.VISIBLE);
+            soldCount.setText("Đã bán " + totalSold);
 
             // Load product image
             if (product.getImageUrl() != null && !product.getImageUrl().isEmpty()) {

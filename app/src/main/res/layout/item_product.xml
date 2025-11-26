@@ -166,6 +166,7 @@
                     android:textColor="#4CAF50"
                     android:textSize="10sp"
                     android:textStyle="bold" />
+
             </LinearLayout>
 
             <!-- Price Container - Horizontal Layout -->
@@ -197,6 +198,17 @@
                     android:textSize="13sp"
                     android:visibility="gone" />
             </LinearLayout>
+            <!-- Add sold count (moved under price) -->
+            <TextView
+                android:id="@+id/soldCount"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="Đã bán 0"
+                android:textColor="#000000"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:visibility="gone" />
 
             <!-- Add to Cart Button -->
             <com.google.android.material.button.MaterialButton

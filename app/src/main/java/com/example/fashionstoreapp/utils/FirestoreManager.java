@@ -397,17 +397,38 @@ public class FirestoreManager {
      * Get unread notifications count
      */
     public void getUnreadNotificationsCount(String userId, OnUnreadCountLoadedListener listener) {
+        // Count user-specific unread notifications
         db.collection(COLLECTION_NOTIFICATIONS)
                 .whereEqualTo("userId", userId)
                 .whereEqualTo("isRead", false)
                 .get()
-                .addOnSuccessListener(queryDocumentSnapshots -> {
-                    int count = queryDocumentSnapshots.size();
-                    listener.onCountLoaded(count);
+                .addOnSuccessListener(userSnapshot -> {
+                    int userCount = userSnapshot.size();
+                    // Also count global (userId == "") unread notifications
+                    db.collection(COLLECTION_NOTIFICATIONS)
+                            .whereEqualTo("userId", "")
+                            .whereEqualTo("isRead", false)
+                            .get()
+                            .addOnSuccessListener(globalSnapshot -> {
+                                int globalCount = globalSnapshot.size();
+                                int total = userCount + globalCount;
+                                listener.onCountLoaded(total);
+                            })
+                            .addOnFailureListener(e -> {
+                                Log.e(TAG, "Error getting global unread count", e);
+                                // If global query fails, still return userCount
+                                listener.onCountLoaded(userCount);
+                            });
                 })
                 .addOnFailureListener(e -> {
-                    Log.e(TAG, "Error getting unread count", e);
-                    listener.onError(e.getMessage());
+                    Log.e(TAG, "Error getting unread count for user", e);
+                    // Try falling back to counting only global unread notifications
+                    db.collection(COLLECTION_NOTIFICATIONS)
+                            .whereEqualTo("userId", "")
+                            .whereEqualTo("isRead", false)
+                            .get()
+                            .addOnSuccessListener(globalSnapshot -> listener.onCountLoaded(globalSnapshot.size()))
+                            .addOnFailureListener(err -> listener.onError(err.getMessage()));
                 });
     }
 
@@ -1052,6 +1073,49 @@ public class FirestoreManager {
                     Log.e(TAG, "Error saving order", e);
                     listener.onError(e.getMessage());
                 });
+    }
+
+    /**
+     * Increment totalSold for products in given cart items (client-side quick
+     * update).
+     */
+    public void incrementProductsSold(List<com.example.fashionstoreapp.models.CartItem> items) {
+        if (items == null || items.isEmpty())
+            return;
+
+        com.google.firebase.firestore.WriteBatch batch = db.batch();
+        int ops = 0;
+        for (com.example.fashionstoreapp.models.CartItem item : items) {
+            if (item == null || item.getProduct() == null)
+                continue;
+            String productId = item.getProduct().getId();
+            if (productId == null || productId.isEmpty())
+                continue;
+            com.google.firebase.firestore.DocumentReference prodRef = db.collection(COLLECTION_PRODUCTS)
+                    .document(productId);
+            batch.update(prodRef, "totalSold", com.google.firebase.firestore.FieldValue.increment(item.getQuantity()));
+            ops++;
+            // Firestore batch supports up to 500 operations; commit periodically if needed
+            if (ops >= 450) {
+                try {
+                    batch.commit().addOnSuccessListener(aVoid -> Log.d(TAG, "Batch increment committed"))
+                            .addOnFailureListener(e -> Log.e(TAG, "Batch increment failed: " + e.getMessage()));
+                } catch (Exception e) {
+                    Log.e(TAG, "Exception committing batch: " + e.getMessage());
+                }
+                // start a new batch
+                ops = 0;
+                batch = db.batch();
+            }
+        }
+
+        // commit remaining
+        try {
+            batch.commit().addOnSuccessListener(aVoid -> Log.d(TAG, "Incremented totalSold for products"))
+                    .addOnFailureListener(e -> Log.e(TAG, "Failed to increment totalSold: " + e.getMessage()));
+        } catch (Exception e) {
+            Log.e(TAG, "Exception committing final batch: " + e.getMessage());
+        }
     }
 
     /**
