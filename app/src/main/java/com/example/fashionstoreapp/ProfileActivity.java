@@ -57,6 +57,16 @@ public class ProfileActivity extends AppCompatActivity {
         firestoreManager = FirestoreManager.getInstance();
         mAuth = FirebaseAuth.getInstance();
 
+        // Check if user is logged in
+        if (mAuth.getCurrentUser() == null) {
+            // Not logged in, redirect to login
+            Toast.makeText(this, "Vui lòng đăng nhập để xem trang cá nhân", Toast.LENGTH_SHORT).show();
+            Intent intent = new Intent(ProfileActivity.this, LoginActivity.class);
+            startActivity(intent);
+            finish();
+            return;
+        }
+
         initViews();
         setupToolbar();
         loadUserData();

@@ -45,7 +45,8 @@ public class LoginActivity extends AppCompatActivity {
 
     private ImageView backButton;
     private TextInputEditText emailInput, passwordInput;
-    private Button btnLogin, btnLoginGoogle, btnLoginFacebook;
+    private Button btnLogin;
+    private ImageView btnLoginGoogle, btnLoginFacebook;
     private TextView forgotPasswordText, registerText;
     private ProgressBar progressBar;
 

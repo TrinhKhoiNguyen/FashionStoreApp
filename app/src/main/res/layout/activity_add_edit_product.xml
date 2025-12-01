@@ -30,22 +30,52 @@
             android:orientation="vertical"
             android:padding="16dp">
 
-            <!-- Image Preview -->
-            <com.google.android.material.card.MaterialCardView
+            <!-- Product Images Section -->
+            <TextView
                 android:layout_width="match_parent"
-                android:layout_height="200dp"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:text="Hình ảnh sản phẩm"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="16dp">
+
+                <Button
+                    android:id="@+id/addImageButton"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Thêm ảnh"
+                    android:textStyle="bold"
+                    app:icon="@drawable/baseline_add_photo_alternate_24" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_gravity="center_vertical"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="16dp"
+                    android:text="Chọn nhiều ảnh"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="12sp" />
+
+            </LinearLayout>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/imagesRecyclerView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
-                app:cardCornerRadius="8dp"
-                app:cardElevation="4dp">
-
-                <ImageView
-                    android:id="@+id/productImageView"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:scaleType="centerCrop"
-                    android:src="@drawable/baseline_category_24" />
-
-            </com.google.android.material.card.MaterialCardView>
+                android:orientation="horizontal"
+                android:clipToPadding="false"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp" />
 
             <!-- Product Name -->
             <com.google.android.material.textfield.TextInputLayout
@@ -139,22 +169,6 @@
                 </com.google.android.material.textfield.TextInputLayout>
 
             </LinearLayout>
-
-            <!-- Image URL -->
-            <com.google.android.material.textfield.TextInputLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="8dp"
-                android:hint="URL hình ảnh"
-                app:startIconDrawable="@drawable/baseline_image_24">
-
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/imageUrlInput"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:inputType="textUri" />
-
-            </com.google.android.material.textfield.TextInputLayout>
 
             <!-- Colors Section -->
             <TextView

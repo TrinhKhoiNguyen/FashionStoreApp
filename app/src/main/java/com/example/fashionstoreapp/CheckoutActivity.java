@@ -257,11 +257,11 @@ public class CheckoutActivity extends AppCompatActivity {
         progressDialog.setMessage("Đang kiểm tra voucher...");
         progressDialog.show();
 
-        // Check voucher in Firestore
+        // Check voucher in Firestore using new model
         FirebaseFirestore.getInstance()
                 .collection("vouchers")
                 .whereEqualTo("code", voucherCode)
-                .whereEqualTo("isActive", true)
+                .whereEqualTo("active", true)
                 .limit(1)
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
@@ -275,54 +275,70 @@ public class CheckoutActivity extends AppCompatActivity {
                     com.google.firebase.firestore.DocumentSnapshot voucherDoc = queryDocumentSnapshots.getDocuments()
                             .get(0);
 
-                    // Get voucher data
-                    Double minOrderAmount = voucherDoc.getDouble("minOrderAmount");
-                    com.google.firebase.Timestamp expiryTimestamp = voucherDoc.getTimestamp("expiryDate");
-                    Double discountPercent = voucherDoc.getDouble("discountPercent");
-                    Double discountAmount = voucherDoc.getDouble("discountAmount");
+                    // Get voucher data from new model
+                    Double minOrder = voucherDoc.getDouble("minOrder");
+                    Long startAt = voucherDoc.getLong("startAt");
+                    Long endAt = voucherDoc.getLong("endAt");
+                    String type = voucherDoc.getString("type");
+                    Double amount = voucherDoc.getDouble("amount");
                     Double maxDiscount = voucherDoc.getDouble("maxDiscount");
+                    Long quantity = voucherDoc.getLong("quantity");
+                    Long usedCount = voucherDoc.getLong("usedCount");
 
                     // Validation 1: Check minimum order amount
-                    if (minOrderAmount != null && currentSubtotal < minOrderAmount) {
+                    if (minOrder != null && currentSubtotal < minOrder) {
                         Toast.makeText(this,
-                                "Đơn hàng tối thiểu " + String.format("%,.0f₫", minOrderAmount)
+                                "Đơn hàng tối thiểu " + String.format("%,.0f₫", minOrder)
                                         + " để áp dụng voucher này",
                                 Toast.LENGTH_LONG).show();
                         return;
                     }
 
-                    // Validation 2: Check expiry date
-                    if (expiryTimestamp != null) {
-                        long expiryMillis = expiryTimestamp.toDate().getTime();
-                        long currentMillis = System.currentTimeMillis();
-                        if (currentMillis > expiryMillis) {
-                            Toast.makeText(this, "Voucher đã hết hạn", Toast.LENGTH_LONG).show();
+                    // Validation 2: Check time validity
+                    long currentTime = System.currentTimeMillis();
+                    if (startAt != null && currentTime < startAt) {
+                        Toast.makeText(this, "Voucher chưa đến thời gian sử dụng", Toast.LENGTH_LONG).show();
+                        return;
+                    }
+                    if (endAt != null && currentTime > endAt) {
+                        Toast.makeText(this, "Voucher đã hết hạn", Toast.LENGTH_LONG).show();
+                        return;
+                    }
+
+                    // Validation 3: Check quantity
+                    if (quantity != null && usedCount != null) {
+                        if (usedCount >= quantity) {
+                            Toast.makeText(this, "Voucher đã hết lượt sử dụng", Toast.LENGTH_LONG).show();
                             return;
                         }
                     }
 
-                    // Calculate discount
+                    // Calculate discount based on type
                     double calculatedDiscount = 0;
                     String discountInfo = "";
 
-                    // Priority: discountAmount > discountPercent
-                    if (discountAmount != null && discountAmount > 0) {
-                        // Fixed amount discount
-                        calculatedDiscount = discountAmount;
-                        discountInfo = "Giảm " + String.format("%,.0f₫", discountAmount);
-                    } else if (discountPercent != null && discountPercent > 0) {
+                    if (amount == null || amount <= 0) {
+                        Toast.makeText(this, "Voucher không hợp lệ", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    if ("percent".equals(type)) {
                         // Percentage discount
-                        calculatedDiscount = currentSubtotal * (discountPercent / 100.0);
+                        calculatedDiscount = currentSubtotal * (amount / 100.0);
 
                         // Apply max discount cap if exists
-                        if (maxDiscount != null && calculatedDiscount > maxDiscount) {
+                        if (maxDiscount != null && maxDiscount > 0 && calculatedDiscount > maxDiscount) {
                             calculatedDiscount = maxDiscount;
-                            discountInfo = "Giảm " + String.format("%.0f%%", discountPercent) +
+                            discountInfo = "Giảm " + String.format("%.0f%%", amount) +
                                     " (tối đa " + String.format("%,.0f₫", maxDiscount) + ")";
                         } else {
-                            discountInfo = "Giảm " + String.format("%.0f%%", discountPercent) +
+                            discountInfo = "Giảm " + String.format("%.0f%%", amount) +
                                     " (" + String.format("%,.0f₫", calculatedDiscount) + ")";
                         }
+                    } else if ("fixed".equals(type)) {
+                        // Fixed amount discount
+                        calculatedDiscount = amount;
+                        discountInfo = "Giảm " + String.format("%,.0f₫", amount);
                     } else {
                         Toast.makeText(this, "Voucher không hợp lệ", Toast.LENGTH_SHORT).show();
                         return;
@@ -503,6 +519,11 @@ public class CheckoutActivity extends AppCompatActivity {
                             "Exception updating totalSold via manager: " + e.getMessage());
                 }
 
+                // Increment voucher usedCount if voucher was applied
+                if (appliedVoucherCode != null && !appliedVoucherCode.isEmpty()) {
+                    incrementVoucherUsedCount(appliedVoucherCode);
+                }
+
                 // Remove ordered items from cart
                 cartManager.clearSelectedItems();
 
@@ -573,5 +594,44 @@ public class CheckoutActivity extends AppCompatActivity {
             pendingNotifTitle = null;
             pendingNotifMessage = null;
         }
+    }
+
+    /**
+     * Increment voucher usedCount in Firestore
+     */
+    private void incrementVoucherUsedCount(String voucherCode) {
+        FirebaseFirestore.getInstance()
+                .collection("vouchers")
+                .whereEqualTo("code", voucherCode)
+                .limit(1)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    if (!queryDocumentSnapshots.isEmpty()) {
+                        com.google.firebase.firestore.DocumentSnapshot doc = queryDocumentSnapshots.getDocuments()
+                                .get(0);
+                        String voucherId = doc.getId();
+
+                        // Get current usedCount
+                        Long currentUsedCount = doc.getLong("usedCount");
+                        long newUsedCount = (currentUsedCount != null ? currentUsedCount : 0) + 1;
+
+                        // Update usedCount
+                        FirebaseFirestore.getInstance()
+                                .collection("vouchers")
+                                .document(voucherId)
+                                .update("usedCount", newUsedCount)
+                                .addOnSuccessListener(aVoid -> {
+                                    android.util.Log.d("CheckoutActivity",
+                                            "Voucher usedCount incremented: " + voucherCode);
+                                })
+                                .addOnFailureListener(e -> {
+                                    android.util.Log.e("CheckoutActivity",
+                                            "Failed to increment voucher usedCount: " + e.getMessage());
+                                });
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    android.util.Log.e("CheckoutActivity", "Failed to find voucher: " + e.getMessage());
+                });
     }
 }

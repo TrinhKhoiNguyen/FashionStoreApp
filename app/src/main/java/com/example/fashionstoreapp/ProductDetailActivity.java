@@ -24,15 +24,21 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager2.widget.ViewPager2;
 
+import android.os.Handler;
+import android.os.Looper;
+
 import com.bumptech.glide.Glide;
 import com.example.fashionstoreapp.adapters.ReviewAdapter;
 import com.example.fashionstoreapp.adapters.ReviewImageAdapter;
+import com.example.fashionstoreapp.adapters.ProductImageAdapter;
+import com.example.fashionstoreapp.adapters.RecentProductAdapter;
 import com.example.fashionstoreapp.models.CartItem;
 import com.example.fashionstoreapp.models.Product;
 import com.example.fashionstoreapp.models.Review;
 import com.example.fashionstoreapp.utils.CartManager;
 import com.example.fashionstoreapp.utils.FirestoreManager;
 import com.example.fashionstoreapp.utils.SessionManager;
+import com.example.fashionstoreapp.utils.RecentViewManager;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.storage.FirebaseStorage;
@@ -66,12 +72,23 @@ public class ProductDetailActivity extends AppCompatActivity implements ProductA
     private TextView tvNoRelatedProducts;
     private ProductAdapter relatedProductsAdapter;
 
+    // Recently Viewed Products
+    private RecyclerView recentProductsRecyclerView;
+    private TextView tvRecentProductsTitle;
+    private RecentProductAdapter recentProductsAdapter;
+    private RecentViewManager recentViewManager;
+
     private Product product;
     private String selectedSize = "M"; // Default size
     private List<String> productImages;
     private ReviewAdapter reviewAdapter;
     private List<Review> reviews;
     private FirestoreManager firestoreManager;
+
+    // Auto-slide for images
+    private Handler autoSlideHandler;
+    private Runnable autoSlideRunnable;
+    private static final long AUTO_SLIDE_DELAY = 3000; // 3 seconds
 
     // Image picker for reviews
     private ActivityResultLauncher<Intent> imagePickerLauncher;
@@ -88,6 +105,9 @@ public class ProductDetailActivity extends AppCompatActivity implements ProductA
         // Initialize FirestoreManager
         firestoreManager = FirestoreManager.getInstance();
 
+        // Initialize RecentViewManager
+        recentViewManager = RecentViewManager.getInstance(this);
+
         // Initialize image picker
         setupImagePicker();
 
@@ -98,6 +118,9 @@ public class ProductDetailActivity extends AppCompatActivity implements ProductA
             finish();
             return;
         }
+
+        // Save to recent viewed
+        recentViewManager.addRecentProduct(product.getId());
 
         initViews();
         setupImageGallery();
@@ -135,14 +158,23 @@ public class ProductDetailActivity extends AppCompatActivity implements ProductA
         relatedProductsRecyclerView = findViewById(R.id.relatedProductsRecyclerView);
         relatedProductsLoading = findViewById(R.id.relatedProductsLoading);
         tvNoRelatedProducts = findViewById(R.id.tvNoRelatedProducts);
+
+        // Recent Products
+        recentProductsRecyclerView = findViewById(R.id.recentProductsRecyclerView);
+        tvRecentProductsTitle = findViewById(R.id.tvRecentProductsTitle);
     }
 
     private void setupImageGallery() {
-        // For now, use single product image (can be extended to multiple images)
-        productImages = Arrays.asList(product.getImageUrl());
+        // Load multiple images from Firebase or use single image
+        productImages = product.getImageUrls();
+        if (productImages == null || productImages.isEmpty()) {
+            // Fallback to default
+            productImages = new ArrayList<>();
+            productImages.add("product1");
+        }
 
-        // Setup ViewPager2 adapter
-        ImageGalleryAdapter adapter = new ImageGalleryAdapter(productImages);
+        // Setup ViewPager2 with zoom-enabled adapter
+        ProductImageAdapter adapter = new ProductImageAdapter(this, productImages);
         imageViewPager.setAdapter(adapter);
 
         // Setup indicators if multiple images
@@ -153,8 +185,13 @@ public class ProductDetailActivity extends AppCompatActivity implements ProductA
                 public void onPageSelected(int position) {
                     super.onPageSelected(position);
                     updateImageIndicators(position);
+                    // Reset auto-slide timer when user manually swipes
+                    resetAutoSlide();
                 }
             });
+
+            // Start auto-slide
+            startAutoSlide();
         }
     }
 
@@ -186,6 +223,54 @@ public class ProductDetailActivity extends AppCompatActivity implements ProductA
             } else {
                 dot.setImageResource(android.R.drawable.presence_invisible);
             }
+        }
+    }
+
+    private void startAutoSlide() {
+        if (productImages == null || productImages.size() <= 1) {
+            return;
+        }
+
+        // Stop existing handler if any
+        stopAutoSlide();
+
+        autoSlideHandler = new Handler(Looper.getMainLooper());
+        autoSlideRunnable = new Runnable() {
+            @Override
+            public void run() {
+                // Check if activity is still alive
+                if (isFinishing() || isDestroyed()) {
+                    return;
+                }
+
+                // Check if ViewPager is still valid
+                if (imageViewPager == null || productImages == null || productImages.isEmpty()) {
+                    return;
+                }
+
+                int currentItem = imageViewPager.getCurrentItem();
+                int nextItem = (currentItem + 1) % productImages.size();
+                imageViewPager.setCurrentItem(nextItem, true);
+
+                // Only continue if handler is not null
+                if (autoSlideHandler != null) {
+                    autoSlideHandler.postDelayed(this, AUTO_SLIDE_DELAY);
+                }
+            }
+        };
+        autoSlideHandler.postDelayed(autoSlideRunnable, AUTO_SLIDE_DELAY);
+    }
+
+    private void resetAutoSlide() {
+        stopAutoSlide();
+        startAutoSlide();
+    }
+
+    private void stopAutoSlide() {
+        if (autoSlideHandler != null && autoSlideRunnable != null) {
+            autoSlideHandler.removeCallbacks(autoSlideRunnable);
+            autoSlideHandler = null;
+            autoSlideRunnable = null;
         }
     }
 
@@ -310,6 +395,9 @@ public class ProductDetailActivity extends AppCompatActivity implements ProductA
 
         // Load Related Products
         loadRelatedProducts();
+
+        // Load Recently Viewed Products
+        loadRecentProducts();
     }
 
     private void loadReviews() {
@@ -393,7 +481,20 @@ public class ProductDetailActivity extends AppCompatActivity implements ProductA
         btnAddToCart.setOnClickListener(v -> {
             CartItem cartItem = new CartItem(product, 1, selectedSize, "");
             CartManager.getInstance().addItem(cartItem);
-            Toast.makeText(this, "Đã thêm vào giỏ hàng (Size: " + selectedSize + ")", Toast.LENGTH_SHORT).show();
+
+            // Animate add to cart
+            View cartIconView = findViewById(R.id.btnFavorite).getRootView().findViewById(R.id.cartIcon);
+            if (cartIconView != null) {
+                com.example.fashionstoreapp.utils.AnimationUtils.flyToCart(
+                        this,
+                        imageViewPager,
+                        cartIconView,
+                        () -> Toast
+                                .makeText(this, "Đã thêm vào giỏ hàng (Size: " + selectedSize + ")", Toast.LENGTH_SHORT)
+                                .show());
+            } else {
+                Toast.makeText(this, "Đã thêm vào giỏ hàng (Size: " + selectedSize + ")", Toast.LENGTH_SHORT).show();
+            }
         });
 
         btnBuyNow.setOnClickListener(v -> {
@@ -765,6 +866,83 @@ public class ProductDetailActivity extends AppCompatActivity implements ProductA
         });
     }
 
+    // Load Recently Viewed Products
+    private void loadRecentProducts() {
+        List<String> recentIds = recentViewManager.getRecentProductIds();
+
+        // Filter out current product and limit to 10
+        List<String> filteredIds = new ArrayList<>();
+        for (String id : recentIds) {
+            if (!id.equals(product.getId())) {
+                filteredIds.add(id);
+                if (filteredIds.size() >= 10)
+                    break;
+            }
+        }
+
+        if (filteredIds.isEmpty()) {
+            tvRecentProductsTitle.setVisibility(View.GONE);
+            recentProductsRecyclerView.setVisibility(View.GONE);
+            return;
+        }
+
+        // Load products from Firestore
+        List<Product> recentProducts = new ArrayList<>();
+        final int[] loadedCount = { 0 };
+
+        for (String productId : filteredIds) {
+            firestoreManager.loadProducts(new FirestoreManager.OnProductsLoadedListener() {
+                @Override
+                public void onProductsLoaded(List<Product> products) {
+                    for (Product p : products) {
+                        if (p.getId().equals(productId)) {
+                            recentProducts.add(p);
+                            break;
+                        }
+                    }
+                    loadedCount[0]++;
+
+                    // When all loaded, display
+                    if (loadedCount[0] == filteredIds.size()) {
+                        displayRecentProducts(recentProducts);
+                    }
+                }
+
+                @Override
+                public void onError(String error) {
+                    loadedCount[0]++;
+                    if (loadedCount[0] == filteredIds.size()) {
+                        displayRecentProducts(recentProducts);
+                    }
+                }
+            });
+        }
+    }
+
+    private void displayRecentProducts(List<Product> recentProducts) {
+        if (recentProducts.isEmpty()) {
+            tvRecentProductsTitle.setVisibility(View.GONE);
+            recentProductsRecyclerView.setVisibility(View.GONE);
+            return;
+        }
+
+        tvRecentProductsTitle.setVisibility(View.VISIBLE);
+        recentProductsRecyclerView.setVisibility(View.VISIBLE);
+
+        // Setup horizontal RecyclerView
+        LinearLayoutManager layoutManager = new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false);
+        recentProductsRecyclerView.setLayoutManager(layoutManager);
+
+        recentProductsAdapter = new RecentProductAdapter(this, recentProducts, recentProduct -> {
+            // Open product detail
+            Intent intent = new Intent(ProductDetailActivity.this, ProductDetailActivity.class);
+            intent.putExtra("product", recentProduct);
+            startActivity(intent);
+            finish();
+        });
+        recentProductsRecyclerView.setAdapter(recentProductsAdapter);
+    }
+
     // ProductAdapter.OnProductClickListener implementation
     @Override
     public void onProductClick(Product product) {
@@ -832,5 +1010,25 @@ public class ProductDetailActivity extends AppCompatActivity implements ProductA
             btnFavorite.setImageResource(R.drawable.baseline_favorite_border_24);
             btnFavorite.setColorFilter(0xFFFFFFFF);
         }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        stopAutoSlide(); // Stop auto-slide when activity is paused
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (productImages != null && productImages.size() > 1) {
+            startAutoSlide(); // Resume auto-slide when activity is resumed
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        stopAutoSlide(); // Clean up when activity is destroyed
     }
 }

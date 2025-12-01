@@ -20,6 +20,9 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Tất cả"
+            android:textColor="#000000"
+            android:backgroundTint="@color/accent_yellow"
+            android:textStyle="bold"
             android:checked="true"
             style="@style/Widget.Material3.Chip.Filter" />
 
@@ -28,6 +31,9 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Đang xử lý"
+            android:textColor="#000000"
+            android:backgroundTint="@color/accent_yellow"
+            android:textStyle="bold"
             style="@style/Widget.Material3.Chip.Filter" />
 
         <com.google.android.material.chip.Chip
@@ -35,6 +41,9 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Đang giao"
+            android:textColor="#000000"
+            android:backgroundTint="@color/accent_yellow"
+            android:textStyle="bold"
             style="@style/Widget.Material3.Chip.Filter" />
 
         <com.google.android.material.chip.Chip
@@ -42,6 +51,9 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Hoàn thành"
+            android:textColor="#000000"
+            android:backgroundTint="@color/accent_yellow"
+            android:textStyle="bold"
             style="@style/Widget.Material3.Chip.Filter" />
 
         <com.google.android.material.chip.Chip
@@ -49,6 +61,9 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Đã hủy"
+            android:textColor="#000000"
+            android:backgroundTint="@color/accent_yellow"
+            android:textStyle="bold"
             style="@style/Widget.Material3.Chip.Filter" />
     </com.google.android.material.chip.ChipGroup>
 

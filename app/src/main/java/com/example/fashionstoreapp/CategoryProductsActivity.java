@@ -2,6 +2,7 @@ package com.example.fashionstoreapp;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -13,37 +14,59 @@ import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.fashionstoreapp.adapters.ProductAdapter;
+import com.example.fashionstoreapp.models.FilterCriteria;
 import com.example.fashionstoreapp.models.Product;
+import com.example.fashionstoreapp.models.SortOption;
+import com.example.fashionstoreapp.utils.EndlessRecyclerOnScrollListener;
+import com.example.fashionstoreapp.utils.FilterPreferenceManager;
 import com.example.fashionstoreapp.utils.FirestoreManager;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
 import com.google.firebase.firestore.ListenerRegistration;
+import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 public class CategoryProductsActivity extends AppCompatActivity implements ProductAdapter.OnProductClickListener {
+
+    private static final String TAG = "CategoryProductsActivity";
+    private static final int PAGE_SIZE = 20; // Load 20 products per page
 
     private Toolbar toolbar;
     private RecyclerView productsRecyclerView;
     private ProgressBar progressBar;
     private TextView emptyStateText;
     private TextView categoryDescription;
+    private FloatingActionButton filterFab;
 
     private ProductAdapter productAdapter;
     private List<Product> productList = new ArrayList<>();
-    // Keep a copy of the full list so we can apply client-side filters
-    private List<Product> allProducts = new ArrayList<>();
+    private List<Product> allLoadedProducts = new ArrayList<>(); // All products loaded from Firestore
 
     private String categoryId;
     private String categoryName;
 
     private FirestoreManager firestoreManager;
     private FirebaseAuth mAuth;
-    private ListenerRegistration productsListener;
+    private FilterPreferenceManager filterPreferenceManager;
+
+    // Pagination
+    private DocumentSnapshot lastVisible;
+    private boolean isLastPage = false;
+    private boolean isLoading = false;
+    private EndlessRecyclerOnScrollListener scrollListener;
+
+    // Filter & Sort
+    private FilterCriteria currentFilter;
+    private SortOption currentSort = SortOption.DEFAULT;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -62,11 +85,13 @@ public class CategoryProductsActivity extends AppCompatActivity implements Produ
 
         firestoreManager = FirestoreManager.getInstance();
         mAuth = FirebaseAuth.getInstance();
+        filterPreferenceManager = new FilterPreferenceManager(this);
 
         initViews();
         setupToolbar();
         setupRecyclerView();
-        setupRealtimeListener();
+        loadSavedFilters();
+        loadInitialData();
     }
 
     private void initViews() {
@@ -75,6 +100,11 @@ public class CategoryProductsActivity extends AppCompatActivity implements Produ
         progressBar = findViewById(R.id.progressBar);
         emptyStateText = findViewById(R.id.emptyStateText);
         categoryDescription = findViewById(R.id.categoryDescription);
+        filterFab = findViewById(R.id.filterFab);
+
+        if (filterFab != null) {
+            filterFab.setOnClickListener(v -> showFilterBottomSheet());
+        }
     }
 
     private void setupToolbar() {
@@ -92,41 +122,205 @@ public class CategoryProductsActivity extends AppCompatActivity implements Produ
 
         productAdapter = new ProductAdapter(this, productList, this);
         productsRecyclerView.setAdapter(productAdapter);
+
+        // Setup endless scroll for pagination
+        scrollListener = new EndlessRecyclerOnScrollListener(layoutManager) {
+            @Override
+            public void onLoadMore() {
+                if (!isLastPage && !isLoading) {
+                    loadNextPage();
+                }
+            }
+        };
+        productsRecyclerView.addOnScrollListener(scrollListener);
     }
 
-    private void setupRealtimeListener() {
+    /**
+     * Load saved filter preferences if available
+     */
+    private void loadSavedFilters() {
+        if (filterPreferenceManager.hasSavedPreferences()) {
+            currentFilter = filterPreferenceManager.loadFilterCriteria();
+            // Parse sort option
+            try {
+                currentSort = SortOption.valueOf(currentFilter.getSortBy());
+            } catch (IllegalArgumentException e) {
+                currentSort = SortOption.DEFAULT;
+            }
+        } else {
+            currentFilter = new FilterCriteria();
+        }
+    }
+
+    /**
+     * Load initial page of products with server-side filtering
+     */
+    private void loadInitialData() {
         showLoading();
+        isLoading = true;
+        lastVisible = null;
+        allLoadedProducts.clear();
+        productList.clear();
+        productAdapter.notifyDataSetChanged();
 
-        // Setup real-time listener for products in this category
-        productsListener = FirebaseFirestore.getInstance()
+        if (scrollListener != null) {
+            scrollListener.reset();
+        }
+
+        loadProductsPage();
+    }
+
+    /**
+     * Load next page of products (pagination)
+     */
+    private void loadNextPage() {
+        if (isLoading || isLastPage)
+            return;
+        isLoading = true;
+        loadProductsPage();
+    }
+
+    /**
+     * Core method: Load products with hybrid filtering
+     * - Server-side: category, price range (if possible), sort
+     * - Client-side: size, multiple criteria combinations
+     */
+    private void loadProductsPage() {
+        Query query = FirebaseFirestore.getInstance()
                 .collection("products")
-                .whereEqualTo("category", categoryId)
-                .addSnapshotListener((snapshots, error) -> {
-                    hideLoading();
+                .whereEqualTo("category", categoryId);
 
-                    if (error != null) {
-                        Toast.makeText(this, "Lỗi tải dữ liệu: " + error.getMessage(),
-                                Toast.LENGTH_SHORT).show();
-                        showEmptyState();
+        // SERVER-SIDE FILTERS
+
+        // Price filter (if min/max set)
+        if (currentFilter.getMinPrice() != null && currentFilter.getMinPrice() > 0) {
+            query = query.whereGreaterThanOrEqualTo("currentPrice", currentFilter.getMinPrice());
+        }
+        if (currentFilter.getMaxPrice() != null && currentFilter.getMaxPrice() < Double.MAX_VALUE) {
+            query = query.whereLessThanOrEqualTo("currentPrice", currentFilter.getMaxPrice());
+        }
+
+        // Stock filter (server-side if possible)
+        // Note: Firestore doesn't support complex queries like stockQuantity > 0
+        // combined with price
+        // So we'll do stock filtering client-side
+
+        // SERVER-SIDE SORT
+        if (currentSort != SortOption.DEFAULT && currentSort.isServerSideSort()) {
+            Query.Direction direction = currentSort.getFirestoreDirection().equals("ASCENDING")
+                    ? Query.Direction.ASCENDING
+                    : Query.Direction.DESCENDING;
+            query = query.orderBy(currentSort.getFirestoreField(), direction);
+        }
+
+        // Pagination
+        query = query.limit(PAGE_SIZE);
+        if (lastVisible != null) {
+            query = query.startAfter(lastVisible);
+        }
+
+        query.get()
+                .addOnSuccessListener(querySnapshot -> {
+                    hideLoading();
+                    isLoading = false;
+
+                    if (querySnapshot.isEmpty()) {
+                        isLastPage = true;
+                        if (allLoadedProducts.isEmpty()) {
+                            showEmptyState();
+                        }
                         return;
                     }
 
-                    if (snapshots != null) {
-                        productList.clear();
-                        allProducts.clear();
-
-                        for (QueryDocumentSnapshot doc : snapshots) {
-                            Product product = doc.toObject(Product.class);
-                            if (product != null) {
-                                product.setId(doc.getId());
-                                allProducts.add(product);
-                            }
-                        }
-
-                        // Apply currently selected filters (none by default)
-                        applyFiltersAndUpdate(allProducts);
+                    // Get last document for next page
+                    List<DocumentSnapshot> documents = querySnapshot.getDocuments();
+                    if (documents.size() < PAGE_SIZE) {
+                        isLastPage = true;
                     }
+                    if (!documents.isEmpty()) {
+                        lastVisible = documents.get(documents.size() - 1);
+                    }
+
+                    // Parse products
+                    List<Product> newProducts = new ArrayList<>();
+                    for (QueryDocumentSnapshot doc : querySnapshot) {
+                        Product product = doc.toObject(Product.class);
+                        if (product != null) {
+                            product.setId(doc.getId());
+                            newProducts.add(product);
+                        }
+                    }
+
+                    // Add to all loaded products
+                    allLoadedProducts.addAll(newProducts);
+
+                    // Apply client-side filters and update display
+                    applyClientSideFiltersAndDisplay();
+                })
+                .addOnFailureListener(e -> {
+                    hideLoading();
+                    isLoading = false;
+                    Toast.makeText(this, "Lỗi tải dữ liệu: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    Log.e(TAG, "Error loading products", e);
                 });
+    }
+
+    /**
+     * Apply CLIENT-SIDE filters (size, stock status, rating)
+     * Then sort and display results
+     */
+    private void applyClientSideFiltersAndDisplay() {
+        List<Product> filtered = new ArrayList<>();
+
+        for (Product product : allLoadedProducts) {
+            if (currentFilter.matches(product)) {
+                filtered.add(product);
+            }
+        }
+
+        // CLIENT-SIDE SORTING (if not done server-side or for complex sorts)
+        if (currentSort != SortOption.DEFAULT) {
+            sortProducts(filtered);
+        }
+
+        productList.clear();
+        productList.addAll(filtered);
+        productAdapter.notifyDataSetChanged();
+
+        if (productList.isEmpty()) {
+            showEmptyState();
+        } else {
+            hideEmptyState();
+        }
+    }
+
+    /**
+     * Sort products based on current sort option
+     */
+    private void sortProducts(List<Product> products) {
+        switch (currentSort) {
+            case PRICE_LOW_TO_HIGH:
+                Collections.sort(products, Comparator.comparingDouble(Product::getCurrentPrice));
+                break;
+            case PRICE_HIGH_TO_LOW:
+                Collections.sort(products, (p1, p2) -> Double.compare(p2.getCurrentPrice(), p1.getCurrentPrice()));
+                break;
+            case NEWEST:
+                Collections.sort(products, (p1, p2) -> {
+                    if (p1.getCreatedAt() == null)
+                        return 1;
+                    if (p2.getCreatedAt() == null)
+                        return -1;
+                    return p2.getCreatedAt().compareTo(p1.getCreatedAt());
+                });
+                break;
+            case POPULARITY:
+                Collections.sort(products, (p1, p2) -> Integer.compare(p2.getPopularity(), p1.getPopularity()));
+                break;
+            case RATING:
+                Collections.sort(products, (p1, p2) -> Double.compare(p2.getAverageRating(), p1.getAverageRating()));
+                break;
+        }
     }
 
     @Override
@@ -138,203 +332,67 @@ public class CategoryProductsActivity extends AppCompatActivity implements Produ
     @Override
     public boolean onOptionsItemSelected(android.view.MenuItem item) {
         if (item.getItemId() == R.id.action_filter_products) {
-            showFilterSheet();
+            showFilterBottomSheet();
             return true;
         }
         return super.onOptionsItemSelected(item);
     }
 
-    private void showFilterSheet() {
-        com.google.android.material.bottomsheet.BottomSheetDialog dialog = new com.google.android.material.bottomsheet.BottomSheetDialog(
-                this);
-        android.view.View sheet = getLayoutInflater().inflate(R.layout.dialog_filter_products, null);
+    /**
+     * Show ProductFilterBottomSheet dialog
+     */
+    private void showFilterBottomSheet() {
+        ProductFilterBottomSheet bottomSheet = ProductFilterBottomSheet.newInstance(
+                allLoadedProducts,
+                currentFilter);
 
-        android.widget.EditText minPriceEt = sheet.findViewById(R.id.minPriceEt);
-        android.widget.EditText maxPriceEt = sheet.findViewById(R.id.maxPriceEt);
-        android.widget.CheckBox inStockCb = sheet.findViewById(R.id.inStockCb);
-        ChipGroup categoryChipGroup = sheet.findViewById(R.id.categoryChipGroup);
-        ChipGroup sizeChipGroup = sheet.findViewById(R.id.sizeChipGroup);
-        android.widget.Button applyBtn = sheet.findViewById(R.id.applyFilterBtn);
-        android.widget.Button resetBtn = sheet.findViewById(R.id.resetFilterBtn);
+        bottomSheet.setOnFilterAppliedListener(new ProductFilterBottomSheet.OnFilterAppliedListener() {
+            @Override
+            public void onFilterApplied(FilterCriteria criteria) {
+                currentFilter = criteria;
 
-        applyBtn.setOnClickListener(v -> {
-            String minText = minPriceEt.getText().toString().trim();
-            String maxText = maxPriceEt.getText().toString().trim();
-            Double min = null, max = null;
-            try {
-                if (!minText.isEmpty())
-                    min = Double.parseDouble(minText);
-            } catch (NumberFormatException ignored) {
-            }
-            try {
-                if (!maxText.isEmpty())
-                    max = Double.parseDouble(maxText);
-            } catch (NumberFormatException ignored) {
-            }
-
-            // Default sort type (no spinner anymore)
-            int sortType = 0;
-            boolean inStockOnly = inStockCb.isChecked();
-
-            // Collect selected categories and sizes
-            java.util.Set<String> selectedCategories = new java.util.HashSet<>();
-            for (int i = 0; i < categoryChipGroup.getChildCount(); i++) {
-                android.view.View child = categoryChipGroup.getChildAt(i);
-                if (child instanceof Chip) {
-                    Chip c = (Chip) child;
-                    if (c.isChecked() && c.getTag() != null) {
-                        selectedCategories.add(String.valueOf(c.getTag()));
-                    }
+                // Parse sort option
+                try {
+                    currentSort = SortOption.valueOf(criteria.getSortBy());
+                } catch (IllegalArgumentException e) {
+                    currentSort = SortOption.DEFAULT;
                 }
+
+                // Save preferences
+                filterPreferenceManager.saveFilterCriteria(criteria);
+
+                // Reload data with new filters
+                loadInitialData();
             }
 
-            java.util.Set<String> selectedSizes = new java.util.HashSet<>();
-            for (int i = 0; i < sizeChipGroup.getChildCount(); i++) {
-                android.view.View child = sizeChipGroup.getChildAt(i);
-                if (child instanceof Chip) {
-                    Chip c = (Chip) child;
-                    if (c.isChecked() && c.getTag() != null) {
-                        selectedSizes.add(String.valueOf(c.getTag()));
-                    }
-                }
+            @Override
+            public void onFilterReset() {
+                currentFilter = new FilterCriteria();
+                currentSort = SortOption.DEFAULT;
+                filterPreferenceManager.clearPreferences();
+                loadInitialData();
             }
-
-            filterAndApply(min, max, sortType, inStockOnly, selectedCategories, selectedSizes);
-            dialog.dismiss();
         });
 
-        resetBtn.setOnClickListener(v -> {
-            // Reset filters
-            // clear chips
-            for (int i = 0; i < categoryChipGroup.getChildCount(); i++) {
-                android.view.View child = categoryChipGroup.getChildAt(i);
-                if (child instanceof Chip)
-                    ((Chip) child).setChecked(false);
-            }
-            for (int i = 0; i < sizeChipGroup.getChildCount(); i++) {
-                android.view.View child = sizeChipGroup.getChildAt(i);
-                if (child instanceof Chip)
-                    ((Chip) child).setChecked(false);
-            }
-            applyFiltersAndUpdate(allProducts);
-            dialog.dismiss();
-        });
-
-        // Populate size chips from allProducts (unique sizes)
-        java.util.Set<String> sizesSet = new java.util.LinkedHashSet<>();
-        for (Product p : allProducts) {
-            List<String> sizes = p.getAvailableSizes();
-            if (sizes != null)
-                sizesSet.addAll(sizes);
-        }
-        sizeChipGroup.removeAllViews();
-        for (String s : sizesSet) {
-            Chip chip = new Chip(this);
-            chip.setText(s);
-            chip.setCheckable(true);
-            chip.setId(android.view.View.generateViewId());
-            chip.setTag(s);
-            sizeChipGroup.addView(chip);
-        }
-
-        // Populate category chips by querying Firestore categories collection
-        categoryChipGroup.removeAllViews();
+        // Load categories for ChipGroup
         FirebaseFirestore.getInstance()
                 .collection("categories")
                 .whereEqualTo("active", true)
                 .get()
-                .addOnSuccessListener(queryDocumentSnapshots -> {
-                    for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
-                        String cid = doc.getId();
-                        String name = doc.contains("name") ? doc.getString("name") : (doc.getId());
-                        Chip chip = new Chip(this);
-                        chip.setText(name);
-                        chip.setCheckable(true);
-                        chip.setId(android.view.View.generateViewId());
-                        chip.setTag(cid);
-                        categoryChipGroup.addView(chip);
+                .addOnSuccessListener(querySnapshot -> {
+                    List<String> categoryIds = new ArrayList<>();
+                    List<String> categoryNames = new ArrayList<>();
+
+                    for (QueryDocumentSnapshot doc : querySnapshot) {
+                        categoryIds.add(doc.getId());
+                        String name = doc.contains("name") ? doc.getString("name") : doc.getId();
+                        categoryNames.add(name);
                     }
-                })
-                .addOnFailureListener(e -> {
-                    // ignore; categories optional
+
+                    bottomSheet.setCategoryChips(categoryIds, categoryNames);
                 });
 
-        dialog.setContentView(sheet);
-        dialog.show();
-    }
-
-    private void filterAndApply(Double minPrice, Double maxPrice, int sortType, boolean inStockOnly,
-            java.util.Set<String> categories, java.util.Set<String> sizes) {
-        List<Product> filtered = new ArrayList<>();
-        for (Product p : allProducts) {
-            double price = p.getCurrentPrice();
-            if (minPrice != null && price < minPrice)
-                continue;
-            if (maxPrice != null && price > maxPrice)
-                continue;
-            if (inStockOnly && p.getStockQuantity() <= 0)
-                continue;
-
-            // Filter by categories (if selected)
-            if (categories != null && !categories.isEmpty()) {
-                String prodCat = p.getCategory();
-                if (prodCat == null || !categories.contains(prodCat))
-                    continue;
-            }
-
-            // Filter by sizes (if selected)
-            if (sizes != null && !sizes.isEmpty()) {
-                List<String> avail = p.getAvailableSizes();
-                boolean any = false;
-                if (avail != null) {
-                    for (String s : avail) {
-                        if (sizes.contains(s)) {
-                            any = true;
-                            break;
-                        }
-                    }
-                }
-                if (!any)
-                    continue;
-            }
-            filtered.add(p);
-        }
-
-        // Sort
-        switch (sortType) {
-            case 1: // Price low -> high
-                java.util.Collections.sort(filtered,
-                        (a, b) -> Double.compare(a.getCurrentPrice(), b.getCurrentPrice()));
-                break;
-            case 2: // Price high -> low
-                java.util.Collections.sort(filtered,
-                        (a, b) -> Double.compare(b.getCurrentPrice(), a.getCurrentPrice()));
-                break;
-            case 3: // Newest - if there's a timestamp field, sort by it; fallback leave order
-                // No timestamp field in Product model; keep as-is
-                break;
-            default:
-                break;
-        }
-
-        applyFiltersAndUpdate(filtered);
-    }
-
-    private void applyFiltersAndUpdate(List<Product> newList) {
-        productList.clear();
-        if (newList != null) {
-            productList.addAll(newList);
-        }
-
-        // The adapter holds a reference to productList, so we just need to notify it
-        // that the data has changed.
-        productAdapter.notifyDataSetChanged();
-
-        if (productList.isEmpty()) {
-            showEmptyState();
-        } else {
-            hideEmptyState();
-        }
+        bottomSheet.show(getSupportFragmentManager(), "ProductFilterBottomSheet");
     }
 
     private void showLoading() {
@@ -424,9 +482,9 @@ public class CategoryProductsActivity extends AppCompatActivity implements Produ
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        // Remove listener to prevent memory leaks
-        if (productsListener != null) {
-            productsListener.remove();
+        // Clean up scroll listener
+        if (scrollListener != null && productsRecyclerView != null) {
+            productsRecyclerView.removeOnScrollListener(scrollListener);
         }
     }
 }

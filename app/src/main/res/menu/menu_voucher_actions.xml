@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/action_edit_voucher"
+        android:title="Chỉnh sửa"
+        android:icon="@android:drawable/ic_menu_edit" />
+    
+    <item
+        android:id="@+id/action_toggle_voucher"
+        android:title="Đổi trạng thái"
+        android:icon="@android:drawable/ic_menu_revert" />
+    
+    <item
+        android:id="@+id/action_delete_voucher"
+        android:title="Xóa"
+        android:icon="@android:drawable/ic_menu_delete" />
+</menu>

@@ -1,5 +1,7 @@
 package com.example.fashionstoreapp.models;
 
+import com.google.firebase.Timestamp;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -13,6 +15,7 @@ public class Product implements Serializable {
     private double originalPrice;
     private int discountPercent;
     private String imageUrl;
+    private List<String> imageUrls; // Multiple product images from Firebase
     private String category;
     private boolean isNew;
     private boolean hasVoucher;
@@ -29,6 +32,12 @@ public class Product implements Serializable {
     private boolean isVisible = true; // Product visibility (shown/hidden)
     private int lowStockThreshold = 10; // Alert threshold for low stock
     private int totalSold = 0; // Track total units sold
+
+    // ==================== ENHANCED FILTER/SORT FIELDS ====================
+    private Timestamp createdAt; // For "Newest" sorting
+    private Timestamp updatedAt; // Last update timestamp
+    private int popularity = 0; // View count / purchase count metric
+    private double averageRating = 0.0; // For rating-based sorting
 
     // Constructor
     public Product() {
@@ -112,6 +121,25 @@ public class Product implements Serializable {
 
     public void setImageUrl(String imageUrl) {
         this.imageUrl = imageUrl;
+    }
+
+    public List<String> getImageUrls() {
+        if (imageUrls == null || imageUrls.isEmpty()) {
+            // Fallback to single imageUrl if imageUrls is not set
+            imageUrls = new ArrayList<>();
+            if (imageUrl != null && !imageUrl.isEmpty()) {
+                imageUrls.add(imageUrl);
+            }
+        }
+        return imageUrls;
+    }
+
+    public void setImageUrls(List<String> imageUrls) {
+        this.imageUrls = imageUrls;
+        // Update main imageUrl to first image for backward compatibility
+        if (imageUrls != null && !imageUrls.isEmpty()) {
+            this.imageUrl = imageUrls.get(0);
+        }
     }
 
     public String getCategory() {
@@ -364,5 +392,46 @@ public class Product implements Serializable {
         if (total <= lowStockThreshold)
             return 1; // Orange
         return 2; // Green
+    }
+
+    // ==================== ENHANCED GETTERS/SETTERS ====================
+
+    public Timestamp getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Timestamp createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public Timestamp getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(Timestamp updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+
+    public int getPopularity() {
+        return popularity;
+    }
+
+    public void setPopularity(int popularity) {
+        this.popularity = popularity;
+    }
+
+    public double getAverageRating() {
+        return averageRating;
+    }
+
+    public void setAverageRating(double averageRating) {
+        this.averageRating = averageRating;
+    }
+
+    /**
+     * Increment popularity when product is viewed
+     */
+    public void incrementPopularity() {
+        this.popularity++;
     }
 }

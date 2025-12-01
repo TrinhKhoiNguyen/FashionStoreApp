@@ -12,6 +12,7 @@ import com.example.fashionstoreapp.fragments.AdminDashboardFragment;
 import com.example.fashionstoreapp.fragments.AdminProductsFragment;
 import com.example.fashionstoreapp.fragments.AdminOrdersFragment;
 import com.example.fashionstoreapp.fragments.AdminUsersFragment;
+import com.example.fashionstoreapp.fragments.AdminVouchersFragment;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.tabs.TabLayout;
 import com.google.android.material.tabs.TabLayoutMediator;
@@ -66,6 +67,9 @@ public class AdminPanelActivity extends AppCompatActivity {
                             tab.setText("Đơn hàng");
                             break;
                         case 3:
+                            tab.setText("Vouchers");
+                            break;
+                        case 4:
                             tab.setText("Người dùng");
                             break;
                     }
@@ -90,6 +94,8 @@ public class AdminPanelActivity extends AppCompatActivity {
                 case 2:
                     return new AdminOrdersFragment();
                 case 3:
+                    return new AdminVouchersFragment();
+                case 4:
                     return new AdminUsersFragment();
                 default:
                     return new AdminDashboardFragment();
@@ -98,7 +104,7 @@ public class AdminPanelActivity extends AppCompatActivity {
 
         @Override
         public int getItemCount() {
-            return 4;
+            return 5;
         }
     }
 }

@@ -16,7 +16,10 @@
             android:id="@+id/etAddressName"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:background="@drawable/edit_text"
             android:hint="Họ và tên"
+            android:textColorHint="#000000"
+            android:textStyle="bold"
             android:inputType="textPersonName" />
     </com.google.android.material.textfield.TextInputLayout>
 
@@ -31,34 +34,85 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="Số điện thoại"
+            android:background="@drawable/edit_text"
+            android:textColorHint="#000000"
+            android:textStyle="bold"
             android:inputType="phone" />
     </com.google.android.material.textfield.TextInputLayout>
+
+    <!-- Spinner Tỉnh/Thành phố -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Tỉnh/Thành phố"
+        android:textSize="15sp"
+        android:textStyle="bold"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="4dp" />
+
+    <Spinner
+        android:id="@+id/spinnerProvince"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:minHeight="48dp"
+        android:background="@drawable/edit_text"
+        android:padding="12dp"
+        android:layout_marginBottom="12dp" />
+
+    <!-- Spinner Quận/Huyện -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Quận/Huyện"
+        android:textSize="15sp"
+        android:textStyle="bold"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:layout_marginBottom="4dp" />
+
+    <Spinner
+        android:id="@+id/spinnerDistrict"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:minHeight="48dp"
+        android:background="@drawable/edit_text"
+        android:padding="12dp"
+        android:layout_marginBottom="12dp"
+        android:enabled="false" />
+
+    <!-- Spinner Phường/Xã -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Phường/Xã"
+        android:textSize="12sp"
+        android:textStyle="bold"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:layout_marginBottom="4dp" />
+
+    <Spinner
+        android:id="@+id/spinnerWard"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="12dp"
+        android:background="@drawable/edit_text"
+        android:enabled="false"
+        android:minHeight="48dp"
+        android:padding="12dp" />
 
     <com.google.android.material.textfield.TextInputLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="12dp"
         style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/etAddressDetail"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Địa chỉ chi tiết"
-            android:inputType="textPostalAddress" />
-    </com.google.android.material.textfield.TextInputLayout>
-
-    <com.google.android.material.textfield.TextInputLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
-
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/etAddressCity"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Thành phố"
-            android:inputType="text" />
+            android:hint="Địa chỉ chi tiết (Số nhà, tên đường...)"
+            android:inputType="textPostalAddress"
+            android:background="@drawable/edit_text"
+            android:minLines="2" />
     </com.google.android.material.textfield.TextInputLayout>
 
 </LinearLayout>

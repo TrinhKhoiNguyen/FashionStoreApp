@@ -64,4 +64,18 @@
         android:visibility="gone"
         android:padding="24dp" />
 
+    <!-- Filter FAB -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/filterFab"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:layout_margin="16dp"
+        android:src="@drawable/ic_filter"
+        android:contentDescription="Bộ lọc và sắp xếp"
+        app:tint="#1A1A1A"
+        app:backgroundTint="#FFD700"
+        app:elevation="6dp" />
+
 </RelativeLayout>

@@ -7,15 +7,17 @@ import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.CheckBox;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
-import com.bumptech.glide.Glide;
+import com.example.fashionstoreapp.adapters.ProductImageManageAdapter;
 import com.example.fashionstoreapp.models.Category;
 import com.example.fashionstoreapp.models.Product;
 import com.example.fashionstoreapp.models.SizeStock;
@@ -35,8 +37,9 @@ public class AddEditProductActivity extends AppCompatActivity {
 
     // UI Components
     private Toolbar toolbar;
-    private ImageView productImageView;
-    private TextInputEditText nameInput, descriptionInput, currentPriceInput, originalPriceInput, imageUrlInput;
+    private RecyclerView imagesRecyclerView;
+    private Button addImageButton;
+    private TextInputEditText nameInput, descriptionInput, currentPriceInput, originalPriceInput;
     private AutoCompleteTextView categoryDropdown;
     private CheckBox isVisibleCheckbox;
     private ChipGroup colorsChipGroup;
@@ -51,6 +54,8 @@ public class AddEditProductActivity extends AppCompatActivity {
     private List<Category> categoriesList = new ArrayList<>();
     private List<String> selectedColors = new ArrayList<>();
     private List<SizeStock> sizeStocks = new ArrayList<>();
+    private List<String> productImageUrls = new ArrayList<>();
+    private ProductImageManageAdapter imageAdapter;
 
     // Default sizes
     private final String[] DEFAULT_SIZES = { "S", "M", "L", "XL" };
@@ -76,6 +81,7 @@ public class AddEditProductActivity extends AppCompatActivity {
 
         loadCategories();
         setupSizeStocks();
+        setupImageRecyclerView();
         setupListeners();
 
         if (isEditMode && productId != null) {
@@ -88,12 +94,12 @@ public class AddEditProductActivity extends AppCompatActivity {
 
     private void initViews() {
         toolbar = findViewById(R.id.toolbar);
-        productImageView = findViewById(R.id.productImageView);
+        imagesRecyclerView = findViewById(R.id.imagesRecyclerView);
+        addImageButton = findViewById(R.id.addImageButton);
         nameInput = findViewById(R.id.productNameInput);
         descriptionInput = findViewById(R.id.productDescriptionInput);
         currentPriceInput = findViewById(R.id.currentPriceInput);
         originalPriceInput = findViewById(R.id.originalPriceInput);
-        imageUrlInput = findViewById(R.id.imageUrlInput);
         categoryDropdown = findViewById(R.id.categoryDropdown);
         isVisibleCheckbox = findViewById(R.id.isVisibleCheckbox);
         colorsChipGroup = findViewById(R.id.colorsChipGroup);
@@ -112,21 +118,84 @@ public class AddEditProductActivity extends AppCompatActivity {
     }
 
     private void setupListeners() {
-        // Image URL input - show preview
-        imageUrlInput.setOnFocusChangeListener((v, hasFocus) -> {
-            if (!hasFocus) {
-                String url = imageUrlInput.getText().toString().trim();
-                if (!url.isEmpty()) {
-                    loadImagePreview(url);
-                }
-            }
-        });
+        // Add image button
+        addImageButton.setOnClickListener(v -> showAddImageUrlDialog());
 
         // Add color button
         addColorButton.setOnClickListener(v -> showColorPickerDialog());
 
         // Save button
         saveButton.setOnClickListener(v -> validateAndSaveProduct());
+    }
+
+    private void setupImageRecyclerView() {
+        LinearLayoutManager layoutManager = new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false);
+        imagesRecyclerView.setLayoutManager(layoutManager);
+
+        imageAdapter = new ProductImageManageAdapter(this, productImageUrls,
+                new ProductImageManageAdapter.OnImageActionListener() {
+                    @Override
+                    public void onRemoveClick(int position) {
+                        productImageUrls.remove(position);
+                        imageAdapter.notifyItemRemoved(position);
+                    }
+
+                    @Override
+                    public void onImageClick(String imageUrl, int position) {
+                        // Optional: show edit URL dialog
+                        showEditImageUrlDialog(position, imageUrl);
+                    }
+                });
+        imagesRecyclerView.setAdapter(imageAdapter);
+    }
+
+    private void showAddImageUrlDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Thêm URL ảnh");
+
+        final TextInputEditText input = new TextInputEditText(this);
+        input.setHint("Nhập URL ảnh sản phẩm");
+        input.setPadding(50, 30, 50, 30);
+        builder.setView(input);
+
+        builder.setPositiveButton("Thêm", (dialog, which) -> {
+            String imageUrl = input.getText().toString().trim();
+            if (!TextUtils.isEmpty(imageUrl)) {
+                productImageUrls.add(imageUrl);
+                imageAdapter.notifyItemInserted(productImageUrls.size() - 1);
+                Toast.makeText(this, "Đã thêm ảnh", Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(this, "URL không được để trống", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        builder.setNegativeButton("Hủy", (dialog, which) -> dialog.cancel());
+        builder.show();
+    }
+
+    private void showEditImageUrlDialog(int position, String currentUrl) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Sửa URL ảnh");
+
+        final TextInputEditText input = new TextInputEditText(this);
+        input.setText(currentUrl);
+        input.setHint("Nhập URL ảnh sản phẩm");
+        input.setPadding(50, 30, 50, 30);
+        builder.setView(input);
+
+        builder.setPositiveButton("Cập nhật", (dialog, which) -> {
+            String imageUrl = input.getText().toString().trim();
+            if (!TextUtils.isEmpty(imageUrl)) {
+                productImageUrls.set(position, imageUrl);
+                imageAdapter.notifyItemChanged(position);
+                Toast.makeText(this, "Đã cập nhật ảnh", Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(this, "URL không được để trống", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        builder.setNegativeButton("Hủy", (dialog, which) -> dialog.cancel());
+        builder.show();
     }
 
     private void loadCategories() {
@@ -267,13 +336,6 @@ public class AddEditProductActivity extends AppCompatActivity {
         }
     }
 
-    private void loadImagePreview(String url) {
-        Glide.with(this)
-                .load(url)
-                .placeholder(R.drawable.baseline_category_24)
-                .into(productImageView);
-    }
-
     private void loadProductData() {
         progressBar.setVisibility(View.VISIBLE);
 
@@ -302,9 +364,20 @@ public class AddEditProductActivity extends AppCompatActivity {
         descriptionInput.setText(product.getDescription());
         currentPriceInput.setText(String.valueOf((int) product.getCurrentPrice()));
         originalPriceInput.setText(String.valueOf((int) product.getOriginalPrice()));
-        imageUrlInput.setText(product.getImageUrl());
-        // product.getCategory() may store the internal category ID; show the display
-        // name
+
+        // Load images
+        if (product.getImageUrls() != null && !product.getImageUrls().isEmpty()) {
+            productImageUrls.clear();
+            productImageUrls.addAll(product.getImageUrls());
+            imageAdapter.notifyDataSetChanged();
+        } else if (product.getImageUrl() != null && !product.getImageUrl().isEmpty()) {
+            // Backward compatibility with single image
+            productImageUrls.clear();
+            productImageUrls.add(product.getImageUrl());
+            imageAdapter.notifyDataSetChanged();
+        }
+
+        // Set category display name
         String categoryDisplay = getCategoryNameById(product.getCategory());
         if (categoryDisplay != null) {
             categoryDropdown.setText(categoryDisplay, false);
@@ -312,8 +385,6 @@ public class AddEditProductActivity extends AppCompatActivity {
             categoryDropdown.setText(product.getCategory(), false);
         }
         isVisibleCheckbox.setChecked(product.isVisible());
-
-        loadImagePreview(product.getImageUrl());
 
         // Load size stocks
         if (product.getSizeStocks() != null && !product.getSizeStocks().isEmpty()) {
@@ -334,7 +405,6 @@ public class AddEditProductActivity extends AppCompatActivity {
         String description = descriptionInput.getText().toString().trim();
         String currentPriceStr = currentPriceInput.getText().toString().trim();
         String originalPriceStr = originalPriceInput.getText().toString().trim();
-        String imageUrl = imageUrlInput.getText().toString().trim();
         String category = categoryDropdown.getText().toString().trim();
 
         if (TextUtils.isEmpty(name)) {
@@ -357,6 +427,11 @@ public class AddEditProductActivity extends AppCompatActivity {
             return;
         }
 
+        if (productImageUrls.isEmpty()) {
+            Toast.makeText(this, "Vui lòng thêm ít nhất 1 ảnh sản phẩm", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         double currentPrice = Double.parseDouble(currentPriceStr);
         double originalPrice = Double.parseDouble(originalPriceStr);
 
@@ -370,11 +445,10 @@ public class AddEditProductActivity extends AppCompatActivity {
         product.setDescription(description);
         product.setCurrentPrice(currentPrice);
         product.setOriginalPrice(originalPrice);
-        product.setImageUrl(imageUrl);
-        // Map selected display name back to category ID (store ID in product.category)
+
+        // Map selected display name back to category ID
         String categoryId = getCategoryIdByName(category);
         if (categoryId == null) {
-            // If not found, fallback to the raw text (maintain backward compatibility)
             categoryId = category;
         }
         product.setCategory(categoryId);
@@ -388,6 +462,12 @@ public class AddEditProductActivity extends AppCompatActivity {
             totalStock += ss.getStock();
         }
         product.setStockQuantity(totalStock);
+
+        // Set image URLs directly
+        product.setImageUrls(productImageUrls);
+        if (!productImageUrls.isEmpty()) {
+            product.setImageUrl(productImageUrls.get(0)); // Backward compatibility
+        }
 
         saveProduct(product);
     }

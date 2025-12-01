@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.fashionstoreapp.R;
 import com.example.fashionstoreapp.model.Address;
+import com.google.android.material.button.MaterialButton;
 
 import java.util.List;
 
@@ -25,6 +26,10 @@ public class AddressAdapter extends RecyclerView.Adapter<AddressAdapter.AddressV
         void onDelete(Address address);
 
         void onSelect(Address address);
+
+        void onViewDetails(Address address);
+
+        void onEdit(Address address);
     }
 
     public AddressAdapter(Context context, List<Address> addresses, OnAddressActionListener listener) {
@@ -52,7 +57,8 @@ public class AddressAdapter extends RecyclerView.Adapter<AddressAdapter.AddressV
     }
 
     class AddressViewHolder extends RecyclerView.ViewHolder {
-        private TextView tvName, tvPhone, tvAddress, tvDefault;
+        private TextView tvName, tvPhone, tvAddress, tvLocation, tvDefault;
+        private MaterialButton btnViewDetails, btnEdit;
         private ImageView btnDelete;
 
         public AddressViewHolder(@NonNull View itemView) {
@@ -60,13 +66,30 @@ public class AddressAdapter extends RecyclerView.Adapter<AddressAdapter.AddressV
             tvName = itemView.findViewById(R.id.tvAddressName);
             tvPhone = itemView.findViewById(R.id.tvAddressPhone);
             tvAddress = itemView.findViewById(R.id.tvAddressDetail);
+            tvLocation = itemView.findViewById(R.id.tvAddressLocation);
             tvDefault = itemView.findViewById(R.id.tvDefaultBadge);
             btnDelete = itemView.findViewById(R.id.btnDeleteAddress);
+            btnViewDetails = itemView.findViewById(R.id.btnViewDetails);
+            btnEdit = itemView.findViewById(R.id.btnEditAddress);
 
             btnDelete.setOnClickListener(v -> {
                 int position = getAdapterPosition();
                 if (position != RecyclerView.NO_POSITION && listener != null) {
                     listener.onDelete(addresses.get(position));
+                }
+            });
+
+            btnViewDetails.setOnClickListener(v -> {
+                int position = getAdapterPosition();
+                if (position != RecyclerView.NO_POSITION && listener != null) {
+                    listener.onViewDetails(addresses.get(position));
+                }
+            });
+
+            btnEdit.setOnClickListener(v -> {
+                int position = getAdapterPosition();
+                if (position != RecyclerView.NO_POSITION && listener != null) {
+                    listener.onEdit(addresses.get(position));
                 }
             });
 
@@ -82,7 +105,30 @@ public class AddressAdapter extends RecyclerView.Adapter<AddressAdapter.AddressV
         public void bind(Address address) {
             tvName.setText(address.getName());
             tvPhone.setText(address.getPhone());
-            tvAddress.setText(address.getAddress() + ", " + address.getCity());
+            tvAddress.setText(address.getAddress());
+
+            // Hiển thị đầy đủ: Phường/Xã, Quận/Huyện, Tỉnh/Thành phố
+            StringBuilder location = new StringBuilder();
+            if (address.getWardName() != null && !address.getWardName().isEmpty()) {
+                location.append(address.getWardName());
+            }
+            if (address.getDistrictName() != null && !address.getDistrictName().isEmpty()) {
+                if (location.length() > 0)
+                    location.append(", ");
+                location.append(address.getDistrictName());
+            }
+            if (address.getProvinceName() != null && !address.getProvinceName().isEmpty()) {
+                if (location.length() > 0)
+                    location.append(", ");
+                location.append(address.getProvinceName());
+            } else if (address.getCity() != null && !address.getCity().isEmpty()) {
+                // Fallback cho địa chỉ cũ
+                if (location.length() > 0)
+                    location.append(", ");
+                location.append(address.getCity());
+            }
+
+            tvLocation.setText(location.toString());
             tvDefault.setVisibility(address.isDefault() ? View.VISIBLE : View.GONE);
         }
     }

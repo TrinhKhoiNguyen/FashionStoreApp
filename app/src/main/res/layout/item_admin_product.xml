@@ -58,8 +58,8 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
                 android:text="199,000₫"
-                android:textColor="#FFD700"
-                android:textSize="14sp"
+                android:textColor="#F44336"
+                android:textSize="20sp"
                 android:textStyle="bold" />
 
             <LinearLayout

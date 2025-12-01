@@ -39,12 +39,13 @@
             android:layout_width="match_parent"
             android:layout_height="56dp"
             android:layout_marginTop="32dp"
-            android:background="@drawable/edittext_background"
+            android:background="@drawable/edit_text"
             android:hint="Email"
             android:inputType="textEmailAddress"
             android:paddingStart="16dp"
             android:paddingEnd="16dp"
             android:textColor="#000000"
+            android:textStyle="bold"
             android:textSize="16sp" />
 
         <!-- Full Name Input -->
@@ -53,52 +54,59 @@
             android:layout_width="match_parent"
             android:layout_height="56dp"
             android:layout_marginTop="16dp"
-            android:background="@drawable/edittext_background"
+            android:background="@drawable/edit_text"
             android:hint="Họ và tên"
             android:inputType="textPersonName"
             android:paddingStart="16dp"
             android:paddingEnd="16dp"
             android:textColor="#000000"
+            android:textStyle="bold"
             android:textSize="16sp" />
 
         <!-- Password Input -->
+
+        <!-- Confirm Password Input -->
+
         <EditText
             android:id="@+id/etPassword"
             android:layout_width="match_parent"
             android:layout_height="56dp"
             android:layout_marginTop="16dp"
-            android:background="@drawable/edittext_background"
+            android:background="@drawable/edit_text"
             android:hint="Mật khẩu"
             android:inputType="textPassword"
             android:paddingStart="16dp"
             android:paddingEnd="16dp"
             android:textColor="#000000"
+            android:textStyle="bold"
             android:textSize="16sp" />
 
-        <!-- Confirm Password Input -->
         <EditText
             android:id="@+id/etConfirmPassword"
             android:layout_width="match_parent"
             android:layout_height="56dp"
             android:layout_marginTop="16dp"
-            android:background="@drawable/edittext_background"
+            android:background="@drawable/edit_text"
             android:hint="Xác nhận mật khẩu"
             android:inputType="textPassword"
             android:paddingStart="16dp"
             android:paddingEnd="16dp"
             android:textColor="#000000"
+            android:textStyle="bold"
             android:textSize="16sp" />
 
         <!-- Password Hint -->
+
+        <!-- Terms Checkbox -->
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
             android:text="Mật khẩu phải có ít nhất 6 ký tự, bao gồm chữ hoa, chữ thường và số"
             android:textColor="#666666"
+            android:textStyle="bold"
             android:textSize="12sp" />
 
-        <!-- Terms Checkbox -->
         <CheckBox
             android:id="@+id/cbTerms"
             android:layout_width="match_parent"

@@ -64,7 +64,7 @@
                 android:layout_height="wrap_content"
                 android:text="250.000₫"
                 android:textColor="#FF0000"
-                android:textSize="14sp"
+                android:textSize="18sp"
                 android:textStyle="bold" />
 
             <View

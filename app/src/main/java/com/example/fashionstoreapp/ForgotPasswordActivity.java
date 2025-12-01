@@ -86,6 +86,8 @@ public class ForgotPasswordActivity extends AppCompatActivity {
         // Show loading
         showLoading();
 
+        android.util.Log.d(TAG, "Attempting to send password reset email to: " + email);
+
         // Send password reset email
         mAuth.sendPasswordResetEmail(email)
                 .addOnCompleteListener(task -> {
@@ -93,27 +95,32 @@ public class ForgotPasswordActivity extends AppCompatActivity {
 
                     if (task.isSuccessful()) {
                         // Email sent successfully
-                        android.util.Log.d(TAG, "Password reset email sent to: " + email);
+                        android.util.Log.d(TAG, "✅ Password reset email sent successfully to: " + email);
 
                         // Show success dialog
                         showSuccessDialog(email);
                     } else {
                         // Failed to send email
-                        android.util.Log.w(TAG, "Failed to send reset email", task.getException());
+                        android.util.Log.e(TAG, "❌ Failed to send reset email to: " + email, task.getException());
 
                         String errorMessage = "Không thể gửi email đặt lại mật khẩu";
                         if (task.getException() != null) {
                             String exceptionMessage = task.getException().getMessage();
+                            android.util.Log.e(TAG, "Error details: " + exceptionMessage);
 
                             // Handle specific error cases
-                            if (exceptionMessage.contains("no user record")) {
-                                errorMessage = "Email này chưa được đăng ký";
-                            } else if (exceptionMessage.contains("invalid email")) {
-                                errorMessage = "Email không hợp lệ";
-                            } else if (exceptionMessage.contains("network")) {
-                                errorMessage = "Lỗi kết nối. Vui lòng kiểm tra internet";
-                            } else {
-                                errorMessage = exceptionMessage;
+                            if (exceptionMessage != null) {
+                                if (exceptionMessage.toLowerCase().contains("no user record") ||
+                                        exceptionMessage.toLowerCase().contains("user not found")) {
+                                    errorMessage = "Email này chưa được đăng ký trong hệ thống";
+                                } else if (exceptionMessage.toLowerCase().contains("invalid email")) {
+                                    errorMessage = "Định dạng email không hợp lệ";
+                                } else if (exceptionMessage.toLowerCase().contains("network") ||
+                                        exceptionMessage.toLowerCase().contains("timeout")) {
+                                    errorMessage = "Lỗi kết nối. Vui lòng kiểm tra internet và thử lại";
+                                } else {
+                                    errorMessage = "Lỗi: " + exceptionMessage;
+                                }
                             }
                         }
 

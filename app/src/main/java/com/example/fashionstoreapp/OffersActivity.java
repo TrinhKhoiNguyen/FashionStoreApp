@@ -14,7 +14,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.fashionstoreapp.adapters.VoucherAdapter;
-import com.example.fashionstoreapp.model.Voucher;
+import com.example.fashionstoreapp.models.Voucher;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -81,16 +81,18 @@ public class OffersActivity extends AppCompatActivity implements VoucherAdapter.
         emptyText.setVisibility(View.GONE);
 
         db.collection("vouchers")
-                .whereEqualTo("isActive", true)
+                .whereEqualTo("active", true)
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     voucherList.clear();
-                    Date now = new Date();
+                    long now = System.currentTimeMillis();
 
                     for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
                         Voucher voucher = doc.toObject(Voucher.class);
-                        // Only show vouchers that haven't expired
-                        if (voucher.getExpiryDate() != null && voucher.getExpiryDate().after(now)) {
+                        voucher.setId(doc.getId());
+
+                        // Only show valid vouchers (not expired and has quantity)
+                        if (voucher.isValid()) {
                             voucherList.add(voucher);
                         }
                     }

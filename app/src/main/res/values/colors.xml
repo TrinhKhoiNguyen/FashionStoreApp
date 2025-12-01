@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Light Mode Colors -->
     <color name="primary_black">#000000</color>
     <color name="primary_white">#FFFFFF</color>
     <color name="accent_yellow">#FFD700</color>
@@ -20,4 +21,49 @@
     <color name="white">#FFFFFF</color>
     <color name="black">#000000</color>
     <color name="purple_500">#6200EE</color>
+    
+    <!-- Status colors -->
+    <color name="error">#F44336</color>
+    <color name="success">#4CAF50</color>
+    
+    <!-- Light Theme Colors -->
+    <color name="light_primary">#000000</color>
+    <color name="light_primary_variant">#1A1A1A</color>
+    <color name="light_on_primary">#FFFFFF</color>
+    
+    <color name="light_secondary">#FFD700</color>
+    <color name="light_secondary_variant">#FFC700</color>
+    <color name="light_on_secondary">#000000</color>
+    
+    <color name="light_background">#FFFFFF</color>
+    <color name="light_on_background">#000000</color>
+    
+    <color name="light_surface">#FFFFFF</color>
+    <color name="light_on_surface">#000000</color>
+    
+    <color name="light_text_primary">#000000</color>
+    <color name="light_text_secondary">#666666</color>
+    <color name="light_text_hint">#999999</color>
+    
+    <!-- Dark Theme Colors -->
+    <color name="dark_primary">#1A1A1A</color>
+    <color name="dark_primary_variant">#000000</color>
+    <color name="dark_on_primary">#FFFFFF</color>
+    
+    <color name="dark_secondary">#FFD700</color>
+    <color name="dark_secondary_variant">#FFC700</color>
+    <color name="dark_on_secondary">#000000</color>
+    
+    <color name="dark_background">#121212</color>
+    <color name="dark_on_background">#E0E0E0</color>
+    
+    <color name="dark_surface">#1E1E1E</color>
+    <color name="dark_on_surface">#E0E0E0</color>
+    
+    <color name="dark_text_primary">#FFFFFF</color>
+    <color name="dark_text_secondary">#B0B0B0</color>
+    <color name="dark_text_hint">#707070</color>
+    
+    <!-- Card background for dark mode -->
+    <color name="dark_card_background">#2C2C2C</color>
 </resources>

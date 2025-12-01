@@ -26,6 +26,7 @@ public class FirestoreManager {
     private static final String COLLECTION_CARTS = "carts";
     private static final String COLLECTION_FAVORITES = "favorites";
     private static final String COLLECTION_ORDERS = "orders";
+    private static final String COLLECTION_VOUCHERS = "vouchers";
 
     private FirestoreManager() {
         db = FirebaseFirestore.getInstance();
@@ -2213,6 +2214,218 @@ public class FirestoreManager {
 
     public interface OnNotificationCreatedListener {
         void onCreated(String notificationId);
+
+        void onError(String error);
+    }
+
+    // ==================== VOUCHER MANAGEMENT ====================
+
+    /**
+     * Load all vouchers (Admin)
+     */
+    public void getAllVouchers(OnVouchersLoadedListener listener) {
+        db.collection(COLLECTION_VOUCHERS)
+                .orderBy("createdAt", Query.Direction.DESCENDING)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    List<com.example.fashionstoreapp.models.Voucher> vouchers = new ArrayList<>();
+                    for (DocumentSnapshot document : queryDocumentSnapshots) {
+                        com.example.fashionstoreapp.models.Voucher voucher = document
+                                .toObject(com.example.fashionstoreapp.models.Voucher.class);
+                        if (voucher != null) {
+                            voucher.setId(document.getId());
+                            vouchers.add(voucher);
+                        }
+                    }
+                    Log.d(TAG, "Loaded " + vouchers.size() + " vouchers");
+                    listener.onVouchersLoaded(vouchers);
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error loading vouchers", e);
+                    listener.onError(e.getMessage());
+                });
+    }
+
+    /**
+     * Create a new voucher (Admin)
+     */
+    public void createVoucher(com.example.fashionstoreapp.models.Voucher voucher, OnVoucherSavedListener listener) {
+        // Check if code already exists
+        db.collection(COLLECTION_VOUCHERS)
+                .whereEqualTo("code", voucher.getCode())
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    if (!queryDocumentSnapshots.isEmpty()) {
+                        listener.onError("Mã voucher đã tồn tại");
+                        return;
+                    }
+
+                    // Create new voucher
+                    long now = System.currentTimeMillis();
+                    voucher.setCreatedAt(now);
+                    voucher.setUpdatedAt(now);
+                    voucher.setUsedCount(0);
+
+                    db.collection(COLLECTION_VOUCHERS)
+                            .add(voucher)
+                            .addOnSuccessListener(documentReference -> {
+                                String voucherId = documentReference.getId();
+                                Log.d(TAG, "Voucher created: " + voucherId);
+                                listener.onVoucherSaved(voucherId);
+                            })
+                            .addOnFailureListener(e -> {
+                                Log.e(TAG, "Error creating voucher", e);
+                                listener.onError(e.getMessage());
+                            });
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error checking voucher code", e);
+                    listener.onError(e.getMessage());
+                });
+    }
+
+    /**
+     * Update voucher (Admin)
+     */
+    public void updateVoucher(String voucherId, com.example.fashionstoreapp.models.Voucher voucher,
+            OnVoucherSavedListener listener) {
+        voucher.setUpdatedAt(System.currentTimeMillis());
+
+        java.util.Map<String, Object> updates = new java.util.HashMap<>();
+        updates.put("type", voucher.getType());
+        updates.put("amount", voucher.getAmount());
+        updates.put("maxDiscount", voucher.getMaxDiscount());
+        updates.put("minOrder", voucher.getMinOrder());
+        updates.put("quantity", voucher.getQuantity());
+        updates.put("startAt", voucher.getStartAt());
+        updates.put("endAt", voucher.getEndAt());
+        updates.put("active", voucher.isActive());
+        updates.put("description", voucher.getDescription());
+        updates.put("updatedAt", voucher.getUpdatedAt());
+
+        db.collection(COLLECTION_VOUCHERS)
+                .document(voucherId)
+                .update(updates)
+                .addOnSuccessListener(aVoid -> {
+                    Log.d(TAG, "Voucher updated: " + voucherId);
+                    listener.onVoucherSaved(voucherId);
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error updating voucher", e);
+                    listener.onError(e.getMessage());
+                });
+    }
+
+    /**
+     * Delete voucher (Admin)
+     */
+    public void deleteVoucher(String voucherId, OnVoucherDeletedListener listener) {
+        db.collection(COLLECTION_VOUCHERS)
+                .document(voucherId)
+                .delete()
+                .addOnSuccessListener(aVoid -> {
+                    Log.d(TAG, "Voucher deleted: " + voucherId);
+                    listener.onVoucherDeleted();
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error deleting voucher", e);
+                    listener.onError(e.getMessage());
+                });
+    }
+
+    /**
+     * Toggle voucher active status (Admin)
+     */
+    public void toggleVoucherStatus(String voucherId, boolean active, OnVoucherSavedListener listener) {
+        db.collection(COLLECTION_VOUCHERS)
+                .document(voucherId)
+                .update("active", active, "updatedAt", System.currentTimeMillis())
+                .addOnSuccessListener(aVoid -> {
+                    Log.d(TAG, "Voucher status updated: " + voucherId + " -> " + active);
+                    listener.onVoucherSaved(voucherId);
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error toggling voucher status", e);
+                    listener.onError(e.getMessage());
+                });
+    }
+
+    /**
+     * Get voucher by code (for checkout)
+     */
+    public void getVoucherByCode(String code, OnVoucherLoadedListener listener) {
+        db.collection(COLLECTION_VOUCHERS)
+                .whereEqualTo("code", code.toUpperCase())
+                .whereEqualTo("active", true)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    if (queryDocumentSnapshots.isEmpty()) {
+                        listener.onError("Mã voucher không hợp lệ hoặc đã hết hạn");
+                        return;
+                    }
+
+                    DocumentSnapshot document = queryDocumentSnapshots.getDocuments().get(0);
+                    com.example.fashionstoreapp.models.Voucher voucher = document
+                            .toObject(com.example.fashionstoreapp.models.Voucher.class);
+                    if (voucher != null) {
+                        voucher.setId(document.getId());
+
+                        // Check if voucher is still valid
+                        if (!voucher.isValid()) {
+                            if (voucher.isExpired()) {
+                                listener.onError("Voucher đã hết hạn");
+                            } else if (voucher.getRemainingQuantity() <= 0) {
+                                listener.onError("Voucher đã hết lượt sử dụng");
+                            } else {
+                                listener.onError("Voucher không hợp lệ");
+                            }
+                            return;
+                        }
+
+                        listener.onVoucherLoaded(voucher);
+                    } else {
+                        listener.onError("Không thể tải thông tin voucher");
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error loading voucher by code", e);
+                    listener.onError(e.getMessage());
+                });
+    }
+
+    /**
+     * Increment voucher used count
+     */
+    public void incrementVoucherUsedCount(String voucherId) {
+        db.collection(COLLECTION_VOUCHERS)
+                .document(voucherId)
+                .update("usedCount", com.google.firebase.firestore.FieldValue.increment(1))
+                .addOnSuccessListener(aVoid -> Log.d(TAG, "Voucher used count incremented: " + voucherId))
+                .addOnFailureListener(e -> Log.e(TAG, "Error incrementing voucher used count", e));
+    }
+
+    // ==================== VOUCHER LISTENERS ====================
+
+    public interface OnVouchersLoadedListener {
+        void onVouchersLoaded(List<com.example.fashionstoreapp.models.Voucher> vouchers);
+
+        void onError(String error);
+    }
+
+    public interface OnVoucherSavedListener {
+        void onVoucherSaved(String voucherId);
+
+        void onError(String error);
+    }
+
+    public interface OnVoucherDeletedListener {
+        void onVoucherDeleted();
+
+        void onError(String error);
+    }
+
+    public interface OnVoucherLoadedListener {
+        void onVoucherLoaded(com.example.fashionstoreapp.models.Voucher voucher);
 
         void onError(String error);
     }

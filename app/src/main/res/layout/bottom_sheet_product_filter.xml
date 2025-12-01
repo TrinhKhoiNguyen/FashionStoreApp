@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <!-- Header -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingBottom="16dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Bộ lọc &amp; Sắp xếp"
+                android:textStyle="bold"
+                android:textSize="20sp"
+                android:textColor="#1A1A1A" />
+
+            <TextView
+                android:id="@+id/resultCountTv"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0 sản phẩm"
+                android:textSize="14sp"
+                android:textColor="#666666"
+                android:background="@drawable/bg_badge"
+                android:paddingHorizontal="12dp"
+                android:paddingVertical="4dp" />
+        </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#E0E0E0"
+            android:layout_marginBottom="16dp" />
+
+        <!-- ==================== PRICE RANGE ==================== -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Khoảng giá"
+            android:textStyle="bold"
+            android:textSize="16sp"
+            android:textColor="#1A1A1A"
+            android:paddingBottom="8dp" />
+
+        <com.google.android.material.slider.RangeSlider
+            android:id="@+id/priceRangeSlider"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:valueFrom="0"
+            android:valueTo="10000000"
+            android:stepSize="50000"
+            app:thumbColor="#FFD700"
+            app:trackColorActive="#FFD700"
+            app:trackColorInactive="#E0E0E0"
+            app:labelBehavior="gone" />
+
+        <TextView
+            android:id="@+id/priceRangeTv"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="0₫ - 10,000,000₫"
+            android:textSize="14sp"
+            android:textColor="#666666"
+            android:gravity="center"
+            android:paddingBottom="16dp" />
+
+        <!-- ==================== SORT OPTIONS ==================== -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Sắp xếp"
+            android:textStyle="bold"
+            android:textSize="16sp"
+            android:textColor="#1A1A1A"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp" />
+
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/sortChipGroup"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:singleSelection="true"
+            app:chipSpacing="8dp"
+            app:singleLine="false"
+            android:paddingBottom="16dp" />
+
+        <!-- ==================== CATEGORIES ==================== -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Danh mục"
+            android:textStyle="bold"
+            android:textSize="16sp"
+            android:textColor="#1A1A1A"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp" />
+
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/categoryChipGroup"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:chipSpacing="8dp"
+            app:singleLine="false"
+            android:paddingBottom="16dp" />
+
+        <!-- ==================== SIZES ==================== -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Size"
+            android:textStyle="bold"
+            android:textSize="16sp"
+            android:textColor="#1A1A1A"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp" />
+
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/sizeChipGroup"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:chipSpacing="8dp"
+            app:singleLine="false"
+            android:paddingBottom="16dp" />
+
+        <!-- ==================== STOCK FILTER ==================== -->
+        <CheckBox
+            android:id="@+id/inStockCb"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Chỉ hiển thị sản phẩm còn hàng"
+            android:textSize="14sp"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="16dp" />
+
+        <!-- ==================== ACTION BUTTONS ==================== -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#E0E0E0"
+            android:layout_marginVertical="16dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="end">
+
+            <Button
+                android:id="@+id/resetFilterBtn"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Đặt lại"
+                android:textColor="#1A1A1A"
+                app:strokeColor="#1A1A1A"
+                android:layout_marginEnd="12dp"
+                android:minWidth="120dp" />
+
+            <Button
+                android:id="@+id/applyFilterBtn"
+                style="@style/Widget.Material3.Button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Áp dụng"
+                android:textColor="#1A1A1A"
+                android:backgroundTint="#FFD700"
+                android:minWidth="120dp" />
+        </LinearLayout>
+
+    </LinearLayout>
+</ScrollView>

@@ -65,6 +65,14 @@ dependencies {
     
     // Glide for image loading
     implementation("com.github.bumptech.glide:glide:4.16.0")
+    
+    // PhotoView for image zoom/pinch
+    implementation("com.github.chrisbanes:PhotoView:2.3.0")
+    
+    // Retrofit for API calls
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.11.0")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)

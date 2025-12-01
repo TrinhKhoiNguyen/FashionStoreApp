@@ -10,7 +10,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.fashionstoreapp.R;
-import com.example.fashionstoreapp.model.Voucher;
+import com.example.fashionstoreapp.models.Voucher;
 import com.google.android.material.button.MaterialButton;
 
 import java.text.SimpleDateFormat;
@@ -72,12 +72,41 @@ public class VoucherAdapter extends RecyclerView.Adapter<VoucherAdapter.VoucherV
         }
 
         public void bind(Voucher voucher) {
-            voucherTitle.setText(voucher.getTitle());
+            // Set title based on voucher type and amount
+            String title;
+            if ("percent".equals(voucher.getType())) {
+                title = "Giảm " + voucher.getAmount() + "%";
+            } else {
+                title = "Giảm " + formatCurrency(voucher.getAmount());
+            }
+            voucherTitle.setText(title);
+
             voucherCode.setText(voucher.getCode());
-            voucherDescription.setText(voucher.getDescription());
+
+            // Set description with min order and remaining quantity
+            String description = voucher.getDescription();
+            if (voucher.getMinOrder() > 0) {
+                description += "\nĐơn tối thiểu " + formatCurrency(voucher.getMinOrder());
+            }
+            int remaining = voucher.getRemainingQuantity();
+            if (remaining >= 0) {
+                description += "\nCòn lại: " + remaining + " lượt";
+            }
+            voucherDescription.setText(description);
 
             SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
-            voucherExpiry.setText("HSD: " + sdf.format(voucher.getExpiryDate()));
+            if (voucher.getEndAt() > 0) {
+                voucherExpiry.setText("HSD: " + sdf.format(new java.util.Date(voucher.getEndAt())));
+            }
+        }
+
+        private String formatCurrency(double amount) {
+            if (amount >= 1000000) {
+                return String.format(Locale.getDefault(), "%.0ftr", amount / 1000000);
+            } else if (amount >= 1000) {
+                return String.format(Locale.getDefault(), "%.0fk", amount / 1000);
+            }
+            return String.format(Locale.getDefault(), "%.0f₫", amount);
         }
     }
 }
