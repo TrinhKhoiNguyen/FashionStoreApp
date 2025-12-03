@@ -119,6 +119,9 @@ public class MainActivity extends AppCompatActivity
     private TextView filterBadge;
     private FilterCriteria currentFilter;
 
+    // Chatbot FAB
+    private FloatingActionButton chatbotFab;
+
     // Store original product lists for filtering
     private List<Product> originalVoucherProducts = new ArrayList<>();
     private List<Product> originalRetroProducts = new ArrayList<>();
@@ -321,6 +324,9 @@ public class MainActivity extends AppCompatActivity
         filterButton = findViewById(R.id.filterButton);
         sortButton = findViewById(R.id.sortButton);
         filterBadge = findViewById(R.id.filterBadge);
+
+        // Chatbot FAB
+        chatbotFab = findViewById(R.id.chatbotFab);
     }
 
     private void updateNotificationBadge(int count) {
@@ -952,6 +958,12 @@ public class MainActivity extends AppCompatActivity
         cartIcon.setOnClickListener(v -> {
             // Open cart activity
             Intent intent = new Intent(MainActivity.this, CartActivity.class);
+            startActivity(intent);
+        });
+
+        // Chatbot FAB click
+        chatbotFab.setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, ChatbotActivity.class);
             startActivity(intent);
         });
 

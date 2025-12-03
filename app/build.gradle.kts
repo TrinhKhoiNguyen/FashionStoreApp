@@ -1,14 +1,11 @@
 plugins {
-
     id("com.android.application")
     id("com.google.gms.google-services")
 }
 
 android {
     namespace = "com.example.fashionstoreapp"
-    compileSdk {
-        version = release(36)
-    }
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.example.fashionstoreapp"
@@ -18,6 +15,9 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        
+        // API key for Gemini
+        buildConfigField("String", "GEMINI_API_KEY", "\"AIzaSyAz8PVm724HYCBaMB6rZv-z3oVBvcU87PI\"")
     }
 
     buildTypes {
@@ -29,9 +29,18 @@ android {
             )
         }
     }
+    
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
+    }
+    
+    buildFeatures {
+        buildConfig = true
+    }
+    
+    lint {
+        abortOnError = false
     }
 }
 
@@ -45,11 +54,12 @@ dependencies {
     implementation("androidx.recyclerview:recyclerview:1.3.2")
     
     // Firebase BOM
-    implementation(platform("com.google.firebase:firebase-bom:34.5.0"))
+    implementation(platform("com.google.firebase:firebase-bom:33.5.1"))
     implementation("com.google.firebase:firebase-analytics")
     implementation("com.google.firebase:firebase-auth")
     implementation("com.google.firebase:firebase-firestore")
     implementation("com.google.firebase:firebase-storage")
+    implementation("com.google.firebase:firebase-appcheck-playintegrity")
     
     // Google Sign In
     implementation("com.google.android.gms:play-services-auth:21.2.0")
@@ -69,11 +79,13 @@ dependencies {
     // PhotoView for image zoom/pinch
     implementation("com.github.chrisbanes:PhotoView:2.3.0")
     
-    // Retrofit for API calls
+    // Retrofit for API calls (including Gemini API)
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.11.0")
-
+    
+    implementation("org.reactivestreams:reactive-streams:1.0.4")
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)

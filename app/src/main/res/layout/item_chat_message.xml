@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="8dp">
+
+    <!-- User Message Container (Right side) -->
+    <LinearLayout
+        android:id="@+id/userMessageContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="end"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:maxWidth="280dp"
+            android:background="@drawable/bg_user_message"
+            android:padding="12dp">
+
+            <TextView
+                android:id="@+id/userMessageText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="User message"
+                android:textColor="@android:color/white"
+                android:textSize="15sp" />
+
+            <TextView
+                android:id="@+id/userTimeText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="12:00"
+                android:textColor="#E0E0E0"
+                android:textSize="11sp"
+                android:gravity="end" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- AI Message Container (Left side) -->
+    <LinearLayout
+        android:id="@+id/aiMessageContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="start"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:maxWidth="280dp"
+            android:background="@drawable/bg_ai_message"
+            android:padding="12dp">
+
+            <TextView
+                android:id="@+id/aiMessageText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="AI message"
+                android:textColor="@android:color/black"
+                android:textSize="15sp" />
+
+            <TextView
+                android:id="@+id/aiTimeText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="12:00"
+                android:textColor="#757575"
+                android:textSize="11sp" />
+        </LinearLayout>
+    </LinearLayout>
+
+</LinearLayout>

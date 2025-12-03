@@ -1018,4 +1018,19 @@
         app:labelVisibilityMode="labeled"
         app:menu="@menu/bottom_navigation_menu" />
 
+    <!-- Chatbot FAB -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/chatbotFab"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="16dp"
+        android:layout_marginBottom="80dp"
+        android:contentDescription="Chatbot"
+        android:src="@android:drawable/ic_dialog_email"
+        app:backgroundTint="#FFD700"
+        app:tint="#000000"
+        app:elevation="6dp"
+        app:borderWidth="0dp" />
+
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
